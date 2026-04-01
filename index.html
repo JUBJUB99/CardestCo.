@@ -390,8 +390,6 @@ select option{background:var(--bg3);}
 ════════════════════════════════════════ */
 
 /* show month label only on desktop */
-@media(min-width:600px){ .desktop-only{ display:inline !important; } }
-@media(max-width:599px){ #topbar-plan-badge{ display:none !important; } }
 
 /* Hamburger button (mobile only) */
 .hamburger{display:none;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--text);flex-direction:column;gap:5px;}
@@ -609,7 +607,6 @@ select option{background:var(--bg3);}
         <div class="l-demo-label">DEMO ACCOUNTS</div>
         <div class="l-demo-btns">
           <button class="demo-btn demo-admin" onclick="fill('admin@546bfopg.com','admin1234')">Admin Demo</button>
-          <button class="demo-btn demo-staff" onclick="fill('staff@546bfopg.com','staff1234')">Staff Demo</button>
         </div>
       </div>
     </div>
@@ -950,8 +947,7 @@ select option{background:var(--bg3);}
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="pageTitle">Dashboard</span></div>
         <div class="topbar-right" style="display:flex;align-items:center;gap:8px">
-          <div id="topbar-plan-badge" onclick="toggleSidebar()" style="font-size:10px;font-family:var(--mono);padding:4px 10px;border-radius:20px;background:rgba(124,109,250,0.15);color:var(--accent2);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px"><span id="topbar-tier-icon">⏳</span><span id="topbar-tier-text">Trial</span></div>
-          <span id="dash-month-label" style="font-size:11px;color:var(--text3);font-family:var(--mono);display:none" class="desktop-only">มีนาคม 2026</span>
+          <span id="dash-month-label" style="font-size:11px;color:var(--text3);font-family:var(--mono);display:none">มีนาคม 2026</span>
           <button onclick="refreshDashboard()" id="btn-refresh-dashboard" title="Refresh" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">↻</button>
         </div>
       </div>
@@ -1102,7 +1098,7 @@ select option{background:var(--bg3);}
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-inventory">สต็อกการ์ด</span></div>
         <div class="topbar-right" style="display:flex;gap:8px">
           <button class="btn btn-sm" disabled title="Coming Soon" style="font-size:11px;padding:4px 10px;opacity:0.5;cursor:not-allowed">📥 Import <span style="font-size:9px;color:var(--orange)">Soon</span></button>
-          <button class="btn btn-sm" onclick="openModal('addCard')" id="btn-add-card" data-i18n="inv_btn_add">+ เพิ่มการ์ด</button>
+          <!-- Add card button disabled per spec -->
         </div>
       </div>
       <div class="content">
@@ -1259,6 +1255,47 @@ select option{background:var(--bg3);}
             </div>
           </div>
         </div>
+        <!-- TAB: Package -->
+        <div id="tab-package" class="tab-content" style="display:none">
+          <div style="max-width:480px;margin:0 auto;padding:8px 0">
+            <div style="text-align:center;margin-bottom:20px">
+              <div style="font-size:40px;margin-bottom:8px" id="pkg-icon">⏳</div>
+              <div style="font-size:22px;font-weight:800;color:var(--text)" id="pkg-plan-name">Trial</div>
+              <div style="font-size:13px;color:var(--text3);margin-top:4px" id="pkg-plan-sub">ระยะทดลองใช้งาน</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:14px;padding:18px;margin-bottom:14px;border:1px solid var(--border2)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <span style="font-size:12px;color:var(--text3)">Status</span>
+                <span id="pkg-status-badge" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;background:rgba(245,200,66,0.15);color:var(--yellow)">Trial</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                <span style="font-size:13px;color:var(--text2)">Effective Date</span>
+                <span id="pkg-effective" style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)">-</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                <span style="font-size:13px;color:var(--text2)">Expiration Date</span>
+                <span id="pkg-expiry" style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)">-</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="font-size:13px;color:var(--text2)">วันที่เหลือ</span>
+                <span id="pkg-days-left" style="font-size:13px;font-weight:700;color:var(--green)">-</span>
+              </div>
+            </div>
+            <div style="background:var(--bg3);border-radius:14px;padding:18px;margin-bottom:14px;border:1px solid var(--border2)">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">การใช้งาน</div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:var(--text2)">การ์ดในสต็อก</span>
+                <span id="pkg-cards-usage" style="font-size:12px;font-family:var(--mono);color:var(--text)">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="font-size:12px;color:var(--text2)">รูปภาพการ์ด</span>
+                <span id="pkg-photos-usage" style="font-size:12px;font-family:var(--mono);color:var(--text)">0</span>
+              </div>
+            </div>
+            <div id="pkg-upgrade-btn"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1270,9 +1307,9 @@ select option{background:var(--bg3);}
       </div>
       <div class="content">
         <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
-          <div class="kpi-card" style="--kpi-color:var(--accent)"><div class="kpi-label">TOTAL CUSTOMERS</div><div class="kpi-val">0</div><div class="kpi-sub"><span class="kpi-badge badge-up">+24</span> เดือนนี้</div></div>
-          <div class="kpi-card" style="--kpi-color:var(--yellow)"><div class="kpi-label">VIP MEMBERS</div><div class="kpi-val">0</div><div class="kpi-sub" data-i18n="cust_kpi_sub">ยอดซื้อรวม >฿20,000</div></div>
-          <div class="kpi-card" style="--kpi-color:var(--green)"><div class="kpi-label">AVG. ORDER VALUE</div><div class="kpi-val">฿0</div><div class="kpi-sub"><span class="kpi-badge badge-up">+8.2%</span> vs เดือนที่แล้ว</div></div>
+          <div class="kpi-card" style="--kpi-color:var(--accent)"><div class="kpi-label">TOTAL CUSTOMERS</div><div class="kpi-val" id="cust-kpi-total">0</div><div class="kpi-sub" id="cust-kpi-total-sub">ลูกค้าทั้งหมด</div></div>
+          <div class="kpi-card" style="--kpi-color:var(--yellow)"><div class="kpi-label">VIP MEMBERS</div><div class="kpi-val" id="cust-kpi-vip">0</div><div class="kpi-sub">ยอดซื้อรวม >฿20,000</div></div>
+          <div class="kpi-card" style="--kpi-color:var(--green)"><div class="kpi-label">AVG. ORDER VALUE</div><div class="kpi-val" id="cust-kpi-avg">฿0</div><div class="kpi-sub" id="cust-kpi-avg-sub">เฉลี่ยต่อออเดอร์</div></div>
         </div>
         <div class="panel">
           <div class="panel-head"><span class="panel-title" data-i18n="cust_list">รายชื่อลูกค้า</span></div>
@@ -1647,7 +1684,7 @@ select option{background:var(--bg3);}
           <div class="setup-tab" data-i18n="setup_suppliers" onclick="switchTab('suppliers',this)">ผู้จัดจำหน่าย</div>
           <div class="setup-tab" data-i18n="setup_tiers" onclick="switchTab('tiers',this)">ระดับลูกค้า</div>
           <div class="setup-tab" onclick="switchTab('params',this)">⚙️ Parameters</div>
-          <div class="setup-tab" onclick="switchTab('staff',this)">👥 Staff</div>
+          <div class="setup-tab" onclick="switchTab('package',this)">📦 Package</div>
         </div>
 
         <!-- TAB: Brands -->
@@ -1796,18 +1833,6 @@ select option{background:var(--bg3);}
         </div>
 
         <!-- TAB: Staff -->
-        <div id="tab-staff" class="tab-content" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div>
-              <div style="font-size:15px;font-weight:700">จัดการ Staff</div>
-              <div style="font-size:12px;color:var(--text2);margin-top:2px" data-i18n="setup_staff_desc">เพิ่ม / แก้ไข / ลบบัญชีพนักงาน (Admin Only)</div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="openAddStaffModal()" data-i18n="btn_add_staff">+ เพิ่ม Staff</button>
-          </div>
-
-          <!-- Staff list -->
-          <div id="staff-list" style="display:flex;flex-direction:column;gap:10px"></div>
-        </div>
 
       </div>
     </div>
@@ -2134,57 +2159,7 @@ select option{background:var(--bg3);}
   </div>
 </div>
 
-<!-- Staff Upgrade Modal -->
-<div class="modal-overlay" id="modal-staffUpgrade">
-  <div class="modal" style="width:min(460px,96vw)">
-    <div style="text-align:center;padding:8px 0 20px">
-      <div style="font-size:36px;margin-bottom:8px">⬆️</div>
-      <h3 style="margin:0 0 6px;font-size:18px">Upgrade Plan</h3>
-      <div style="font-size:12px;color:var(--text3);font-family:var(--mono)">
-        Plan ปัจจุบัน: <span id="upgrade-current-plan" style="color:var(--accent2)">Free</span>
-        · Staff: <span id="upgrade-staff-count" style="color:var(--orange)">1/1</span>
-      </div>
-    </div>
 
-    <!-- Plans -->
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-      <div style="border:1px solid var(--border2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-weight:700;font-size:14px">Basic <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">ปัจจุบัน</span></div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px">1 Staff · ฟีเจอร์ครบ</div>
-        </div>
-        <div style="font-size:16px;font-weight:800;color:var(--yellow)">฿499<span style="font-size:10px;font-weight:400;color:var(--text3)">/เดือน</span></div>
-      </div>
-
-      <div style="border:2px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;background:rgba(124,109,250,0.06)">
-        <div style="position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;font-family:var(--mono)">แนะนำ</div>
-        <div>
-          <div style="font-weight:700;font-size:14px;color:var(--accent2)">Pro</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px">สูงสุด 5 Staff · ฟีเจอร์ครบ</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:16px;font-weight:800;color:var(--yellow)">฿899<span style="font-size:10px;font-weight:400;color:var(--text3)">/เดือน</span></div>
-        </div>
-      </div>
-
-      <div style="border:1px solid var(--border2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-weight:700;font-size:14px">Business</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px">Staff ไม่จำกัด · Priority Support</div>
-        </div>
-        <div style="font-size:16px;font-weight:800;color:var(--yellow)">฿1,499<span style="font-size:10px;font-weight:400;color:var(--text3)">/เดือน</span></div>
-      </div>
-    </div>
-
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center;margin-bottom:16px">
-      ติดต่อ Line: @546bfopg หรือ โอนผ่าน PromptPay เพื่อ Upgrade
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-sm" onclick="closeModal('staffUpgrade')" style="flex:1">ปิด</button>
-      <button class="btn btn-primary btn-sm" onclick="closeModal('staffUpgrade')" style="flex:2">ติดต่อ Upgrade →</button>
-    </div>
-  </div>
-</div>
 
 <!-- Add Staff Modal -->
 <div class="modal-overlay" id="modal-addStaff">
@@ -2739,57 +2714,74 @@ function validateConfirmLive(inp) {
 function doRegister() {
   const name     = document.getElementById('reg-name').value.trim()
   const shopname = document.getElementById('reg-shopname').value.trim()
-  const email    = document.getElementById('reg-email').value.trim()
+  const email    = document.getElementById('reg-email').value.trim().toLowerCase()
   const password = document.getElementById('reg-password').value
   const confirm  = document.getElementById('reg-confirm').value
   const btn      = document.getElementById('regBtn')
   clearRegAlert()
-  if (!name)     { showRegAlert('กรุณากรอกชื่อ-นามสกุล'); return }
-  if (!shopname) { showRegAlert('กรุณากรอกชื่อร้าน'); return }
-  if (!validateEmailLive(document.getElementById('reg-email'))) { showRegAlert('กรุณากรอก Email ที่ถูกต้อง'); return }
-  if (!validatePasswordLive(document.getElementById('reg-password'))) { showRegAlert('Password ต้องมีอย่างน้อย 8 ตัวอักษร'); return }
-  if (password !== confirm) { showRegAlert('รหัสผ่านและการยืนยันไม่ตรงกัน'); return }
+  if(!name)     { showRegAlert('กรุณากรอกชื่อ-นามสกุล'); return }
+  if(!shopname) { showRegAlert('กรุณากรอกชื่อร้าน'); return }
+  if(!validateEmailLive(document.getElementById('reg-email'))) { showRegAlert('กรุณากรอก Email ที่ถูกต้อง'); return }
+  if(!validatePasswordLive(document.getElementById('reg-password'))) { showRegAlert('Password ต้องมีอย่างน้อย 8 ตัว'); return }
+  if(password!==confirm) { showRegAlert('รหัสผ่านและการยืนยันไม่ตรงกัน'); return }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('creating_account')
-  ;(async () => {
-    // ตรวจ email ซ้ำจาก Supabase โดยตรง
-    if (sbReady()) {
-      showRegAlert('🔄 กำลังตรวจสอบ Email...')
-      const existing = await sbGetUser(email)
-      if (existing) {
+  ;(async()=>{
+    // ตรวจ email ซ้ำจาก Supabase
+    try {
+      const res = await fetch(
+        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=shop_id',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+      )
+      const rows = await res.json()
+      if(Array.isArray(rows)&&rows.length>0){
         showRegAlert('Email นี้มีบัญชีอยู่แล้ว กรุณา Login')
         btn.disabled=false; btn.innerHTML=t('reg_btn_text'); return
       }
-    } else if (USERS[email]) {
+    } catch(e){}
+    if(USERS[email]){
       showRegAlert('Email นี้มีบัญชีอยู่แล้ว กรุณา Login')
       btn.disabled=false; btn.innerHTML=t('reg_btn_text'); return
     }
     clearRegAlert()
-    // สร้างบัญชี
-    const newUser = { password, name, role:'admin', shop: shopname, email }
-    USERS[email] = newUser
-    if (sbReady()) await sbUpsertUser(newUser)
+    // สร้าง user + trialData
+    const now = Date.now()
+    const trialData = { start:now, subscribed:false, subExpiry:null, status:'trial' }
+    const newUser   = { password, name, role:'admin', shop:shopname, email }
+    USERS[email]    = newUser
+    try{ localStorage.setItem('cv_trial_'+email, JSON.stringify(trialData)) }catch(e){}
+    // save to Supabase
+    try{
+      const getRes = await fetch(
+        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+      )
+      const existing = await getRes.json()
+      const shopData = (Array.isArray(existing)&&existing[0]?.data)||{}
+      shopData.userInfo  = newUser
+      shopData.trialData = trialData
+      await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
+        method:'POST',
+        headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
+                 'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({shop_id:email,data:shopData,updated_at:new Date().toISOString()})
+      })
+    }catch(e){ console.warn('register save failed:',e) }
     // reset form
-    ;['reg-name','reg-shopname','reg-email','reg-password','reg-confirm'].forEach(id => {
-      const el = document.getElementById(id); if(el){el.value=''; el.style.borderColor='';}
+    ;['reg-name','reg-shopname','reg-email','reg-password','reg-confirm'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.value='';el.style.borderColor=''}
     })
-    ;['emailHint','confirmHint','pwdHint'].forEach(id => {
-      const el = document.getElementById(id); if(el) { el.textContent=''; el.style.color='' }
+    ;['emailHint','confirmHint','pwdHint'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.textContent='';el.style.color=''}
     })
-    ;['reg-name','reg-shopname','reg-email','reg-password','reg-confirm'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.style.borderColor=''
-    })
-    const el1 = document.getElementById('emailIcon'); if(el1) el1.textContent='✉️'
-    const el2 = document.getElementById('confirmIcon'); if(el2) el2.textContent='🔒'
-    ;['sb1','sb2','sb3','sb4'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.style.background='var(--border2)'
+    const e1=document.getElementById('emailIcon'); if(e1) e1.textContent='✉️'
+    const e2=document.getElementById('confirmIcon'); if(e2) e2.textContent='🔒'
+    ;['sb1','sb2','sb3','sb4'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.style.background='var(--border2)'
     })
     btn.disabled=false; btn.innerHTML=t('reg_btn_text')
-    // login อัตโนมัติหลังสมัครสำเร็จ
-    localStorage.setItem('cv_lastUser', email)
-    currentUser = { ...USERS[email], email, username: email }
-    let trialData = getTrialData(email)
-    if (!trialData) trialData = initTrial(email)
-    checkAccessAndRoute(currentUser, trialData)
+    localStorage.setItem('cv_lastUser',email)
+    currentUser = {...newUser,email,username:email}
+    checkAccessAndRoute(currentUser,trialData)
   })()
 }
 
@@ -2890,12 +2882,26 @@ function getTrialData(username) {
 }
 
 function initTrial(username) {
-  const data = {
-    start:      Date.now(),
-    subscribed: false,
-    subExpiry:  null
-  }
-  localStorage.setItem(STORAGE_KEY + '_' + username, JSON.stringify(data))
+  const data = { start:Date.now(), subscribed:false, subExpiry:null, status:'trial' }
+  try{ localStorage.setItem(STORAGE_KEY+'_'+username, JSON.stringify(data)) }catch(e){}
+  // save trialData to Supabase
+  ;(async()=>{
+    try{
+      const getRes = await fetch(
+        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(username)+'&select=data',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+      )
+      const rows = await getRes.json()
+      const shopData = (Array.isArray(rows)&&rows[0]?.data)||{}
+      shopData.trialData = data
+      await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
+        method:'POST',
+        headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
+                 'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({shop_id:username,data:shopData,updated_at:new Date().toISOString()})
+      })
+    }catch(e){}
+  })()
   return data
 }
 
@@ -3191,99 +3197,48 @@ function updateSidebarUser(user) {
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 function doLogin(){
-  const u   = document.getElementById('username').value.trim()
+  const u   = document.getElementById('username').value.trim().toLowerCase()
   const p   = document.getElementById('password').value
   const btn = document.getElementById('loginBtn')
   clearAlert()
-  if(!u||!p){ showAlert('กรุณากรอก Username และ Password'); return; }
+  if(!u||!p){ showAlert('กรุณากรอก Email และ Password'); return }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('login_btn_loading')
-  // ใช้ async function แทน setTimeout เพื่อให้ await ทำงานได้ถูกต้อง
-  ;(async () => {
-    const email = u.trim().toLowerCase()
-    const sb = getSB()
-    const ready = sbReady()
-
-    // DEBUG A: sbReady + URL + supabase global
-    const sbGlobal = typeof supabase !== 'undefined' ? 'loaded' : 'MISSING'
-    const sbClient = getSB()
-    showToast('A: ready='+ready+' lib='+sbGlobal+' client='+(sbClient?'OK':'NULL'), ready?'var(--accent)':'var(--red)')
-    await new Promise(r=>setTimeout(r,2000))
-
-    // DEBUG B: ใช้ fetch ตรงๆ แทน SDK
-    let fetchOk = false, fetchData = null, fetchErr = null
+  ;(async()=>{
+    let user = null
     try {
       const res = await fetch(
-        SUPABASE_URL + '/rest/v1/shop_data?select=shop_id',
-        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(u)+'&select=data',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
       )
-      fetchData = await res.json()
-      fetchOk = res.ok
-      showToast('B fetch: ok='+fetchOk+' count='+(Array.isArray(fetchData)?fetchData.length:'err')+' status='+res.status, fetchOk?'var(--accent)':'var(--red)')
-    } catch(e) {
-      showToast('B fetch ERROR: '+e.message, 'var(--red)')
-    }
-    await new Promise(r=>setTimeout(r,2000))
-
-    if(fetchOk && Array.isArray(fetchData) && fetchData.length>0) {
-      showToast('B2: ids='+fetchData.map(x=>x.shop_id).join('|').substring(0,80), 'var(--accent)')
-      await new Promise(r=>setTimeout(r,2000))
-    }
-
-    // DEBUG C: fetch filter by email
-    let fetchUser = null
-    try {
-      const res2 = await fetch(
-        SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
-        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
-      )
-      const d2 = await res2.json()
-      showToast('C fetch filter: count='+(Array.isArray(d2)?d2.length:0)+' ok='+res2.ok, res2.ok?'var(--accent)':'var(--red)')
-      if(Array.isArray(d2) && d2.length>0) {
-        const ui = d2[0].data?.userInfo
-        fetchUser = ui ? {...ui, email} : null
-        showToast('D userInfo: '+(fetchUser?'FOUND pwd='+((ui.password||'').length)+'c':'missing'), fetchUser?'var(--green)':'var(--red)')
+      const rows = await res.json()
+      if(Array.isArray(rows)&&rows.length>0){
+        const ui = rows[0].data?.userInfo
+        if(ui) user = {...ui, email:u}
+        // sync trialData จาก Supabase
+        const td = rows[0].data?.trialData
+        if(td) { try{ localStorage.setItem('cv_trial_'+u, JSON.stringify(td)) }catch(e){} }
       }
-    } catch(e) { showToast('C fetch ERROR: '+e.message, 'var(--red)') }
-    await new Promise(r=>setTimeout(r,2000))
-
-    // หา user
-    let user = USERS[email] || fetchUser
-    if(!user) { await sbLoadAllUsers(); user=USERS[email] }
-
-    // password check
-    if(user) {
-      const match = user.password===p
-      showToast('E: pwd match='+match+' db='+((user.password||'').length)+'c input='+p.length+'c', match?'var(--green)':'var(--red)')
-      await new Promise(r=>setTimeout(r,1500))
-    } else {
-      showToast('E: user NOT found', 'var(--red)')
-      await new Promise(r=>setTimeout(r,1500))
+    } catch(e){ console.warn('fetch login failed:', e) }
+    // fallback localStorage
+    if(!user) user = USERS[u]
+    if(!user){
+      showAlert('ไม่พบ Email นี้ในระบบ กรุณาสมัครสมาชิก')
+      btn.disabled=false; btn.innerHTML=t('login_btn_text'); return
     }
-
-    if(user && user.password===p){
-      localStorage.setItem('cv_lastUser', email)
-      // remember me
-      const rememberChecked = document.getElementById('remember')?.checked
-      if (rememberChecked) {
-        try {
-          localStorage.setItem('cv_remember_email', email)
-          localStorage.setItem('cv_remember_pwd', btoa(p))
-        } catch(e) {}
-      } else {
-        try {
-          localStorage.removeItem('cv_remember_email')
-          localStorage.removeItem('cv_remember_pwd')
-        } catch(e) {}
-      }
-      let trialData = getTrialData(email)
-      if (!trialData) trialData = initTrial(email)
-      currentUser = { ...user, email, username: email }
-      checkAccessAndRoute(currentUser, trialData)
-      btn.disabled=false; btn.innerHTML=t('login_btn_text')
-    } else {
-      showAlert('Email หรือ Password ไม่ถูกต้อง')
-      btn.disabled=false; btn.innerHTML=t('login_btn_text')
+    if(user.password !== p){
+      showAlert('Password ไม่ถูกต้อง')
+      btn.disabled=false; btn.innerHTML=t('login_btn_text'); return
     }
+    USERS[u] = user
+    localStorage.setItem('cv_lastUser', u)
+    const rem = document.getElementById('remember')?.checked
+    if(rem){ try{ localStorage.setItem('cv_remember_email',u); localStorage.setItem('cv_remember_pwd',btoa(p)) }catch(e){} }
+    else{ try{ localStorage.removeItem('cv_remember_email'); localStorage.removeItem('cv_remember_pwd') }catch(e){} }
+    currentUser = {...user, email:u, username:u}
+    let trialData = getTrialData(u)
+    if(!trialData) trialData = initTrial(u)
+    btn.disabled=false; btn.innerHTML=t('login_btn_text')
+    checkAccessAndRoute(currentUser, trialData)
   })()
 }
 
@@ -5353,6 +5308,54 @@ function renderOrders(){
     </tr>`).join('')
 }
 
+function renderPackageTab() {
+  const email = currentUser?.email
+  if(!email) return
+  let trialData = null
+  try{ const r=localStorage.getItem('cv_trial_'+email); trialData=r?JSON.parse(r):null }catch(e){}
+  if(!trialData) return
+
+  const subscribed = trialData.subscribed && trialData.subExpiry && Date.now()<trialData.subExpiry
+  const daysLeft   = Math.max(0,Math.ceil(7-(Date.now()-trialData.start)/(1000*60*60*24)))
+  const fmt = ts => ts ? new Date(ts).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) : '-'
+  const $= id => document.getElementById(id)
+
+  if(subscribed){
+    const d = Math.max(0,Math.ceil((trialData.subExpiry-Date.now())/(1000*60*60*24)))
+    if($('pkg-icon'))         $('pkg-icon').textContent         = '✅'
+    if($('pkg-plan-name'))    $('pkg-plan-name').textContent    = 'Basic Plan'
+    if($('pkg-plan-sub'))     $('pkg-plan-sub').textContent     = 'ใช้งานได้ไม่จำกัด'
+    if($('pkg-status-badge')){ $('pkg-status-badge').textContent='Basic'; $('pkg-status-badge').style.background='rgba(74,222,128,0.15)'; $('pkg-status-badge').style.color='var(--green)' }
+    if($('pkg-effective'))    $('pkg-effective').textContent    = fmt(trialData.subStart||trialData.start)
+    if($('pkg-expiry'))       { $('pkg-expiry').textContent=fmt(trialData.subExpiry); $('pkg-expiry').style.color=d<=7?'var(--orange)':'var(--text)' }
+    if($('pkg-days-left'))    { $('pkg-days-left').textContent=d+' วัน'; $('pkg-days-left').style.color=d<=7?'var(--orange)':'var(--green)' }
+    if($('pkg-cards-usage'))  $('pkg-cards-usage').textContent = cards.length+' / ไม่จำกัด'
+    if($('pkg-photos-usage')) $('pkg-photos-usage').textContent= cards.filter(x=>x.photo&&x.photo.length>0).length+' / ไม่จำกัด'
+    if($('pkg-upgrade-btn'))  $('pkg-upgrade-btn').innerHTML   = ''
+  } else if(daysLeft>0){
+    const exp = trialData.start+7*24*60*60*1000
+    if($('pkg-icon'))         $('pkg-icon').textContent         = '⏳'
+    if($('pkg-plan-name'))    $('pkg-plan-name').textContent    = 'Trial'
+    if($('pkg-plan-sub'))     $('pkg-plan-sub').textContent     = 'ระยะทดลอง 7 วัน'
+    if($('pkg-status-badge')){ $('pkg-status-badge').textContent='Trial'; $('pkg-status-badge').style.background='rgba(245,200,66,0.15)'; $('pkg-status-badge').style.color='var(--yellow)' }
+    if($('pkg-effective'))    $('pkg-effective').textContent    = fmt(trialData.start)
+    if($('pkg-expiry'))       { $('pkg-expiry').textContent=fmt(exp); $('pkg-expiry').style.color=daysLeft<=2?'var(--red)':'var(--text)' }
+    if($('pkg-days-left'))    { $('pkg-days-left').textContent=daysLeft+' วัน'; $('pkg-days-left').style.color=daysLeft<=2?'var(--red)':'var(--yellow)' }
+    const ph = cards.filter(x=>x.photo&&x.photo.length>0).length
+    if($('pkg-cards-usage'))  $('pkg-cards-usage').textContent = cards.length+' / 100'
+    if($('pkg-photos-usage')) $('pkg-photos-usage').textContent= ph+' / 20'
+    if($('pkg-upgrade-btn'))  $('pkg-upgrade-btn').innerHTML   = '<button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="showSubScreen()">🚀 Upgrade เป็น Basic Plan</button>'
+  } else {
+    if($('pkg-icon'))         $('pkg-icon').textContent         = '❌'
+    if($('pkg-plan-name'))    $('pkg-plan-name').textContent    = 'Trial หมดอายุ'
+    if($('pkg-status-badge')){ $('pkg-status-badge').textContent='Expired'; $('pkg-status-badge').style.background='rgba(248,113,113,0.15)'; $('pkg-status-badge').style.color='var(--red)' }
+    if($('pkg-effective'))    $('pkg-effective').textContent    = fmt(trialData.start)
+    if($('pkg-expiry'))       { $('pkg-expiry').textContent=fmt(trialData.start+7*24*60*60*1000); $('pkg-expiry').style.color='var(--red)' }
+    if($('pkg-days-left'))    { $('pkg-days-left').textContent='หมดอายุ'; $('pkg-days-left').style.color='var(--red)' }
+    if($('pkg-upgrade-btn'))  $('pkg-upgrade-btn').innerHTML   = '<button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="showSubScreen()">🚀 Subscribe เพื่อใช้งานต่อ</button>'
+  }
+}
+
 function renderCustomers(){
   // สร้าง customer summary จาก orders จริง
   const custMap = {}
@@ -5366,6 +5369,17 @@ function renderCustomers(){
     })
   })
   const list = Object.values(custMap).sort((a,b)=>b.total-a.total)
+
+  // update KPI cards
+  const vipCount = list.filter(cu=>cu.total>=20000).length
+  const totalOrders = list.reduce((s,cu)=>s+cu.orders,0)
+  const totalRev    = list.reduce((s,cu)=>s+cu.total,0)
+  const avgVal      = totalOrders>0 ? Math.round(totalRev/totalOrders) : 0
+  const el = id => document.getElementById(id)
+  if(el('cust-kpi-total')) el('cust-kpi-total').textContent = list.length
+  if(el('cust-kpi-vip'))   el('cust-kpi-vip').textContent   = vipCount
+  if(el('cust-kpi-avg'))   el('cust-kpi-avg').textContent   = '฿'+avgVal.toLocaleString()
+
   const bt={Pokemon:'tag-poke',['Yu-Gi-Oh']:'tag-yugi',MTG:'tag-mtg',['One Piece']:'tag-op'}
   const tbody = document.getElementById('customersTable')
   if (!tbody) return
@@ -5673,8 +5687,14 @@ function renderPurchase(data){
     if(allBrands.length===0) brandListEl.innerHTML='<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">'+t('no_brands')+'</div>'
   }
   // สรุปต้นทุน vs ราคาขาย
-  const sumCost   = activePO.reduce((s,p)=>s+(p.cost*p.qty),0)
-  const sumSell   = activePO.reduce((s,p)=>s+(p.sell*p.qty),0)
+  const sumCost = activePO.reduce((s,p)=>s+(p.cost*p.qty),0)
+  // ข้อ 11: ใช้ราคาจาก stock (cards) แทน sell ใน PO
+  const cardPriceMap = {}
+  cards.forEach(cd=>{ if((cd.price||0)>0) cardPriceMap[cd.name]=cd.price })
+  const sumSell = activePO.reduce((s,p)=>{
+    const sp = cardPriceMap[p.name] || p.sell || 0
+    return s+(sp*p.qty)
+  },0)
   const sumProfit = sumSell - sumCost
   const sumMargin = sumCost > 0 ? Math.round((sumProfit/sumCost)*100) : 0
   const totalQty  = activePO.reduce((s,p)=>s+p.qty,0)
@@ -6246,10 +6266,10 @@ async function shareScreenshot(containerId, title) {
     // 2 คอลัมน์ แถวละ 2 การ์ด — แสดงสูงสุด 4 ใบ
     const MAX_CARDS = 4
     const show4 = visibleCards.slice(0, MAX_CARDS)
-    const PAD    = 24
-    const COLS   = 2
-    const WM     = 100
-    const VP_W   = 1080   // FullHD width — คมชัด ไม่ต้อง zoom
+    const PAD    = 32
+    const COLS   = 4   // 4 คอลัมน์ สำหรับ desktop/website landscape
+    const WM     = 80
+    const VP_W   = 1920   // Website/computer size — landscape 1920px
     const CARD_W = Math.floor((VP_W - PAD * (COLS + 1)) / COLS)
     const CARD_H = Math.round(CARD_W * 1.45)
     const rows   = Math.ceil(show4.length / COLS)
@@ -7194,7 +7214,6 @@ function switchTab(tab, el){
   setupPage.querySelectorAll('.tab-content').forEach(t=>t.style.display='none')
   document.getElementById('tab-'+tab).style.display='block'
   if(tab==='params') renderParams()
-  if(tab==='staff')  renderStaff()
 }
 
 function switchPurchaseTab(tab, el){
@@ -7400,10 +7419,5 @@ document.addEventListener('change', e=>{
     <span class="bnav-icon" id="navToggleIcon">⇔</span><span data-i18n="bnav_back">สลับ</span>
   </div>
 </nav>
-
-  <!-- Floating tier badge — mobile only, shows on all pages -->
-  <div id="floating-tier-badge" onclick="toggleSidebar()" style="display:none;position:fixed;top:12px;right:12px;z-index:9990;font-size:10px;font-family:var(--mono);padding:4px 10px;border-radius:20px;background:rgba(124,109,250,0.15);color:var(--accent2);cursor:pointer;white-space:nowrap;align-items:center;gap:4px;border:1px solid rgba(124,109,250,0.2);backdrop-filter:blur(8px)">
-    <span id="float-tier-icon">⏳</span> <span id="float-tier-text">Trial</span>
-  </div>
 </body>
 </html>
