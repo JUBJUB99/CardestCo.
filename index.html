@@ -365,9 +365,9 @@ select option{background:var(--bg3);}
 .cat-inactive{background:rgba(248,113,113,0.1);color:var(--red);}
 
 /* Trial & Subscription */
-#trialScreen,#subScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:9;transition:opacity 0.4s ease,transform 0.4s ease;opacity:0;pointer-events:none;}
+#trialScreen,#subScreen{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:24px;padding-top:env(safe-area-inset-top,24px);z-index:9;transition:opacity 0.4s ease,transform 0.4s ease;opacity:0;pointer-events:none;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 #trialScreen.show,#subScreen.show{opacity:1;pointer-events:all;}
-.trial-wrap{width:100%;max-width:440px;animation:fadeUp 0.4s ease;}
+.trial-wrap{width:100%;max-width:440px;animation:fadeUp 0.4s ease;margin:auto 0;padding-bottom:32px;}
 .trial-card{background:var(--bg2);border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:32px;position:relative;overflow:hidden;}
 .trial-card.expired-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);}
 .trial-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--yellow),transparent);}
@@ -460,7 +460,7 @@ select option{background:var(--bg3);}
   /* Trial/Sub screens */
   .trial-wrap{max-width:100%;}
   .trial-card{padding:22px 18px;}
-  #subScreen .trial-wrap{max-width:100%;}
+  #subScreen .trial-wrap{max-width:100%;padding-bottom:40px;}
 
   /* App screen */
   #appScreen{flex-direction:column;height:100vh;}
@@ -3105,6 +3105,59 @@ function handleSlipDrop(e) {
   }
 }
 
+async function activateSubscription(email, amount, transRef) {
+  const now    = Date.now()
+  const expiry = now + 31 * 24 * 60 * 60 * 1000
+  const price  = PLANS.basic.price || 199
+
+  // 1. update localStorage
+  const trialData = getTrialData(email) || initTrial(email)
+  trialData.subscribed = true; trialData.subStart = now
+  trialData.subExpiry  = expiry; trialData.status = 'basic'
+  trialData.pendingApproval = false
+  try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+
+  // 2. update shop_data
+  const getRes  = await fetch(
+    SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
+    {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+  )
+  const rows    = await getRes.json()
+  const shopData = (Array.isArray(rows)&&rows[0]?.data)||{}
+  shopData.trialData = trialData
+  await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
+             'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({shop_id:email,data:shopData,updated_at:new Date().toISOString()})
+  })
+
+  // 3. update subscriptions
+  await fetch(SUPABASE_URL+'/rest/v1/subscriptions',{
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
+             'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({shop_id:email,status:'basic',
+      effective_date:new Date(now).toISOString(),
+      expiration_date:new Date(expiry).toISOString(),
+      updated_at:new Date().toISOString()})
+  })
+
+  // 4. save payment record
+  await fetch(SUPABASE_URL+'/rest/v1/payments',{
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
+             'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({
+      shop_id:email, plan:'basic', amount:price,
+      months:1, total:amount||price, paid_at:new Date().toISOString(),
+      note:'EasySlip transRef:'+transRef+' ref:'+currentRefId,
+      approved_by:'easyslip_auto'
+    })
+  })
+  return trialData
+}
+
 async function submitSlip() {
   if (!slipFileData) { showToast('กรุณาแนบสลิปก่อนส่ง', 'var(--orange)'); return }
   const btn = document.getElementById('submitSlipBtn')
@@ -3118,6 +3171,8 @@ async function submitSlip() {
   document.getElementById('payResultTitle').textContent = 'กำลังตรวจสอบสลิป...'
   document.getElementById('payResultMsg').textContent   = 'EasySlip กำลังอ่านสลิปของคุณ กรุณารอสักครู่'
 
+  const email = currentUser?.email || localStorage.getItem('cv_lastUser') || ''
+
   try {
     // แปลง file เป็น base64
     const base64 = await new Promise((res, rej) => {
@@ -3128,29 +3183,33 @@ async function submitSlip() {
     })
 
     // เรียก EasySlip API
-    const response = await fetch('https://developer.easyslip.com/api/v1/verify', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + EASYSLIP_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ image: base64 })
-    })
-
-    const result = await response.json()
-    console.log('EasySlip result:', result)
-
-    if (!response.ok || result.status !== 200) {
-      // API error
-      throw new Error(result.message || 'ไม่สามารถอ่านสลิปได้')
+    let response, result
+    try {
+      response = await fetch('https://developer.easyslip.com/api/v1/verify', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + EASYSLIP_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: base64 })
+      })
+      result = await response.json()
+      console.log('EasySlip result:', JSON.stringify(result))
+    } catch(corsErr) {
+      console.warn('EasySlip CORS/network error:', corsErr)
+      // CORS block หรือ network error → fallback manual
+      throw new Error('CORS_OR_NETWORK')
     }
 
-    const slip = result.data
+    if (!response.ok || result.status !== 200) {
+      throw new Error(result.message || 'EasySlip: status '+result.status)
+    }
+
+    const slip     = result.data
     const amount   = slip?.amount?.amount || 0
-    const receiver = slip?.receiver?.displayName || slip?.receiver?.name?.th || ''
     const transRef = slip?.transRef || slip?.transactionId || ''
 
-    // เช็คสลิปซ้ำ (ดูจาก transRef ที่เคยใช้)
+    // เช็คสลิปซ้ำ
     const usedRefs = JSON.parse(localStorage.getItem('cv_used_slips')||'[]')
     if (transRef && usedRefs.includes(transRef)) {
       document.getElementById('payResultIcon').textContent  = '❌'
@@ -3160,89 +3219,37 @@ async function submitSlip() {
     }
 
     // เช็คยอดเงิน
-    if (amount < (PLANS.basic.price || 199)) {
+    const minPrice = PLANS.basic.price || 199
+    if (amount < minPrice) {
       document.getElementById('payResultIcon').textContent  = '❌'
       document.getElementById('payResultTitle').textContent = 'ยอดเงินไม่ถูกต้อง'
-      document.getElementById('payResultMsg').textContent   = 'ยอดในสลิป ฿'+amount+' ต้องชำระ ฿'+SUB_PRICE+' กรุณาตรวจสอบอีกครั้ง'
+      document.getElementById('payResultMsg').textContent   = 'ยอดในสลิป ฿'+amount+' — ต้องชำระ ฿'+minPrice+' ขึ้นไป'
       btn.disabled = false; btn.innerHTML = t('sub_submit_btn'); return
     }
 
-    // ✅ สลิปถูกต้อง — activate subscription
-    const email = currentUser?.email || localStorage.getItem('cv_lastUser') || ''
-    const now   = Date.now()
-    const expiry = now + 31 * 24 * 60 * 60 * 1000  // 31 วัน
-
-    // บันทึก transRef กัน reuse
+    // บันทึก transRef
     if (transRef) {
       usedRefs.push(transRef)
       try { localStorage.setItem('cv_used_slips', JSON.stringify(usedRefs)) } catch(e) {}
     }
 
-    // update trialData localStorage
-    const trialData = getTrialData(email) || initTrial(email)
-    trialData.subscribed    = true
-    trialData.subStart      = now
-    trialData.subExpiry     = expiry
-    trialData.status        = 'basic'
-    trialData.pendingApproval = false
-    try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
-
-    // save to Supabase — shop_data + subscriptions + payments
-    if (email) {
-      ;(async()=>{
-        try {
-          // update shop_data
-          const getRes = await fetch(SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
-            {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}})
-          const rows = await getRes.json()
-          const shopData = (Array.isArray(rows)&&rows[0]?.data)||{}
-          shopData.trialData = trialData
-          await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
-            method:'POST',
-            headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
-                     'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-            body:JSON.stringify({shop_id:email,data:shopData,updated_at:new Date().toISOString()})
-          })
-          // update subscriptions
-          await fetch(SUPABASE_URL+'/rest/v1/subscriptions',{
-            method:'POST',
-            headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
-                     'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-            body:JSON.stringify({shop_id:email,status:'basic',
-              effective_date:new Date(now).toISOString(),
-              expiration_date:new Date(expiry).toISOString(),
-              updated_at:new Date().toISOString()})
-          })
-          // save payment record
-          await fetch(SUPABASE_URL+'/rest/v1/payments',{
-            method:'POST',
-            headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
-                     'Content-Type':'application/json','Prefer':'return=minimal'},
-            body:JSON.stringify({
-              shop_id:email, plan:'basic', amount:SUB_PRICE,
-              months:1, total:amount || (PLANS.basic.price||199), paid_at:new Date().toISOString(),
-              note:'EasySlip transRef:'+transRef+' ref:'+currentRefId,
-              approved_by:'easyslip_auto'
-            })
-          })
-        }catch(e){ console.warn('Supabase update failed:', e) }
-      })()
-    }
+    // ✅ Activate subscription + save to Supabase (await ทุก step)
+    document.getElementById('payResultMsg').textContent = 'กำลัง Activate subscription...'
+    await activateSubscription(email, amount, transRef)
 
     updateSubBadge(true, 0)
     document.getElementById('payResultIcon').textContent  = '✅'
     document.getElementById('payResultTitle').textContent = 'ชำระเงินสำเร็จ!'
-    document.getElementById('payResultMsg').textContent   = 'ยืนยันสลิป ฿'+amount+' เรียบร้อย\nSubscription เปิดใช้งาน 31 วัน\nRef: '+currentRefId
+    document.getElementById('payResultMsg').textContent   = 'ยืนยันสลิป ฿'+amount+' เรียบร้อย — Subscription เปิดใช้งาน 31 วัน\nRef: '+currentRefId
     document.getElementById('payResultBtn').style.display = 'block'
 
   } catch(err) {
-    console.error('EasySlip error:', err)
+    console.error('submitSlip error:', err.message)
     // fallback: รอ Admin manual approve
     document.getElementById('payResultIcon').textContent  = '📋'
-    document.getElementById('payResultTitle').textContent = 'รอการยืนยัน'
-    document.getElementById('payResultMsg').innerHTML     = 'รับสลิปแล้ว รอ Admin ยืนยันภายใน 1 ชั่วโมง<br><span style="font-family:var(--mono);font-size:12px;color:var(--accent2)">Ref: '+currentRefId+'</span><br><br>ติดต่อ <a href="https://line.me/ti/p/@546bfopg" style="color:var(--green)">Line OA @546bfopg</a>'
-    // แจ้ง Line OA พร้อม ref
-    console.log('Manual review needed - Ref:', currentRefId, 'Email:', currentUser?.email)
+    document.getElementById('payResultTitle').textContent = 'รอการยืนยันจาก Admin'
+    document.getElementById('payResultMsg').innerHTML     = 'รับสลิปแล้ว รอ Admin ยืนยันภายใน 1 ชั่วโมง<br><span style="font-family:var(--mono);font-size:12px;color:var(--accent2)">Ref: '+currentRefId+'</span><br><span style="font-size:11px;color:var(--text3)">Error: '+err.message+'</span><br><br>ติดต่อ <a href="https://line.me/ti/p/@546bfopg" style="color:var(--green)">Line OA @546bfopg</a>'
+    console.log('Manual review needed — Ref:', currentRefId, '| Email:', email, '| Error:', err.message)
   }
 
   btn.disabled = false
@@ -7022,7 +7029,14 @@ function savePurchase(){
   const date=formatDate()
   poItems.forEach(it => {
     const newPO = {
-      po: 'PO-' + String(purchases.length + 39).padStart(4,'0'),
+      po: (()=>{
+        // หาเลข PO สูงสุดที่มีอยู่ แล้ว +1
+        const maxNum = purchases.reduce((max, p) => {
+          const m = p.po?.match(/PO-(\d+)/)
+          return m ? Math.max(max, parseInt(m[1])) : max
+        }, 0)
+        return 'PO-' + String(maxNum + 1).padStart(4,'0')
+      })(),
       name:it.name, brand:it.brand, qty:it.qty, cost:it.cost, sell:it.sell||0,
       rarity:it.rarity, set:it.set, source:it.source,
       psa:it.psa, psaGrade:it.psaGrade,
