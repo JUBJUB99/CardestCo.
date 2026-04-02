@@ -2514,19 +2514,22 @@ async function sbUpsertUser(userObj) {
 }
 
 async function sbLoadAllUsers() {
-  if (!sbReady()) return null
   try {
-    const { data, error } = await getSB().from('shop_data').select('shop_id, data')
-    if (error) return null
-    ;(data||[]).forEach(row => {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data',
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+    )
+    if (!res.ok) return null
+    const rows = await res.json()
+    ;(rows||[]).forEach(row => {
       const u = row.data?.userInfo
       if (u && u.email) {
         const key = u.email.trim().toLowerCase()
         USERS[key] = { name:u.name, shop:u.shop, password:u.password, role:u.role||'admin', email:key }
       }
     })
-    return data
-  } catch(e) { return null }
+    return rows
+  } catch(e) { console.warn('sbLoadAllUsers failed:', e); return null }
 }
 
 // ── Build snapshot object ─────────────────────────────────────────────────────────
@@ -3368,6 +3371,8 @@ async function enterApp() {
   applyNavMode()
   applyTheme(currentTheme)
   currentLang = (()=>{ try { return localStorage.getItem('cv_lang')||'th' } catch(e){ return 'th' } })()
+  // Clear ข้อมูลเก่าก่อน load ของ user ปัจจุบัน
+  cards.length = 0; orders.length = 0; purchases.length = 0
   await loadData()
   syncMasterToAllPages()
   applyLang()
