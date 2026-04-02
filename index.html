@@ -130,7 +130,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* ── SCREENS ── */
 #loginScreen,#appScreen{position:fixed;inset:0;transition:opacity 0.4s ease,transform 0.4s ease;}
-#loginScreen{display:flex;align-items:center;justify-content:center;padding:24px;z-index:10;}
+#loginScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:10;}
 #loginScreen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
 #appScreen{opacity:0;transform:scale(0.97);pointer-events:none;display:block;width:100%;height:100vh;overflow:visible;}
 #appScreen.visible{opacity:1;transform:scale(1);pointer-events:all;}
