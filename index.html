@@ -5539,18 +5539,24 @@ function renderPackageTab() {
   if($('pkg-plan-name')) $('pkg-plan-name').textContent = 'กำลังโหลด...'
   if($('pkg-effective')) $('pkg-effective').textContent = '...'
 
-  // ดึงข้อมูลจาก Supabase subscriptions table
-  fetch(
-    SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(email)+'&select=*',
-    {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
-  )
-  .then(r=>r.json())
-  .then(rows => {
-    const sub = Array.isArray(rows) && rows.length>0 ? rows[0] : null
-
-    // fallback จาก localStorage ถ้า Supabase ไม่มีข้อมูล
+  // ดึงข้อมูลจาก Supabase: subscriptions + shop_data (fallback)
+  Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(email)+'&select=*',
+      {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}).then(r=>r.json()).catch(()=>[]),
+    fetch(SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
+      {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}).then(r=>r.json()).catch(()=>[])
+  ])
+  .then(([subRows, shopRows]) => {
+    const sub = Array.isArray(subRows) && subRows.length>0 ? subRows[0] : null
+    // ดึง trialData จาก cloud ก่อน ถ้าไม่มีค่อย fallback localStorage
+    const cloudTrialData = Array.isArray(shopRows) && shopRows[0]?.data?.trialData
     let trialData = null
     try{ const r=localStorage.getItem('cv_trial_'+email); trialData=r?JSON.parse(r):null }catch(e){}
+    if(cloudTrialData) {
+      trialData = cloudTrialData
+      // sync กลับ localStorage
+      try{ localStorage.setItem('cv_trial_'+email, JSON.stringify(cloudTrialData)) }catch(e){}
+    }
 
     const status   = sub?.status || (trialData?.subscribed?'basic':'trial')
     const effDate  = sub?.effective_date || trialData?.subStart || trialData?.start || null
