@@ -2873,30 +2873,10 @@ document.addEventListener('keydown', e=>{ if(e.key==='Enter' && !document.getEle
 //  TRIAL & SUBSCRIPTION SYSTEM
 // ══════════════════════════════════════════════════════════════════
 const TRIAL_DAYS   = 7
-// EasySlip key — โหลดจาก Supabase (admin config) หรือ cache
-let _easySlipKeyCache = ''
+const EASYSLIP_KEY = '0bb64b5d-3ab9-4231-81e0-51081eb14f03'
 
-async function fetchEasySlipKey() {
-  try {
-    const res = await fetch(
-      SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.superadmin%40cardestco.com&select=data',
-      {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
-    )
-    const rows = await res.json()
-    const key = Array.isArray(rows)&&rows[0]?.data?.adminConfig?.easyslipKey || ''
-    if(key) _easySlipKeyCache = key
-    return key
-  } catch(e) { return '' }
-}
-
-function getEasySlipKey() {
-  // fallback: ลอง localStorage admin config cache
-  if(_easySlipKeyCache) return _easySlipKeyCache
-  try {
-    const cfg = JSON.parse(localStorage.getItem('cardestco_admin_config') || '{}')
-    return cfg.easyslipKey || ''
-  } catch(e) { return '' }
-}
+async function fetchEasySlipKey() { return EASYSLIP_KEY }
+function getEasySlipKey() { return EASYSLIP_KEY }
 const SUB_PRICE    = 499
 const STORAGE_KEY  = 'cv_trial'   // key ใน localStorage
 
