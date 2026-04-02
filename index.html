@@ -3461,7 +3461,7 @@ function doLogin(){
     USERS[u] = user
     localStorage.setItem('cv_lastUser', u)
     const rem = document.getElementById('remember')?.checked
-    if(rem){ try{ localStorage.setItem('cv_remember_email',u); localStorage.setItem('cv_remember_pwd',btoa(hashedInput)) }catch(e){} }
+    if(rem){ try{ localStorage.setItem('cv_remember_email',u) }catch(e){} }
     else{ try{ localStorage.removeItem('cv_remember_email'); localStorage.removeItem('cv_remember_pwd') }catch(e){} }
     currentUser = {...user, email:u, username:u}
     let trialData = getTrialData(u)
@@ -3528,10 +3528,8 @@ function doLogout(){
   document.getElementById('bottomNav').style.display = 'none'
   // ถ้า remember me → คง email/password ไว้
   const savedEmail = (() => { try { return localStorage.getItem('cv_remember_email') } catch(e) { return null } })()
-  const savedPwd   = null // password not restored for security
   if (savedEmail) {
     document.getElementById('username').value = savedEmail
-    document.getElementById('password').value = savedPwd ? atob(savedPwd) : ''
     const remEl = document.getElementById('remember')
     if (remEl) remEl.checked = true
   } else {
@@ -4044,13 +4042,11 @@ function toggleTheme() {
   // auto-fill remember me
   try {
     const savedEmail = localStorage.getItem('cv_remember_email')
-    const savedPwd   = localStorage.getItem('cv_remember_pwd')
     if (savedEmail) {
       const uEl = document.getElementById('username')
       const pEl = document.getElementById('password')
       const rEl = document.getElementById('remember')
       if (uEl) uEl.value = savedEmail
-      if (pEl && savedPwd) pEl.value = atob(savedPwd)
       if (rEl) rEl.checked = true
     }
   } catch(e) {}
