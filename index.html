@@ -130,7 +130,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* ── SCREENS ── */
 #loginScreen,#appScreen{position:fixed;inset:0;transition:opacity 0.4s ease,transform 0.4s ease;}
-#loginScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:10;}
+#loginScreen{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;padding-top:40px;z-index:10;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 #loginScreen.hidden{opacity:0;transform:scale(1.04);pointer-events:none;}
 #appScreen{opacity:0;transform:scale(0.97);pointer-events:none;display:block;width:100%;height:100vh;overflow:visible;}
 #appScreen.visible{opacity:1;transform:scale(1);pointer-events:all;}
@@ -147,13 +147,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;
 ════════════════════════════════════════ */
 /* ── ซ่อน sidebar เมื่ออยู่ที่หน้า login ── */
 #sidebar.sidebar-hidden { display: none !important; }
-.login-wrap{width:100%;max-width:400px;animation:fadeUp 0.4s ease;}
+.login-wrap{width:100%;max-width:400px;animation:fadeUp 0.4s ease;padding-bottom:40px;}
 .l-logo{text-align:center;margin-bottom:36px;}
 .l-logo-mark{font-size:28px;font-weight:800;letter-spacing:-1px;
   background:linear-gradient(135deg,var(--accent2),var(--yellow));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .l-logo-sub{font-size:11px;color:var(--text3);letter-spacing:3px;font-family:var(--mono);margin-top:4px;}
-.l-card{background:var(--bg2);border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:36px;position:relative;overflow:hidden;}
+.l-card{background:var(--bg2);border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:36px;position:relative;overflow:visible;}
 .l-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--accent),transparent);}
 .l-title{font-size:20px;font-weight:700;margin-bottom:6px;}
@@ -454,8 +454,8 @@ select option{background:var(--bg3);}
 
   /* Login */
   #loginScreen{align-items:flex-start;padding:16px;padding-top:40px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-  .login-wrap{max-width:100%;}
-  .l-card{padding:24px 20px;padding-bottom:32px;}
+  .login-wrap{max-width:100%;padding-bottom:60px;}
+  .l-card{padding:24px 20px;padding-bottom:40px;overflow:visible;}
 
   /* Trial/Sub screens */
   .trial-wrap{max-width:100%;}
@@ -2829,7 +2829,8 @@ function doRegister() {
       const shopData = (Array.isArray(existing)&&existing[0]?.data)||{}
       shopData.userInfo  = newUser
       shopData.trialData = trialData
-      await sbFetch('/rest/v1/shop_data',{
+      // ใช้ fetch ตรง (ไม่ใช้ sbFetch เพราะยังไม่ได้ login)
+      await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
         method:'POST',
         headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
                  'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
@@ -3468,7 +3469,7 @@ function doLogin(){
           const rows2 = await getRes.json()
           const sd = (Array.isArray(rows2)&&rows2[0]?.data)||{}
           if(sd.userInfo) sd.userInfo.password = hashedInput
-          await sbFetch('/rest/v1/shop_data',{
+          await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
             method:'POST',
             headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
                      'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
