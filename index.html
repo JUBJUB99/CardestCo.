@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CardestCo — Card Management</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3466,6 +3466,32 @@ function doLogin(){
     currentUser = {...user, email:u, username:u}
     let trialData = getTrialData(u)
     if(!trialData) trialData = initTrial(u)
+
+    // ── sync subscriptions จาก Supabase ก่อน route ──────────────────────
+    try {
+      const subRes = await fetch(
+        SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(u)+'&select=*',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+      )
+      const subRows = await subRes.json()
+      if(Array.isArray(subRows) && subRows.length > 0) {
+        const sub = subRows[0]
+        const isBasic = sub.status === 'basic' && sub.expiration_date && new Date(sub.expiration_date) > new Date()
+        if(isBasic) {
+          // update trialData ให้ตรงกับ Supabase
+          trialData.subscribed = true
+          trialData.subStart   = new Date(sub.effective_date).getTime()
+          trialData.subExpiry  = new Date(sub.expiration_date).getTime()
+          trialData.status     = 'basic'
+          try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
+        } else if(sub.status === 'suspended') {
+          trialData.subscribed = false
+          trialData.status     = 'suspended'
+          try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
+        }
+      }
+    } catch(e) { console.warn('subscription sync failed:', e) }
+
     btn.disabled=false; btn.innerHTML=t('login_btn_text')
     checkAccessAndRoute(currentUser, trialData)
   })()
