@@ -2614,35 +2614,38 @@ async function loadData() {
   if (!currentUser?.email) return
   const email = currentUser.email
 
-  // 1. ดึงจาก Supabase REST API ก่อนเสมอ
-  try {
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
-      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
-    )
-    if (res.ok) {
-      const rows = await res.json()
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
-        const cloudData = rows[0].data
-        applySnapshot(cloudData)
-        // sync ลง localStorage cache
-        try { localStorage.setItem('cv_data_' + email, JSON.stringify(cloudData)) } catch(e) {}
-        console.log('✅ loadData: loaded from Supabase cloud')
-        return
-      }
-    }
-  } catch(e) { console.warn('loadData Supabase failed:', e) }
-
-  // 2. fallback localStorage
+  // 1. โหลด localStorage cache ทันที (ไม่รอ network) — UX เร็ว
+  let hasCache = false
   try {
     const raw = localStorage.getItem('cv_data_' + email)
     if (raw) {
       applySnapshot(JSON.parse(raw))
-      console.log('📦 loadData: loaded from localStorage cache')
-    } else {
-      console.log('ℹ️ loadData: no data found (new device or new account)')
+      hasCache = true
     }
-  } catch(e) { console.warn('loadData localStorage failed:', e) }
+  } catch(e) {}
+
+  // 2. background sync จาก Supabase (ไม่ await — ไม่บล็อก UI)
+  ;(async () => {
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
+        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+      )
+      if (!res.ok) return
+      const rows = await res.json()
+      if (!Array.isArray(rows) || rows.length === 0 || !rows[0].data) return
+      const cloudData = rows[0].data
+      // เปรียบเทียบ savedAt ก่อน apply (ไม่ทับข้อมูลใหม่กว่า)
+      const localRaw = localStorage.getItem('cv_data_' + email)
+      const localSaved = localRaw ? (JSON.parse(localRaw).savedAt || 0) : 0
+      const cloudSaved = cloudData.savedAt || 0
+      if (cloudSaved >= localSaved) {
+        applySnapshot(cloudData)
+        try { localStorage.setItem('cv_data_' + email, JSON.stringify(cloudData)) } catch(e) {}
+        renderDashboard()
+      }
+    } catch(e) {}
+  })()
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
@@ -3371,8 +3374,6 @@ window.addEventListener('resize', () => {
 })
 
 async function enterApp() {
-  // โหลด users จาก Supabase เข้า USERS object
-  await sbLoadAllUsers()
   document.getElementById('loginScreen').classList.add('hidden')
   document.getElementById('trialScreen').classList.remove('show')
   document.getElementById('subScreen').classList.remove('show')
@@ -3411,22 +3412,30 @@ function doLogin(){
   if(!u||!p){ showAlert('กรุณากรอก Email และ Password'); return }
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('login_btn_loading')
   ;(async()=>{
-    // Hash password ก่อน compare
-    const hashedInput = await hashPassword(p)
+    // Hash password + fetch shop_data + subscriptions พร้อมกัน (parallel)
+    const [hashedInput, loginRes, subLoginRes] = await Promise.all([
+      hashPassword(p),
+      fetch(SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(u)+'&select=data',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}),
+      fetch(SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(u)+'&select=*',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}})
+    ])
     let user = null
+    let _loginShopData = null
+    let _loginSubData  = null
     try {
-      const res = await fetch(
-        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(u)+'&select=data',
-        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
-      )
-      const rows = await res.json()
+      const rows = await loginRes.json()
       if(Array.isArray(rows)&&rows.length>0){
-        const ui = rows[0].data?.userInfo
+        _loginShopData = rows[0].data || {}
+        const ui = _loginShopData.userInfo
         if(ui) user = {...ui, email:u}
-        const td = rows[0].data?.trialData
+        const td = _loginShopData.trialData
         if(td) { try{ localStorage.setItem('cv_trial_'+u, JSON.stringify(td)) }catch(e){} }
+        // cache ไว้ใช้ใน loadData (ไม่ต้อง fetch ซ้ำ)
+        try { localStorage.setItem('cv_data_'+u, JSON.stringify(_loginShopData)) } catch(e) {}
       }
     } catch(e){ console.warn('fetch login failed:', e) }
+    try { const sr = await subLoginRes.json(); if(Array.isArray(sr)&&sr.length>0) _loginSubData=sr[0] } catch(e){}
     if(!user) user = USERS[u]
     if(!user){
       showAlert('ไม่พบ Email นี้ในระบบ กรุณาสมัครสมาชิก')
@@ -3467,38 +3476,22 @@ function doLogin(){
     let trialData = getTrialData(u)
     if(!trialData) trialData = initTrial(u)
 
-    // ── sync subscriptions จาก Supabase ก่อน route ──────────────────────
-    try {
-      const subRes = await fetch(
-        SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(u)+'&select=*',
-        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
-      )
-      const subRows = await subRes.json()
-      if(Array.isArray(subRows) && subRows.length > 0) {
-        const sub = subRows[0]
-        const isBasic = sub.status === 'basic' && sub.expiration_date && new Date(sub.expiration_date) > new Date()
-        if(isBasic) {
-          // Basic plan ยังไม่หมดอายุ
-          trialData.subscribed = true
-          trialData.subStart   = new Date(sub.effective_date).getTime()
-          trialData.subExpiry  = new Date(sub.expiration_date).getTime()
-          trialData.status     = 'basic'
-        } else if(sub.status === 'suspended') {
-          // ถูก suspend
-          trialData.subscribed = false
-          trialData.subExpiry  = null
-          trialData.status     = 'suspended'
-        } else {
-          // trial หรือ basic หมดอายุ — reset กลับเป็น trial
-          trialData.subscribed = false
-          trialData.subExpiry  = null
-          trialData.status     = 'trial'
-          // คง start date เดิมไว้
-        }
-        // sync กลับ localStorage เสมอ
-        try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
+    // ── sync subscriptions จากที่ดึงมาแล้ว (ไม่ต้อง fetch ซ้ำ) ──────────
+    if (_loginSubData) {
+      const sub = _loginSubData
+      const isBasic = sub.status === 'basic' && sub.expiration_date && new Date(sub.expiration_date) > new Date()
+      if(isBasic) {
+        trialData.subscribed = true
+        trialData.subStart   = new Date(sub.effective_date).getTime()
+        trialData.subExpiry  = new Date(sub.expiration_date).getTime()
+        trialData.status     = 'basic'
+      } else if(sub.status === 'suspended') {
+        trialData.subscribed = false; trialData.subExpiry = null; trialData.status = 'suspended'
+      } else {
+        trialData.subscribed = false; trialData.subExpiry = null; trialData.status = 'trial'
       }
-    } catch(e) { console.warn('subscription sync failed:', e) }
+      try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
+    }
 
     btn.disabled=false; btn.innerHTML=t('login_btn_text')
     checkAccessAndRoute(currentUser, trialData)
