@@ -2481,6 +2481,43 @@ function sbFetch(path, options={}) {
   return fetch(SUPABASE_URL + path, { ...options, headers })
 }
 
+// ── Supabase Storage: Upload Photo ────────────────────────────────────────────
+const STORAGE_BUCKET = 'card-photos'
+
+async function uploadPhotoToStorage(dataUrl, filename) {
+  // แปลง dataUrl → Blob
+  const res     = await fetch(dataUrl)
+  const blob    = await res.blob()
+  const ext     = blob.type === 'image/png' ? 'png' : 'jpg'
+  const email   = currentUser?.email || 'unknown'
+  const safeMail= email.replace(/[^a-z0-9]/gi, '_')
+  const fname   = filename
+    ? filename.replace(/[^a-z0-9._-]/gi, '_')
+    : `${safeMail}_${Date.now()}.${ext}`
+  const path    = `${safeMail}/${fname}`
+
+  const uploadRes = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`,
+    {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': blob.type,
+        'x-upsert': 'true'
+      },
+      body: blob
+    }
+  )
+  if (!uploadRes.ok) {
+    const err = await uploadRes.text()
+    throw new Error('Storage upload failed: ' + err)
+  }
+  // คืน public URL
+  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`
+  return publicUrl
+}
+
 // ── Supabase User Helpers (ใช้ shop_data แทน users table) ──────────────────
 async function sbGetUser(email) {
   if (!sbReady()) return null
@@ -2544,8 +2581,13 @@ function escHtml(str) {
 }
 
 function buildSnapshot() {
+  // strip base64 photos — เก็บเฉพาะ URL (https://...) ไม่เก็บ data:image/...
+  const cleanCards = cards.map(c => {
+    const isUrl = c.photo && (c.photo.startsWith('http://') || c.photo.startsWith('https://'))
+    return { ...c, photo: isUrl ? c.photo : '' }
+  })
   return {
-    cards, orders, purchases,
+    cards: cleanCards, orders, purchases,
     setupData: {
       brands:    setupData.brands,
       rarity:    setupData.rarity,
@@ -4554,9 +4596,21 @@ function handleCardPhoto(event, cardIdx) {
   if (!file) return
   const card = cards[cardIdx]
   if (!card) return
-  openCropUI(file, (croppedUrl) => {
-    showToast('💾 บันทึกรูป card['+cardIdx+'] len='+croppedUrl.length, 'var(--green)')
+  openCropUI(file, async (croppedUrl) => {
+    // แสดง preview ทันที (base64 ชั่วคราว) เพื่อ UX เร็ว
     card.photo = croppedUrl
+    filterCards()
+    showToast('⬆️ กำลังอัพโหลดรูป...', 'var(--accent2)')
+    try {
+      const cardName = (card.name || 'card').replace(/[^a-z0-9]/gi,'_').slice(0,30)
+      const fname    = `card_${cardIdx}_${cardName}_${Date.now()}.jpg`
+      const url      = await uploadPhotoToStorage(croppedUrl, fname)
+      card.photo     = url   // แทนที่ base64 ด้วย URL
+      showToast('✅ อัพโหลดรูปสำเร็จ', 'var(--green)')
+    } catch(e) {
+      console.warn('Storage upload failed, keeping base64 fallback:', e)
+      showToast('⚠️ Upload ไม่สำเร็จ — บันทึกเป็น fallback', 'var(--orange)')
+    }
     saveData()
     filterCards()
   })
@@ -7340,7 +7394,8 @@ function loadPoImage(file) {
   // ตรวจ photo limit ก่อนอัพโหลด
   const photoCheck = canAddPhoto()
   if (!photoCheck.ok) { showToast('⚠️ '+photoCheck.msg, 'var(--orange)'); return }
-  openCropUI(file, (croppedUrl) => {
+  openCropUI(file, async (croppedUrl) => {
+    // preview ทันที
     poImageB64 = croppedUrl.split(',')[1]
     poPhotos   = [croppedUrl]
 
@@ -7352,6 +7407,19 @@ function loadPoImage(file) {
     if(btn){ btn.disabled = false; btn.style.opacity = '1' }
     const thumb = document.getElementById('po-thumb')
     if(thumb){ thumb.src = croppedUrl; thumb.style.display = 'block' }
+
+    // upload to storage in background
+    try {
+      showToast('⬆️ กำลังอัพโหลดรูป...', 'var(--accent2)')
+      const fname = `po_${Date.now()}.jpg`
+      const url   = await uploadPhotoToStorage(croppedUrl, fname)
+      poPhotos    = [url]   // แทนด้วย URL
+      poImageB64  = null    // ไม่จำเป็นต้องเก็บ base64 อีก
+      showToast('✅ อัพโหลดรูปสำเร็จ', 'var(--green)')
+    } catch(e) {
+      console.warn('Storage upload failed, using base64 fallback:', e)
+      showToast('⚠️ Upload ไม่สำเร็จ — ใช้ fallback', 'var(--orange)')
+    }
   })
 }
 
