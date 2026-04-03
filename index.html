@@ -3478,17 +3478,25 @@ function doLogin(){
         const sub = subRows[0]
         const isBasic = sub.status === 'basic' && sub.expiration_date && new Date(sub.expiration_date) > new Date()
         if(isBasic) {
-          // update trialData ให้ตรงกับ Supabase
+          // Basic plan ยังไม่หมดอายุ
           trialData.subscribed = true
           trialData.subStart   = new Date(sub.effective_date).getTime()
           trialData.subExpiry  = new Date(sub.expiration_date).getTime()
           trialData.status     = 'basic'
-          try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
         } else if(sub.status === 'suspended') {
+          // ถูก suspend
           trialData.subscribed = false
+          trialData.subExpiry  = null
           trialData.status     = 'suspended'
-          try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
+        } else {
+          // trial หรือ basic หมดอายุ — reset กลับเป็น trial
+          trialData.subscribed = false
+          trialData.subExpiry  = null
+          trialData.status     = 'trial'
+          // คง start date เดิมไว้
         }
+        // sync กลับ localStorage เสมอ
+        try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
       }
     } catch(e) { console.warn('subscription sync failed:', e) }
 
