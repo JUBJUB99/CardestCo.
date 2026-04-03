@@ -4917,7 +4917,7 @@ function autoCropCard(file) {
 }
 
 function filterCards(val){
-  const s=(val||document.querySelector('.search-input')?.value||'').toLowerCase()
+  const s=(val!==undefined ? (val||'') : (document.getElementById('search-cards')?.value||'')).toLowerCase()
   const b=document.getElementById('brandFilter')?.value||''
   const r=document.getElementById('rarityFilter')?.value||''
   let filtered = cards.filter(c=>(!s||c.name.toLowerCase().includes(s))&&(!b||c.brand===b)&&(!r||c.rarity===r))
@@ -5743,6 +5743,8 @@ function renderPackageTab() {
   // แสดง loading ก่อน
   if($('pkg-plan-name')) $('pkg-plan-name').textContent = 'กำลังโหลด...'
   if($('pkg-effective')) $('pkg-effective').textContent = '...'
+  if($('pkg-expiry'))    $('pkg-expiry').textContent    = '...'
+  if($('pkg-days-left'))$('pkg-days-left').textContent  = '...'
 
   // ดึงข้อมูลจาก Supabase: subscriptions + shop_data (fallback)
   Promise.all([
@@ -5759,17 +5761,57 @@ function renderPackageTab() {
     try{ const r=localStorage.getItem('cv_trial_'+email); trialData=r?JSON.parse(r):null }catch(e){}
     if(cloudTrialData) {
       trialData = cloudTrialData
-      // sync กลับ localStorage
       try{ localStorage.setItem('cv_trial_'+email, JSON.stringify(cloudTrialData)) }catch(e){}
     }
 
-    const status   = sub?.status || (trialData?.subscribed?'basic':'trial')
-    const effDate  = sub?.effective_date || trialData?.subStart || trialData?.start || null
-    const expDate  = sub?.expiration_date || trialData?.subExpiry || (trialData?.start ? trialData.start+7*24*60*60*1000 : null)
-    const now      = Date.now()
-    const expTs    = expDate ? new Date(expDate).getTime() : null
-    const daysLeft = expTs ? Math.max(0, Math.ceil((expTs-now)/(1000*60*60*24))) : 0
-    const isBasic  = status==='basic' && expTs && expTs>now
+    const now = Date.now()
+    let status, effDate, expDate, expTs, daysLeft, isBasic
+
+    if (sub) {
+      // ใช้ subscriptions table เป็นหลัก
+      status  = sub.status || 'trial'
+      effDate = sub.effective_date  || null
+      const effTs = effDate ? new Date(effDate).getTime() : null
+
+      if (status === 'basic' && sub.expiration_date) {
+        // Basic plan
+        expDate = sub.expiration_date
+        expTs   = new Date(expDate).getTime()
+      } else {
+        // Trial — expiry = effective_date + 7 วัน
+        expTs   = effTs ? effTs + TRIAL_DAYS * 24 * 60 * 60 * 1000 : (trialData?.start ? trialData.start + TRIAL_DAYS * 24 * 60 * 60 * 1000 : null)
+        expDate = expTs ? new Date(expTs).toISOString() : null
+      }
+      daysLeft = expTs ? Math.max(0, Math.ceil((expTs - now) / (1000 * 60 * 60 * 24))) : 0
+      isBasic  = status === 'basic' && expTs && expTs > now
+
+      // sync กลับ localStorage
+      if (trialData) {
+        if (isBasic) {
+          trialData.subscribed = true
+          trialData.subStart   = effTs || trialData.subStart
+          trialData.subExpiry  = expTs
+          trialData.status     = 'basic'
+        } else {
+          trialData.subscribed = false
+          trialData.status     = 'trial'
+          if (effTs) trialData.start = effTs
+        }
+        try { localStorage.setItem('cv_trial_'+email, JSON.stringify(trialData)) } catch(e) {}
+        try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+      }
+    } else {
+      // Fallback: ไม่มีใน subscriptions → ใช้ trialData
+      const subscribed = trialData?.subscribed && trialData?.subExpiry && now < trialData.subExpiry
+      status  = subscribed ? 'basic' : 'trial'
+      effDate = trialData?.subStart || trialData?.start || null
+      expTs   = subscribed
+        ? trialData.subExpiry
+        : (trialData?.start ? trialData.start + TRIAL_DAYS * 24 * 60 * 60 * 1000 : null)
+      expDate = expTs ? new Date(expTs).toISOString() : null
+      daysLeft = expTs ? Math.max(0, Math.ceil((expTs - now) / (1000 * 60 * 60 * 24))) : 0
+      isBasic  = subscribed
+    }
 
     if(isBasic){
       if($('pkg-icon'))         $('pkg-icon').textContent      = '✅'
@@ -5782,10 +5824,10 @@ function renderPackageTab() {
       if($('pkg-cards-usage'))  $('pkg-cards-usage').textContent  = cards.length+' / ไม่จำกัด'
       if($('pkg-photos-usage')) $('pkg-photos-usage').textContent = photoCount+' / ไม่จำกัด'
       if($('pkg-upgrade-btn'))  $('pkg-upgrade-btn').innerHTML    = ''
-    } else if(status==='trial' && daysLeft>0){
+    } else if(daysLeft > 0){
       if($('pkg-icon'))         $('pkg-icon').textContent      = '⏳'
       if($('pkg-plan-name'))    $('pkg-plan-name').textContent = 'Trial'
-      if($('pkg-plan-sub'))     $('pkg-plan-sub').textContent  = 'ระยะทดลอง 7 วัน'
+      if($('pkg-plan-sub'))     $('pkg-plan-sub').textContent  = 'ระยะทดลอง '+TRIAL_DAYS+' วัน'
       if($('pkg-status-badge')){ $('pkg-status-badge').textContent='Trial'; $('pkg-status-badge').style.background='rgba(245,200,66,0.15)'; $('pkg-status-badge').style.color='var(--yellow)' }
       if($('pkg-effective'))    $('pkg-effective').textContent = fmt(effDate)
       if($('pkg-expiry'))       { $('pkg-expiry').textContent=fmt(expDate); $('pkg-expiry').style.color=daysLeft<=2?'var(--red)':'var(--text)' }
@@ -5812,15 +5854,17 @@ function renderPackageTab() {
     let trialData = null
     try{ const r=localStorage.getItem('cv_trial_'+email); trialData=r?JSON.parse(r):null }catch(ex){}
     if(!trialData) return
-    const subscribed = trialData.subscribed && trialData.subExpiry && Date.now()<trialData.subExpiry
-    const daysLeft   = Math.max(0,Math.ceil(7-(Date.now()-trialData.start)/(1000*60*60*24)))
+    const now = Date.now()
+    const subscribed = trialData.subscribed && trialData.subExpiry && now<trialData.subExpiry
+    const startTs    = trialData.start || now
+    const expTs      = subscribed ? trialData.subExpiry : startTs + TRIAL_DAYS * 24 * 60 * 60 * 1000
+    const daysLeft   = Math.max(0, Math.ceil((expTs - now) / (1000 * 60 * 60 * 24)))
     if($('pkg-plan-name')) $('pkg-plan-name').textContent = subscribed?'Basic Plan':daysLeft>0?'Trial':'หมดอายุ'
-    if($('pkg-effective')) $('pkg-effective').textContent = fmt(trialData.subStart||trialData.start)
-    if($('pkg-expiry'))    $('pkg-expiry').textContent    = fmt(subscribed?trialData.subExpiry:trialData.start+7*24*60*60*1000)
-    if($('pkg-days-left')){ 
-      const d = subscribed?Math.max(0,Math.ceil((trialData.subExpiry-Date.now())/(1000*60*60*24))):daysLeft
-      $('pkg-days-left').textContent = d>0?d+' วัน':'หมดอายุ'
-    }
+    if($('pkg-effective')) $('pkg-effective').textContent = fmt(subscribed ? (trialData.subStart||startTs) : startTs)
+    if($('pkg-expiry'))    $('pkg-expiry').textContent    = fmt(expTs)
+    if($('pkg-days-left')){ $('pkg-days-left').textContent = daysLeft>0?daysLeft+' วัน':'หมดอายุ' }
+    if($('pkg-cards-usage'))  $('pkg-cards-usage').textContent  = cards.length+(subscribed?' / ไม่จำกัด':' / 100')
+    if($('pkg-photos-usage')) $('pkg-photos-usage').textContent = photoCount+(subscribed?' / ไม่จำกัด':' / 20')
   })
 }
 
@@ -7710,7 +7754,8 @@ function switchTab(tab, el){
   el.classList.add('active')
   setupPage.querySelectorAll('.tab-content').forEach(t=>t.style.display='none')
   document.getElementById('tab-'+tab).style.display='block'
-  if(tab==='params') renderParams()
+  if(tab==='params')  renderParams()
+  if(tab==='package') renderPackageTab()
 }
 
 function switchPurchaseTab(tab, el){
