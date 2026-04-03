@@ -2995,38 +2995,136 @@ function isSubscribed(data) {
 }
 
 function checkAccessAndRoute(user, trialData) {
-  const daysLeft    = getDaysLeft(trialData.start)
-  const subscribed  = isSubscribed(trialData)
-  const trialActive = daysLeft > 0
-
   updateSidebarUser(user)
-  updateSubBadge(subscribed, daysLeft)
 
-  if (subscribed) {
-    // มี subscription → เข้าโปรแกรมได้เลย
-    enterApp()
-  } else if (trialActive) {
-    // ยังอยู่ใน Trial → แสดง Trial screen ก่อน
-    showTrialScreen(daysLeft, trialData.start)
-  } else {
-    // Trial หมดแล้ว ไม่มี sub → บล็อก
-    showSubScreen()
-  }
+  const email = user.email || user.username
+
+  // ── ดึง subscription จาก Supabase เพื่อใช้ effective_date ──────────────────
+  ;(async () => {
+    try {
+      const subRes = await fetch(
+        SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(email)+'&select=*',
+        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+      )
+      const subRows = await subRes.json()
+      const sub = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null
+
+      const now = Date.now()
+      let subscribed = false
+      let daysLeft   = 0
+      let startTs    = trialData.start || now
+
+      if (sub) {
+        const status = sub.status
+        const expTs  = sub.expiration_date ? new Date(sub.expiration_date).getTime() : null
+        const effTs  = sub.effective_date  ? new Date(sub.effective_date).getTime()  : null
+
+        if (status === 'basic' && expTs && expTs > now) {
+          // Basic plan ยังใช้งานได้
+          subscribed = true
+          daysLeft   = Math.max(0, Math.ceil((expTs - now) / (1000 * 60 * 60 * 24)))
+          trialData.subscribed = true
+          trialData.subStart   = effTs || trialData.subStart
+          trialData.subExpiry  = expTs
+          trialData.status     = 'basic'
+          try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+        } else {
+          // trial หรือ basic หมด — คำนวณจาก effective_date ใน Supabase
+          subscribed = false
+          startTs    = effTs || trialData.start || now
+          daysLeft   = Math.max(0, Math.ceil(TRIAL_DAYS - (now - startTs) / (1000 * 60 * 60 * 24)))
+          trialData.subscribed = false
+          trialData.status     = 'trial'
+          try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+        }
+      } else {
+        // ไม่มีใน subscriptions → ใช้ trialData เดิม
+        subscribed = isSubscribed(trialData)
+        startTs    = trialData.start || now
+        daysLeft   = subscribed
+          ? Math.max(0, Math.ceil((trialData.subExpiry - now) / (1000 * 60 * 60 * 24)))
+          : Math.max(0, Math.ceil(TRIAL_DAYS - (now - startTs) / (1000 * 60 * 60 * 24)))
+      }
+
+      updateSubBadge(subscribed, daysLeft)
+
+      if (subscribed) {
+        enterApp()
+      } else if (daysLeft > 0) {
+        showTrialScreen(daysLeft, startTs)
+      } else {
+        showSubScreen()
+      }
+    } catch(e) {
+      // Fallback ถ้า fetch ล้มเหลว
+      const subscribed  = isSubscribed(trialData)
+      const trialActive = getDaysLeft(trialData.start) > 0
+      const daysLeft    = getDaysLeft(trialData.start)
+      updateSubBadge(subscribed, daysLeft)
+      if (subscribed)      enterApp()
+      else if (trialActive) showTrialScreen(daysLeft, trialData.start)
+      else                  showSubScreen()
+    }
+  })()
 }
 
 function showTrialScreen(daysLeft, startTs) {
   const endTs    = startTs + TRIAL_DAYS * 24 * 60 * 60 * 1000
   const pct      = Math.round((daysLeft / TRIAL_DAYS) * 100)
   const fillColor = daysLeft <= 2 ? 'var(--red)' : daysLeft <= 4 ? 'var(--orange)' : 'var(--green)'
+  const isExpired = daysLeft <= 0
 
-  document.getElementById('trialDaysLeft').textContent   = daysLeft
-  document.getElementById('trialFill').style.width       = pct + '%'
-  document.getElementById('trialFill').style.background  = fillColor
+  document.getElementById('trialDaysLeft').textContent   = isExpired ? '0' : daysLeft
+  document.getElementById('trialFill').style.width       = (isExpired ? 0 : pct) + '%'
+  document.getElementById('trialFill').style.background  = isExpired ? 'var(--red)' : fillColor
   document.getElementById('trialStartLabel').textContent = t('trial_start')+' '+ new Date(startTs).toLocaleDateString('th-TH',{day:'numeric',month:'short'})
   document.getElementById('trialEndLabel').textContent   = t('trial_end')+'  '+ new Date(endTs).toLocaleDateString('th-TH',{day:'numeric',month:'short'})
-  document.getElementById('trialFooterNote').textContent = daysLeft <= 2
+  document.getElementById('trialFooterNote').textContent = isExpired
+    ? '❌ Trial หมดอายุแล้ว — กรุณา Subscribe เพื่อใช้งานต่อ'
+    : daysLeft <= 2
     ? '⚠️ เหลือน้อย! Subscribe เพื่อไม่ให้หยุดชะงัก'
     : `ระยะทดลองเหลือ ${daysLeft} วัน`
+
+  // ปุ่ม "ใช้งานต่อ" — disable เมื่อหมดอายุ
+  const continueBtn = document.querySelector('#trialScreen .sub-main-btn[onclick="continueWithTrial()"]')
+  if (continueBtn) {
+    if (isExpired) {
+      continueBtn.disabled = true
+      continueBtn.style.opacity = '0.4'
+      continueBtn.style.cursor  = 'not-allowed'
+      continueBtn.style.pointerEvents = 'none'
+      continueBtn.title = 'Trial หมดอายุแล้ว กรุณา Subscribe'
+    } else {
+      continueBtn.disabled = false
+      continueBtn.style.opacity = ''
+      continueBtn.style.cursor  = ''
+      continueBtn.style.pointerEvents = ''
+      continueBtn.title = ''
+    }
+  }
+
+  // ปรับ card style เมื่อหมดอายุ
+  const trialCard = document.querySelector('#trialScreen .trial-card')
+  if (trialCard) {
+    if (isExpired) {
+      trialCard.classList.add('expired-card')
+      // อัพเดท days display เป็นสีแดง
+      const daysBig = document.getElementById('trialDaysLeft')
+      if (daysBig) {
+        daysBig.style.background = 'linear-gradient(135deg,var(--red),#c0392b)'
+        daysBig.style['-webkit-background-clip'] = 'text'
+        daysBig.style['-webkit-text-fill-color'] = 'transparent'
+      }
+    } else {
+      trialCard.classList.remove('expired-card')
+      const daysBig = document.getElementById('trialDaysLeft')
+      if (daysBig) {
+        daysBig.style.background = ''
+        daysBig.style['-webkit-background-clip'] = ''
+        daysBig.style['-webkit-text-fill-color'] = ''
+      }
+    }
+  }
 
   document.getElementById('loginScreen').classList.add('hidden')
   document.getElementById('trialScreen').classList.add('show')
@@ -3292,11 +3390,76 @@ function backToLogin() {
 
 function refreshSubBadge() {
   if (!currentUser) return
-  const trialData = (()=>{ try { const raw=localStorage.getItem('cv_trial_'+currentUser.email); return raw?JSON.parse(raw):null } catch(e){ return null } })()
-  if (!trialData) return
-  const subscribed = trialData.subscribed && trialData.subExpiry && Date.now() < trialData.subExpiry
-  const daysLeft = Math.max(0, Math.ceil(7 - (Date.now()-trialData.start)/(1000*60*60*24)))
-  updateSubBadge(subscribed, daysLeft)
+  const email = currentUser.email
+
+  // ── ดึงจาก Supabase ก่อน (real-time) ──────────────────────────────────────
+  Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/subscriptions?shop_id=eq.'+encodeURIComponent(email)+'&select=*',
+      {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}).then(r=>r.json()).catch(()=>[]),
+    fetch(SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
+      {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}).then(r=>r.json()).catch(()=>[])
+  ]).then(([subRows, shopRows]) => {
+    const sub = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null
+    const cloudTrialData = Array.isArray(shopRows) && shopRows[0]?.data?.trialData
+    let trialData = null
+    try { const r = localStorage.getItem('cv_trial_'+email); trialData = r ? JSON.parse(r) : null } catch(e) {}
+    if (cloudTrialData) {
+      trialData = cloudTrialData
+      try { localStorage.setItem('cv_trial_'+email, JSON.stringify(cloudTrialData)) } catch(e) {}
+    }
+    if (!trialData) return
+
+    const now = Date.now()
+    let subscribed = false
+    let daysLeft   = 0
+
+    if (sub) {
+      // ใช้ข้อมูลจาก subscriptions table
+      const status  = sub.status
+      const expTs   = sub.expiration_date ? new Date(sub.expiration_date).getTime() : null
+      const effTs   = sub.effective_date  ? new Date(sub.effective_date).getTime()  : null
+
+      if (status === 'basic' && expTs && expTs > now) {
+        // Basic plan ที่ยังไม่หมด
+        subscribed = true
+        daysLeft   = Math.max(0, Math.ceil((expTs - now) / (1000 * 60 * 60 * 24)))
+        // sync localStorage
+        trialData.subscribed = true
+        trialData.subStart   = effTs || trialData.subStart
+        trialData.subExpiry  = expTs
+        trialData.status     = 'basic'
+        try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+      } else if (status === 'trial' || !expTs || expTs <= now) {
+        // Trial หรือ basic หมดแล้ว
+        subscribed = false
+        // คำนวณ remaining จาก effective_date หรือ trial start
+        const startTs = effTs || trialData.start || now
+        daysLeft = Math.max(0, Math.ceil(TRIAL_DAYS - (now - startTs) / (1000 * 60 * 60 * 24)))
+        trialData.subscribed = false
+        trialData.status     = 'trial'
+        try { localStorage.setItem(STORAGE_KEY+'_'+email, JSON.stringify(trialData)) } catch(e) {}
+      }
+    } else {
+      // Fallback: ใช้ localStorage
+      subscribed = trialData.subscribed && trialData.subExpiry && now < trialData.subExpiry
+      const startTs = trialData.start || now
+      daysLeft = subscribed
+        ? Math.max(0, Math.ceil((trialData.subExpiry - now) / (1000 * 60 * 60 * 24)))
+        : Math.max(0, Math.ceil(TRIAL_DAYS - (now - startTs) / (1000 * 60 * 60 * 24)))
+    }
+
+    updateSubBadge(subscribed, daysLeft)
+  }).catch(() => {
+    // Fallback ถ้า fetch ล้มเหลว
+    try {
+      const raw = localStorage.getItem('cv_trial_'+email)
+      if (!raw) return
+      const trialData = JSON.parse(raw)
+      const subscribed = trialData.subscribed && trialData.subExpiry && Date.now() < trialData.subExpiry
+      const daysLeft   = Math.max(0, Math.ceil(TRIAL_DAYS - (Date.now()-trialData.start)/(1000*60*60*24)))
+      updateSubBadge(subscribed, daysLeft)
+    } catch(e) {}
+  })
 }
 
 function updateSubBadge(subscribed, daysLeft) {
@@ -3479,16 +3642,21 @@ function doLogin(){
     // ── sync subscriptions จากที่ดึงมาแล้ว (ไม่ต้อง fetch ซ้ำ) ──────────
     if (_loginSubData) {
       const sub = _loginSubData
-      const isBasic = sub.status === 'basic' && sub.expiration_date && new Date(sub.expiration_date) > new Date()
+      const now = Date.now()
+      const expTs = sub.expiration_date ? new Date(sub.expiration_date).getTime() : null
+      const effTs = sub.effective_date  ? new Date(sub.effective_date).getTime()  : null
+      const isBasic = sub.status === 'basic' && expTs && expTs > now
       if(isBasic) {
         trialData.subscribed = true
-        trialData.subStart   = new Date(sub.effective_date).getTime()
-        trialData.subExpiry  = new Date(sub.expiration_date).getTime()
+        trialData.subStart   = effTs || new Date(sub.effective_date).getTime()
+        trialData.subExpiry  = expTs
         trialData.status     = 'basic'
       } else if(sub.status === 'suspended') {
         trialData.subscribed = false; trialData.subExpiry = null; trialData.status = 'suspended'
       } else {
+        // trial — ถ้ามี effective_date ใช้เป็น startTs สำหรับคำนวณ remaining
         trialData.subscribed = false; trialData.subExpiry = null; trialData.status = 'trial'
+        if (effTs) trialData.start = effTs  // override start ด้วย effective_date จาก Supabase
       }
       try { localStorage.setItem(STORAGE_KEY+'_'+u, JSON.stringify(trialData)) } catch(e) {}
     }
