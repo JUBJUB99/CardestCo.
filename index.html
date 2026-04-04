@@ -2623,15 +2623,22 @@ function applySnapshot(data) {
   if (data.trialData && currentUser) {
     try { localStorage.setItem('cv_trial_' + currentUser.email, JSON.stringify(data.trialData)) } catch(e) {}
   }
-  // ── migrate การ์ดเก่า: ถ้ามี psa=true แต่ไม่มี psaType → ตั้งเป็น 'gem' ──
+  // ── migrate การ์ดเก่า: backfill psaType ──────────────────────────────────
+  let needsMigration = false
   cards.forEach(c => {
     if (c.psa && !c.psaType) {
+      // การ์ดเก่าที่ psa=true แต่ไม่มี psaType
+      // ถ้ามี psaGrade → gem, ไม่มี → auth
       c.psaType = c.psaGrade ? 'gem' : 'auth'
-    }
-    if (!c.psa) {
+      needsMigration = true
+    } else if (!c.psa && c.psaType !== 'no') {
       c.psaType = 'no'
     }
   })
+  // save กลับถ้ามีการ migrate
+  if (needsMigration && currentUser) {
+    setTimeout(() => saveData(), 500)
+  }
 }
 
 // ── Save: localStorage + Supabase ────────────────────────────────────────────
@@ -4501,15 +4508,17 @@ function renderCardsDisplay(data) {
       </div>
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? (() => {
+      ${(()=>{
+        if (!c.psa) return ''
+        // psaType จาก card — auto migrate: psa=true ไม่มี psaType → ดู psaGrade
         const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
-        const grade = c.psaGrade ? String(c.psaGrade).trim() : ''
-        let label = ''
-        if (t === 'gem')  label = grade ? 'G Gem ' + grade : 'G Gem'
-        else if (t === 'auto') label = grade ? 'G Auto ' + grade : 'G Auto'
-        else label = 'G Auth'
+        const grade = (c.psaGrade !== null && c.psaGrade !== undefined && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
+        let label
+        if (t === 'auto')       label = grade ? 'G Auto ' + grade : 'G Auto'
+        else if (t === 'auth')  label = 'G Auth'
+        else                    label = grade ? 'G Gem ' + grade : 'G Gem'
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
-      })() : ''}
+      })()}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
@@ -4559,15 +4568,17 @@ function renderCardsEdit(data) {
       <input type="file" id="card-upload-${cardIdx}" accept="image/*" style="display:none" onchange="handleCardPhoto(event,${cardIdx})">
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? (() => {
+      ${(()=>{
+        if (!c.psa) return ''
+        // psaType จาก card — auto migrate: psa=true ไม่มี psaType → ดู psaGrade
         const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
-        const grade = c.psaGrade ? String(c.psaGrade).trim() : ''
-        let label = ''
-        if (t === 'gem')  label = grade ? 'G Gem ' + grade : 'G Gem'
-        else if (t === 'auto') label = grade ? 'G Auto ' + grade : 'G Auto'
-        else label = 'G Auth'
+        const grade = (c.psaGrade !== null && c.psaGrade !== undefined && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
+        let label
+        if (t === 'auto')       label = grade ? 'G Auto ' + grade : 'G Auto'
+        else if (t === 'auth')  label = 'G Auth'
+        else                    label = grade ? 'G Gem ' + grade : 'G Gem'
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
-      })() : ''}
+      })()}
       <!-- Brand + Rarity editable -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
         <div style="background:var(--bg3);border-radius:8px;padding:6px 8px">
