@@ -2368,6 +2368,20 @@ select option{background:var(--bg3);}
     </div>
     <div class="form-group" id="cat-emoji-group"><label>Emoji / ไอคอน</label><input type="text" id="cat-emoji" placeholder="🃏" maxlength="2"></div>
     <div class="form-group" id="cat-extra-group" style="display:none"><label id="cat-extra-label">ข้อมูลเพิ่มเติม</label><input type="text" id="cat-extra" placeholder=""></div>
+    <!-- Tier range fields (From/To) — แสดงเฉพาะ tiers -->
+    <div id="tier-range-group" style="display:none">
+      <div class="form-row" style="margin-bottom:0">
+        <div class="form-group" style="margin-bottom:0">
+          <label>ยอดซื้อขั้นต่ำ (฿) From</label>
+          <input type="number" id="tier-min" placeholder="0" min="0">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>ยอดซื้อสูงสุด (฿) To</label>
+          <input type="number" id="tier-max" placeholder="ไม่จำกัด (ว่างไว้)" min="0">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px">ช่อง To ว่างไว้ = ไม่จำกัดยอดสูงสุด</div>
+    </div>
     <div class="form-group">
       <label>สถานะ</label>
       <select id="cat-status"><option value="active">ใช้งาน</option><option value="inactive">ปิดใช้งาน</option></select>
@@ -3926,7 +3940,7 @@ const LANG = {
     pur_cancel_select:'เลือก PO ที่ต้องการยกเลิก', pur_cancel_history:'ประวัติการยกเลิก', pur_filter_month:'กรองเดือน', pur_select_po:'เลือก PO', pur_no_cancel_history:'ยังไม่มีประวัติการยกเลิก', pur_select_po_first:'กรุณาเลือก PO ก่อน',
     pur_kpi_received2_sub:'ออเดอร์ที่ไม่ยกเลิก', pur_kpi_cost_sub:'จาก PO ที่รับแล้ว',
     pur_kpi_pending3_sub:'ใบสั่งซื้อ',
-    cust_kpi_sub:'ยอดซื้อรวม >฿20,000',
+    cust_kpi_sub:'ยอดซื้อรวมสูงสุด',
     // extra table headers
     th_customer:'ลูกค้า', th_card:'การ์ด', th_qty:'จำนวน', th_total:'ยอด', th_status:'สถานะ', th_date:'วันที่',
     th_brand:'แบรนด์', th_cost:'ต้นทุน', th_po:'PO',
@@ -4110,7 +4124,7 @@ const LANG = {
     pur_cancel_select:'Select PO to Cancel', pur_cancel_history:'Cancellation History',
     pur_kpi_received2_sub:'Non-cancelled orders', pur_kpi_cost_sub:'From received POs',
     pur_kpi_pending3_sub:'Purchase orders',
-    cust_kpi_sub:'Total spend >฿20,000',
+    cust_kpi_sub:'Top tier members',
     th_customer:'Customer', th_card:'Card', th_qty:'Qty', th_total:'Total', th_status:'Status', th_date:'Date',
     th_brand:'Brand', th_cost:'Cost', th_po:'PO',
     sup_name:'Name', sup_type:'Type', sup_contact:'Contact', sup_brand:'Brands', sup_status:'Status',
@@ -5976,8 +5990,28 @@ function renderCustomers(){
   })
   const list = Object.values(custMap).sort((a,b)=>b.total-a.total)
 
-  // update KPI cards
-  const vipCount = list.filter(cu=>cu.total>=20000).length
+  // helper: คำนวณ tier จาก setupData.tiers ที่ user ตั้งไว้
+  function getCustomerTier(total) {
+    const activeTiers = (setupData.tiers || [])
+      .filter(t => t.status === 'active')
+      .sort((a, b) => (b.tierMin ?? 0) - (a.tierMin ?? 0))  // เรียงจากสูงสุดลงมา
+    for (const tier of activeTiers) {
+      const min = tier.tierMin ?? 0
+      const max = tier.tierMax ?? null
+      if (total >= min && (max === null || total <= max)) {
+        return { name: tier.name, color: tier.color || 'var(--text3)' }
+      }
+    }
+    // fallback ถ้าไม่มี tier ที่ตั้งไว้
+    return { name: 'Regular', color: 'var(--text3)' }
+  }
+
+  // update KPI — VIP = tier สูงสุด (tierMin สูงสุด)
+  const topTier = (setupData.tiers || [])
+    .filter(t => t.status === 'active')
+    .sort((a, b) => (b.tierMin ?? 0) - (a.tierMin ?? 0))[0]
+  const topTierMin = topTier?.tierMin ?? 20000
+  const vipCount = list.filter(cu => cu.total >= topTierMin).length
   const totalOrders = list.reduce((s,cu)=>s+cu.orders,0)
   const totalRev    = list.reduce((s,cu)=>s+cu.total,0)
   const avgVal      = totalOrders>0 ? Math.round(totalRev/totalOrders) : 0
@@ -5995,14 +6029,13 @@ function renderCustomers(){
   }
   tbody.innerHTML = list.map(cu => {
     const favBrand = Object.entries(cu.brands).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-'
-    const tier = cu.total>=50000?'VIP':cu.total>=20000?'Silver':'Regular'
-    const tierColor = tier==='VIP'?'var(--yellow)':tier==='Silver'?'#b4b2a9':'var(--text3)'
+    const tierObj  = getCustomerTier(cu.total)
     return `<tr>
       <td style="font-weight:600">${cu.name}</td>
       <td style="font-family:var(--mono);text-align:center">${cu.orders}</td>
       <td style="color:var(--yellow);font-weight:700">฿${cu.total.toLocaleString()}</td>
       <td><span class="tag ${bt[favBrand]||''}">${favBrand}</span></td>
-      <td style="color:${tierColor};font-size:12px;font-weight:600">${tier}</td>
+      <td style="color:${tierObj.color};font-size:12px;font-weight:600">${tierObj.name}</td>
     </tr>`
   }).join('')
 }
@@ -7633,9 +7666,9 @@ let setupData = {
     {name:'Private Collector',       desc:'ผู้ขายส่วนตัว / Reseller',           contact:'Line: @abc',  brands:'ทุกแบรนด์',          status:'active'},
   ],
   tiers: [
-    {name:'Regular', desc:'ลูกค้าทั่วไป',                          emoji:'👤', color:'#8888aa', extra:'ยอดซื้อ < ฿20,000', status:'active'},
-    {name:'Silver',  desc:'ลูกค้าประจำ มีส่วนลด 3%',              emoji:'🥈', color:'#b4b2a9', extra:'ยอดซื้อ ฿20,000–50,000', status:'active'},
-    {name:'VIP',     desc:'ลูกค้า VIP มีส่วนลด 7% + สินค้าจอง', emoji:'👑', color:'#f5c842', extra:'ยอดซื้อ > ฿50,000', status:'active'},
+    {name:'Regular', desc:'ลูกค้าทั่วไป',                          emoji:'👤', color:'#8888aa', extra:'฿0 – ฿19,999',       tierMin:0,     tierMax:19999,  status:'active'},
+    {name:'Silver',  desc:'ลูกค้าประจำ มีส่วนลด 3%',              emoji:'🥈', color:'#b4b2a9', extra:'฿20,000 – ฿49,999',  tierMin:20000, tierMax:49999,  status:'active'},
+    {name:'VIP',     desc:'ลูกค้า VIP มีส่วนลด 7% + สินค้าจอง', emoji:'👑', color:'#f5c842', extra:'฿50,000+',            tierMin:50000, tierMax:null,   status:'active'},
   ],
 }
 
@@ -7930,9 +7963,21 @@ function openCatModal(type, item=null, idx=-1){
   document.getElementById('cat-color-hex').value = item?.color || '#7c6dfa'
   document.getElementById('cat-extra').value = item?.extra || ''
   document.getElementById('cat-status').value = item?.status || 'active'
-  const hasExtra = type==='rarity'||type==='tiers'
-  document.getElementById('cat-extra-group').style.display = hasExtra ? 'flex' : 'none'
-  if(hasExtra) document.getElementById('cat-extra-label').textContent = catExtras[type]||'ข้อมูลเพิ่มเติม'
+
+  const isTier   = type === 'tiers'
+  const isRarity = type === 'rarity'
+  // extra group — แสดงเฉพาะ rarity (ไม่ใช่ tiers แล้ว)
+  document.getElementById('cat-extra-group').style.display = isRarity ? 'flex' : 'none'
+  if(isRarity) document.getElementById('cat-extra-label').textContent = catExtras['rarity']||'ข้อมูลเพิ่มเติม'
+  // tier range group
+  const rangeGroup = document.getElementById('tier-range-group')
+  if(rangeGroup) {
+    rangeGroup.style.display = isTier ? 'block' : 'none'
+    if(isTier) {
+      document.getElementById('tier-min').value = item?.tierMin ?? ''
+      document.getElementById('tier-max').value = item?.tierMax ?? ''
+    }
+  }
   // hide color+emoji for suppliers
   document.getElementById('cat-color-group').style.display = type==='suppliers' ? 'none' : 'flex'
   document.getElementById('cat-emoji-group').style.display = type==='suppliers' ? 'none' : 'flex'
@@ -7958,6 +8003,17 @@ function saveCat(){
     extra:  document.getElementById('cat-extra').value.trim(),
     contact: '', brands: '',
     status: document.getElementById('cat-status').value,
+  }
+  // บันทึก tierMin/tierMax สำหรับ tiers
+  if (type === 'tiers') {
+    const minVal = document.getElementById('tier-min').value.trim()
+    const maxVal = document.getElementById('tier-max').value.trim()
+    item.tierMin = minVal !== '' ? parseFloat(minVal) : 0
+    item.tierMax = maxVal !== '' ? parseFloat(maxVal) : null  // null = ไม่จำกัด
+    // สร้าง extra text อัตโนมัติ
+    item.extra = item.tierMax !== null
+      ? `฿${item.tierMin.toLocaleString()} – ฿${item.tierMax.toLocaleString()}`
+      : `฿${item.tierMin.toLocaleString()}+`
   }
   if(!item.name){ alert('กรุณากรอกชื่อ'); return }
   if(idx===-1) setupData[type].push(item)
