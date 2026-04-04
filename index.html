@@ -2620,10 +2620,18 @@ function applySnapshot(data) {
     if (data.setupData.tiers)     setupData.tiers     = data.setupData.tiers
   }
   if (data.USERS) Object.assign(USERS, data.USERS)
-  // sync trialData จาก Supabase → localStorage (Admin อาจ update subscription)
   if (data.trialData && currentUser) {
     try { localStorage.setItem('cv_trial_' + currentUser.email, JSON.stringify(data.trialData)) } catch(e) {}
   }
+  // ── migrate การ์ดเก่า: ถ้ามี psa=true แต่ไม่มี psaType → ตั้งเป็น 'gem' ──
+  cards.forEach(c => {
+    if (c.psa && !c.psaType) {
+      c.psaType = c.psaGrade ? 'gem' : 'auth'
+    }
+    if (!c.psa) {
+      c.psaType = 'no'
+    }
+  })
 }
 
 // ── Save: localStorage + Supabase ────────────────────────────────────────────
@@ -4494,8 +4502,12 @@ function renderCardsDisplay(data) {
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
       ${c.psa ? (() => {
-        const t = c.psaType || 'gem'
-        const label = t==='gem' ? ('G Gem '+( c.psaGrade||'')) : t==='auto' ? ('G Auto '+(c.psaGrade||'')) : 'G Auth'
+        const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
+        const grade = c.psaGrade ? String(c.psaGrade).trim() : ''
+        let label = ''
+        if (t === 'gem')  label = grade ? 'G Gem ' + grade : 'G Gem'
+        else if (t === 'auto') label = grade ? 'G Auto ' + grade : 'G Auto'
+        else label = 'G Auth'
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })() : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
@@ -4548,8 +4560,12 @@ function renderCardsEdit(data) {
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
       ${c.psa ? (() => {
-        const t = c.psaType || 'gem'
-        const label = t==='gem' ? ('G Gem '+( c.psaGrade||'')) : t==='auto' ? ('G Auto '+(c.psaGrade||'')) : 'G Auth'
+        const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
+        const grade = c.psaGrade ? String(c.psaGrade).trim() : ''
+        let label = ''
+        if (t === 'gem')  label = grade ? 'G Gem ' + grade : 'G Gem'
+        else if (t === 'auto') label = grade ? 'G Auto ' + grade : 'G Auto'
+        else label = 'G Auth'
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })() : ''}
       <!-- Brand + Rarity editable -->
