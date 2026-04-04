@@ -4510,13 +4510,11 @@ function renderCardsDisplay(data) {
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
       ${(()=>{
         if (!c.psa) return ''
-        // psaType จาก card — auto migrate: psa=true ไม่มี psaType → ดู psaGrade
-        const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
-        const grade = (c.psaGrade !== null && c.psaGrade !== undefined && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
-        let label
-        if (t === 'auto')       label = grade ? 'G Auto ' + grade : 'G Auto'
-        else if (t === 'auth')  label = 'G Auth'
-        else                    label = grade ? 'G Gem ' + grade : 'G Gem'
+        const t = c.psaType || 'gem'
+        const grade = (c.psaGrade != null && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
+        const label = t === 'auth' ? 'G Auth'
+                    : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
+                    :                ('G Gem'  + (grade ? ' '+grade : ''))
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
@@ -4570,13 +4568,11 @@ function renderCardsEdit(data) {
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
       ${(()=>{
         if (!c.psa) return ''
-        // psaType จาก card — auto migrate: psa=true ไม่มี psaType → ดู psaGrade
-        const t = c.psaType || (c.psaGrade ? 'gem' : 'auth')
-        const grade = (c.psaGrade !== null && c.psaGrade !== undefined && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
-        let label
-        if (t === 'auto')       label = grade ? 'G Auto ' + grade : 'G Auto'
-        else if (t === 'auth')  label = 'G Auth'
-        else                    label = grade ? 'G Gem ' + grade : 'G Gem'
+        const t = c.psaType || 'gem'
+        const grade = (c.psaGrade != null && String(c.psaGrade).trim() !== '') ? String(c.psaGrade).trim() : ''
+        const label = t === 'auth' ? 'G Auth'
+                    : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
+                    :                ('G Gem'  + (grade ? ' '+grade : ''))
         return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
       <!-- Brand + Rarity editable -->
@@ -6447,23 +6443,37 @@ function renderPurchase(data){
 function markReceived(idx){
   const p = purchases[idx]
   p.status = 'received'
-  // อัพเดท stock การ์ดในสต็อก
-  const card = cards.find(c => c.name === p.name && c.brand === p.brand)
   const poPhoto = p.photos && p.photos[0] ? p.photos[0] : null
+
+  // หาการ์ดที่ตรงกัน — match ทั้งชื่อ+แบรนด์+psaType+psaGrade
+  // ถ้าชื่อซ้ำแต่ graded ต่างกัน → สร้าง entry ใหม่แยกกัน
+  const psaType  = p.psaType || (p.psa ? 'gem' : 'no')
+  const psaGrade = p.psaGrade || null
+
+  const card = cards.find(c =>
+    c.name === p.name &&
+    c.brand === p.brand &&
+    (c.psaType || 'no') === psaType &&
+    String(c.psaGrade || '') === String(psaGrade || '')
+  )
+
   if(card){
     card.stock += p.qty
-    // อัพเดทรูปถ้ายังไม่มี หรือ PO มีรูปใหม่
     if(poPhoto && (!card.photo || card.photo.length === 0)) card.photo = poPhoto
-    if(p.psa) { card.psa = true; card.psaType = p.psaType || 'gem'; card.psaGrade = p.psaGrade }
+    if(p.psa) {
+      card.psa     = true
+      card.psaType  = psaType
+      card.psaGrade = psaGrade
+    }
   } else {
     cards.push({
       name:p.name, brand:p.brand, set:p.set||'-',
       rarity:p.rarity||'-', cost:p.cost, price:p.sell||0,
       stock:p.qty, min:3, emoji:'🃏',
       photo: poPhoto || '',
-      psa: p.psa || false,
-      psaType: p.psaType || (p.psa ? 'gem' : 'no'),
-      psaGrade: p.psaGrade || null
+      psa:      p.psa || false,
+      psaType:  psaType,
+      psaGrade: psaGrade
     })
   }
   saveData()
@@ -7468,7 +7478,7 @@ function savePurchase(){
       })(),
       name:it.name, brand:it.brand, qty:it.qty, cost:it.cost, sell:it.sell||0,
       rarity:it.rarity, set:it.set, source:it.source,
-      psa:it.psa, psaGrade:it.psaGrade,
+      psa:it.psa, psaType: it.psaType || 'no', psaGrade:it.psaGrade,
       status: 'pending',
       photos: it.photos||[],
       date
