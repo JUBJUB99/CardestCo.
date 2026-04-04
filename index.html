@@ -2920,25 +2920,10 @@ document.addEventListener('keydown', e=>{ if(e.key==='Enter' && !document.getEle
 //  TRIAL & SUBSCRIPTION SYSTEM
 // ══════════════════════════════════════════════════════════════════
 const TRIAL_DAYS   = 7
-// ── EasySlip: เรียกผ่าน Supabase Edge Function (key ซ่อนอยู่ใน server) ──────
-async function verifySlipViaEdge(base64Image) {
-  const res = await fetch(
-    SUPABASE_URL + '/functions/v1/verify-slip',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + SUPABASE_ANON
-      },
-      body: JSON.stringify({ image: base64Image })
-    }
-  )
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error('Edge Function error: ' + err)
-  }
-  return res.json()
-}
+const EASYSLIP_KEY = '0bb64b5d-3ab9-4231-81e0-51081eb14f03'
+
+async function fetchEasySlipKey() { return EASYSLIP_KEY }
+function getEasySlipKey() { return EASYSLIP_KEY }
 const SUB_PRICE    = 499
 const STORAGE_KEY  = 'cv_trial'   // key ใน localStorage
 
@@ -3357,17 +3342,29 @@ async function submitSlip() {
       reader.readAsDataURL(slipFileData)
     })
 
-    // เรียก Edge Function (EasySlip key ซ่อนอยู่ใน server ไม่เปิดเผย)
-    let result
+    // เรียก EasySlip API — ดึง key จาก Supabase ก่อนเสมอ
+    const slipKey = await fetchEasySlipKey() || getEasySlipKey()
+    if (!slipKey) throw new Error('EasySlip key not configured — manual review required')
+    let response, result
     try {
-      result = await verifySlipViaEdge(base64)
+      response = await fetch('https://developer.easyslip.com/api/v1/verify', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + getEasySlipKey(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: base64 })
+      })
+      result = await response.json()
+      console.log('EasySlip result:', JSON.stringify(result))
     } catch(corsErr) {
-      console.warn('Edge Function error:', corsErr)
-      throw new Error('EDGE_FUNCTION_ERROR')
+      console.warn('EasySlip CORS/network error:', corsErr)
+      // CORS block หรือ network error → fallback manual
+      throw new Error('CORS_OR_NETWORK')
     }
 
-    if (!result || result.status !== 200) {
-      throw new Error(result?.message || 'Verify slip failed: status ' + result?.status)
+    if (!response.ok || result.status !== 200) {
+      throw new Error(result.message || 'EasySlip: status '+result.status)
     }
 
     const slip     = result.data
