@@ -2063,21 +2063,21 @@ select option{background:var(--bg3);}
         <input type="text" id="po-set" placeholder="เช่น Stellar Crown">
       </div>
 
-      <!-- PSA -->
+      <!-- Graded -->
       <div class="form-group">
-        <label>PSA Graded</label>
+        <label>Graded</label>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-psa-lbl-no">
             <input type="radio" name="po-psa" value="no" id="po-psa-no" onchange="togglePSA()" checked style="width:16px;height:16px;flex-shrink:0">
-            <span data-i18n="po_no_psa">ไม่มี PSA</span>
+            <span data-i18n="po_no_psa">No Graded</span>
           </label>
           <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-psa-lbl-yes">
             <input type="radio" name="po-psa" value="yes" id="po-psa-yes" onchange="togglePSA()" style="width:16px;height:16px;flex-shrink:0">
-            <span>🏅 PSA</span>
+            <span>🏅 Graded</span>
           </label>
         </div>
         <div id="po-psa-grade-wrap" style="display:none;margin-top:10px">
-          <label style="font-size:11px;color:var(--text3);margin-bottom:6px;display:block;font-family:var(--mono)" data-i18n="po_psa_grade">เกรด PSA</label>
+          <label style="font-size:11px;color:var(--text3);margin-bottom:6px;display:block;font-family:var(--mono)" data-i18n="po_psa_grade">เกรด</label>
           <div style="display:flex;gap:5px">
             <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g5-lbl"><input type="radio" name="po-psa-grade" value="5" id="po-psa-g5" style="display:none">5</label>
             <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g6-lbl"><input type="radio" name="po-psa-grade" value="6" id="po-psa-g6" style="display:none">6</label>
@@ -3891,7 +3891,7 @@ const LANG = {
     po_step2_title:'ตรวจสอบและกรอกราคา', po_step2_back:'← ย้อนกลับ',
     po_lbl_name:'ชื่อการ์ด', po_lbl_brand:'แบรนด์', po_lbl_set:'Set / ชุด',
     po_lbl_name_ph:'ชื่อการ์ด', po_lbl_set_ph:'เช่น Stellar Crown',
-    po_no_psa:'ไม่มี PSA', po_psa_grade:'เกรด PSA',
+    po_no_psa:'No Graded', po_psa_grade:'เกรด',
     po_price_section:'💰 ราคา (กรอกด้วยตัวเอง)',
     po_lbl_qty:'จำนวน (ใบ)', po_lbl_cost:'ราคาที่ซื้อ/ใบ (฿) *',
     po_lbl_source:'แหล่งซื้อ', po_lbl_note:'หมายเหตุ', po_note_ph:'ระบุหมายเหตุ...',
@@ -4079,7 +4079,7 @@ const LANG = {
     po_step2_title:'Review & Enter Price', po_step2_back:'← Back',
     po_lbl_name:'Card Name', po_lbl_brand:'Brand', po_lbl_set:'Set / Series',
     po_lbl_name_ph:'Card name', po_lbl_set_ph:'e.g. Stellar Crown',
-    po_no_psa:'No PSA', po_psa_grade:'PSA Grade',
+    po_no_psa:'No Graded', po_psa_grade:'Grade',
     po_price_section:'💰 Price (enter manually)',
     po_lbl_qty:'Qty (cards)', po_lbl_cost:'Purchase Price/card (฿) *',
     po_lbl_source:'Supplier', po_lbl_note:'Note', po_note_ph:'Add a note...',
@@ -4475,7 +4475,7 @@ function renderCardsDisplay(data) {
       </div>
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 PSA ${c.psaGrade||''}</div>` : ''}
+      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 G ${c.psaGrade||''}</div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
@@ -4525,7 +4525,7 @@ function renderCardsEdit(data) {
       <input type="file" id="card-upload-${cardIdx}" accept="image/*" style="display:none" onchange="handleCardPhoto(event,${cardIdx})">
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 PSA ${c.psaGrade||''}</div>` : ''}
+      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 G ${c.psaGrade||''}</div>` : ''}
       <!-- Brand + Rarity editable -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
         <div style="background:var(--bg3);border-radius:8px;padding:6px 8px">
@@ -5686,7 +5686,7 @@ function exportCSV(type) {
     })
   } else if (type === 'cards') {
     filename = 'cardestco_inventory.csv'
-    rows.push(['ชื่อการ์ด','แบรนด์','Rarity','Set','Stock','ต้นทุน/ใบ','ราคาขาย/ใบ','PSA','เกรด PSA'])
+    rows.push(['ชื่อการ์ด','แบรนด์','Rarity','Set','Stock','ต้นทุน/ใบ','ราคาขาย/ใบ','Graded','เกรด'])
     cards.forEach(cd => {
       rows.push([cd.name, cd.brand, cd.rarity||'', cd.set||'', cd.stock||0, cd.cost||0, cd.price||0, cd.psa?'Yes':'No', cd.psaGrade||''])
     })
@@ -6933,7 +6933,7 @@ async function shareScreenshot(containerId, title) {
         ctx.fillStyle = '#1a237e'
         roundRect(ctx, x+12, psaY, 100, 28, 6); ctx.fill()
         ctx.font = 'bold 16px monospace'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'
-        ctx.fillText('PSA '+(cd.psaGrade||''), x+62, psaY+19)
+        ctx.fillText('G '+(cd.psaGrade||''), x+62, psaY+19)
         ctx.textAlign = 'left'
       }
 
@@ -7118,7 +7118,7 @@ async function sharePortfolio() {
       ctx.font = 'bold 13px Arial,sans-serif'; ctx.fillStyle = TXT
       ctx.fillText(truncate(h.name||'-', 20), PAD+56, rowY+20)
       ctx.font = '10px monospace'; ctx.fillStyle = TXT2
-      const brandTxt = h.brand + (h.psa ? '  PSA '+h.psaGrade : '') + '  ×'+h.stock
+      const brandTxt = h.brand + (h.psa ? '  G '+h.psaGrade : '') + '  ×'+h.stock
       ctx.fillText(brandTxt, PAD+56, rowY+36)
 
       ctx.textAlign = 'right'
