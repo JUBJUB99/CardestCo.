@@ -3161,6 +3161,26 @@ function showTrialScreen(daysLeft, startTs) {
 }
 
 function showSubScreen() {
+  // reset ก่อนแสดงเสมอ — ป้องกัน state เก่าจาก session ก่อนหน้า
+  currentRefId = null
+  currentTxnId = null
+  slipFileData = null
+  try {
+    const s1 = document.getElementById('subStep1')
+    const s2 = document.getElementById('subStep2')
+    const s3 = document.getElementById('subStep3')
+    if (s1) s1.style.display = 'block'
+    if (s2) s2.style.display = 'none'
+    if (s3) s3.style.display = 'none'
+    const slipPreview     = document.getElementById('slipPreview')
+    const slipPlaceholder = document.getElementById('slipPlaceholder')
+    const slipUploadArea  = document.getElementById('slipUploadArea')
+    const submitBtn       = document.getElementById('submitSlipBtn')
+    if (slipPreview)     slipPreview.style.display = 'none'
+    if (slipPlaceholder) slipPlaceholder.style.display = 'block'
+    if (slipUploadArea)  slipUploadArea.style.borderColor = ''
+    if (submitBtn)       { submitBtn.disabled = false; submitBtn.innerHTML = t('sub_submit_btn') }
+  } catch(e) {}
   document.getElementById('loginScreen').classList.add('hidden')
   document.getElementById('trialScreen').classList.remove('show')
   document.getElementById('subScreen').classList.add('show')
@@ -3337,8 +3357,9 @@ async function submitSlip() {
     const amount   = slip?.amount?.amount || 0
     const transRef = slip?.transRef || slip?.transactionId || ''
 
-    // เช็คสลิปซ้ำ
-    const usedRefs = JSON.parse(localStorage.getItem('cv_used_slips')||'[]')
+    // เช็คสลิปซ้ำ — แยกตาม user email ป้องกัน cross-session
+    const usedSlipsKey = 'cv_used_slips_' + (email || 'unknown')
+    const usedRefs = JSON.parse(localStorage.getItem(usedSlipsKey)||'[]')
     if (transRef && usedRefs.includes(transRef)) {
       document.getElementById('payResultIcon').textContent  = '❌'
       document.getElementById('payResultTitle').textContent = 'สลิปซ้ำ'
@@ -3355,10 +3376,10 @@ async function submitSlip() {
       btn.disabled = false; btn.innerHTML = t('sub_submit_btn'); return
     }
 
-    // บันทึก transRef
+    // บันทึก transRef แยกตาม user
     if (transRef) {
       usedRefs.push(transRef)
-      try { localStorage.setItem('cv_used_slips', JSON.stringify(usedRefs)) } catch(e) {}
+      try { localStorage.setItem(usedSlipsKey, JSON.stringify(usedRefs)) } catch(e) {}
     }
 
     // ✅ Activate subscription + save to Supabase (await ทุก step)
@@ -3731,6 +3752,32 @@ function doLogout(){
   document.getElementById('subScreen').classList.remove('show')
   document.getElementById('loginScreen').classList.remove('hidden')
   document.getElementById('bottomNav').style.display = 'none'
+
+  // reset payment state ป้องกัน session เก่าโผล่ใน user ใหม่
+  currentRefId  = null
+  currentTxnId  = null
+  slipFileData  = null
+  // reset subScreen กลับ step 1
+  try {
+    const s1 = document.getElementById('subStep1')
+    const s2 = document.getElementById('subStep2')
+    const s3 = document.getElementById('subStep3')
+    if (s1) s1.style.display = 'block'
+    if (s2) s2.style.display = 'none'
+    if (s3) s3.style.display = 'none'
+    const slipPreview = document.getElementById('slipPreview')
+    const slipPlaceholder = document.getElementById('slipPlaceholder')
+    const slipUploadArea = document.getElementById('slipUploadArea')
+    const submitBtn = document.getElementById('submitSlipBtn')
+    if (slipPreview)     slipPreview.style.display = 'none'
+    if (slipPlaceholder) slipPlaceholder.style.display = 'block'
+    if (slipUploadArea)  slipUploadArea.style.borderColor = ''
+    if (submitBtn)       { submitBtn.disabled = false; submitBtn.innerHTML = t('sub_submit_btn') }
+    const payRefId  = document.getElementById('payRefId')
+    const payRefId2 = document.getElementById('payRefId2')
+    if (payRefId)  payRefId.textContent  = 'CV------'
+    if (payRefId2) payRefId2.textContent = 'CV------'
+  } catch(e) {}
   // ถ้า remember me → คง email/password ไว้
   const savedEmail = (() => { try { return localStorage.getItem('cv_remember_email') } catch(e) { return null } })()
   if (savedEmail) {
