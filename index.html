@@ -3289,7 +3289,7 @@ async function activateSubscription(email, amount, transRef) {
       updated_at:new Date().toISOString()})
   })
 
-  // 4. save payment record
+  // 4. save payment record — บันทึก trans_ref แยก column เพื่อเช็คซ้ำ
   await fetch(SUPABASE_URL+'/rest/v1/payments',{
     method:'POST',
     headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
@@ -3297,6 +3297,7 @@ async function activateSubscription(email, amount, transRef) {
     body:JSON.stringify({
       shop_id:email, plan:'basic', amount:price,
       months:1, total:amount||price, paid_at:new Date().toISOString(),
+      trans_ref: transRef || null,
       note:'EasySlip transRef:'+transRef+' ref:'+currentRefId,
       approved_by:'easyslip_auto'
     })
@@ -3357,7 +3358,8 @@ async function submitSlip() {
     const amount   = slip?.amount?.amount || 0
     const transRef = slip?.transRef || slip?.transactionId || ''
 
-    // เช็คสลิปซ้ำ — แยกตาม user email ป้องกัน cross-session
+    // ── เช็คสลิปซ้ำ 2 ชั้น ────────────────────────────────────────────────
+    // ชั้น 1: localStorage (เร็ว — ป้องกัน same device)
     const usedSlipsKey = 'cv_used_slips_' + (email || 'unknown')
     const usedRefs = JSON.parse(localStorage.getItem(usedSlipsKey)||'[]')
     if (transRef && usedRefs.includes(transRef)) {
@@ -3365,6 +3367,28 @@ async function submitSlip() {
       document.getElementById('payResultTitle').textContent = 'สลิปซ้ำ'
       document.getElementById('payResultMsg').textContent   = 'สลิปนี้ถูกใช้งานแล้ว กรุณาใช้สลิปใหม่'
       btn.disabled = false; btn.innerHTML = t('sub_submit_btn'); return
+    }
+
+    // ชั้น 2: Supabase payments table (ป้องกันทุกอุปกรณ์ / ทุก browser)
+    if (transRef) {
+      document.getElementById('payResultMsg').textContent = 'กำลังตรวจสอบสลิปซ้ำ...'
+      try {
+        const dupRes = await fetch(
+          SUPABASE_URL+'/rest/v1/payments?trans_ref=eq.'+encodeURIComponent(transRef)+'&select=id',
+          {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
+        )
+        const dupRows = await dupRes.json()
+        if (Array.isArray(dupRows) && dupRows.length > 0) {
+          // พบสลิปนี้ใน Supabase แล้ว
+          document.getElementById('payResultIcon').textContent  = '❌'
+          document.getElementById('payResultTitle').textContent = 'สลิปซ้ำ'
+          document.getElementById('payResultMsg').textContent   = 'สลิปนี้ถูกใช้งานไปแล้ว กรุณาใช้สลิปใหม่'
+          btn.disabled = false; btn.innerHTML = t('sub_submit_btn'); return
+        }
+      } catch(dupErr) {
+        console.warn('Supabase dup check failed, continue:', dupErr)
+        // ถ้า fetch ล้มเหลว ให้ผ่านไปได้ (localStorage ยังช่วยได้บางส่วน)
+      }
     }
 
     // เช็คยอดเงิน
