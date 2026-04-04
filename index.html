@@ -2066,27 +2066,31 @@ select option{background:var(--bg3);}
       <!-- Graded -->
       <div class="form-group">
         <label>Graded</label>
-        <div style="display:flex;gap:8px">
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-psa-lbl-no">
-            <input type="radio" name="po-psa" value="no" id="po-psa-no" onchange="togglePSA()" checked style="width:16px;height:16px;flex-shrink:0">
-            <span data-i18n="po_no_psa">No Graded</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:12px;font-weight:500" id="po-psa-lbl-no">
+            <input type="radio" name="po-psa" value="no" id="po-psa-no" onchange="togglePSA()" checked style="width:15px;height:15px;flex-shrink:0">
+            <span>No Graded</span>
           </label>
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-psa-lbl-yes">
-            <input type="radio" name="po-psa" value="yes" id="po-psa-yes" onchange="togglePSA()" style="width:16px;height:16px;flex-shrink:0">
-            <span>🏅 Graded</span>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:12px;font-weight:500" id="po-psa-lbl-gem">
+            <input type="radio" name="po-psa" value="gem" id="po-psa-gem" onchange="togglePSA()" style="width:15px;height:15px;flex-shrink:0">
+            <span>🏅 Gem Mint</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:12px;font-weight:500" id="po-psa-lbl-auto">
+            <input type="radio" name="po-psa" value="auto" id="po-psa-auto" onchange="togglePSA()" style="width:15px;height:15px;flex-shrink:0">
+            <span>🏅 Auto</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:12px;font-weight:500" id="po-psa-lbl-auth">
+            <input type="radio" name="po-psa" value="auth" id="po-psa-auth" onchange="togglePSA()" style="width:15px;height:15px;flex-shrink:0">
+            <span>🏅 Authentic</span>
           </label>
         </div>
+        <!-- Grade number picker — แสดงเฉพาะ Gem Mint และ Auto -->
         <div id="po-psa-grade-wrap" style="display:none;margin-top:10px">
-          <label style="font-size:11px;color:var(--text3);margin-bottom:6px;display:block;font-family:var(--mono)" data-i18n="po_psa_grade">เกรด</label>
-          <div style="display:flex;gap:5px">
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g5-lbl"><input type="radio" name="po-psa-grade" value="5" id="po-psa-g5" style="display:none">5</label>
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g6-lbl"><input type="radio" name="po-psa-grade" value="6" id="po-psa-g6" style="display:none">6</label>
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g7-lbl"><input type="radio" name="po-psa-grade" value="7" id="po-psa-g7" style="display:none">7</label>
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g8-lbl"><input type="radio" name="po-psa-grade" value="8" id="po-psa-g8" style="display:none">8</label>
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700" id="po-psa-g9-lbl"><input type="radio" name="po-psa-grade" value="9" id="po-psa-g9" style="display:none">9</label>
-            <label style="flex:1;text-align:center;padding:6px 2px;border:1px solid var(--accent);border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700;background:rgba(124,109,250,0.08);color:var(--accent2)" id="po-psa-g10-lbl"><input type="radio" name="po-psa-grade" value="10" id="po-psa-g10" checked style="display:none">10</label>
-          </div>
+          <label style="font-size:11px;color:var(--text3);margin-bottom:8px;display:block;font-family:var(--mono)">เกรด</label>
+          <div style="display:flex;flex-wrap:wrap;gap:5px" id="po-grade-buttons"></div>
         </div>
+        <!-- hidden compat -->
+        <input type="hidden" id="po-psa-yes" style="display:none">
       </div>
 
       <!-- Price section — highlight สำคัญ -->
@@ -4489,7 +4493,11 @@ function renderCardsDisplay(data) {
       </div>
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 G ${c.psaGrade||''}</div>` : ''}
+      ${c.psa ? (() => {
+        const t = c.psaType || 'gem'
+        const label = t==='gem' ? ('G Gem '+( c.psaGrade||'')) : t==='auto' ? ('G Auto '+(c.psaGrade||'')) : 'G Auth'
+        return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+      })() : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
@@ -4539,7 +4547,11 @@ function renderCardsEdit(data) {
       <input type="file" id="card-upload-${cardIdx}" accept="image/*" style="display:none" onchange="handleCardPhoto(event,${cardIdx})">
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      ${c.psa ? `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 G ${c.psaGrade||''}</div>` : ''}
+      ${c.psa ? (() => {
+        const t = c.psaType || 'gem'
+        const label = t==='gem' ? ('G Gem '+( c.psaGrade||'')) : t==='auto' ? ('G Auto '+(c.psaGrade||'')) : 'G Auth'
+        return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+      })() : ''}
       <!-- Brand + Rarity editable -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
         <div style="background:var(--bg3);border-radius:8px;padding:6px 8px">
@@ -6415,7 +6427,7 @@ function markReceived(idx){
     card.stock += p.qty
     // อัพเดทรูปถ้ายังไม่มี หรือ PO มีรูปใหม่
     if(poPhoto && (!card.photo || card.photo.length === 0)) card.photo = poPhoto
-    if(p.psa) { card.psa = true; card.psaGrade = p.psaGrade }
+    if(p.psa) { card.psa = true; card.psaType = p.psaType || 'gem'; card.psaGrade = p.psaGrade }
   } else {
     cards.push({
       name:p.name, brand:p.brand, set:p.set||'-',
@@ -6423,6 +6435,7 @@ function markReceived(idx){
       stock:p.qty, min:3, emoji:'🃏',
       photo: poPhoto || '',
       psa: p.psa || false,
+      psaType: p.psaType || (p.psa ? 'gem' : 'no'),
       psaGrade: p.psaGrade || null
     })
   }
@@ -7311,9 +7324,10 @@ function resetPOForm(keepOpen) {
   document.getElementById('po-set').value   = ''
   document.getElementById('po-psa-no').checked = true
   document.getElementById('po-psa-grade-wrap').style.display = 'none'
-  document.getElementById('po-psa-lbl-yes').style.borderColor = 'var(--border2)'
-  document.getElementById('po-psa-lbl-no').style.borderColor  = 'var(--accent)'
-  selectPSAGrade('10')
+  ;['no','gem','auto','auth'].forEach(v => {
+    const lbl = document.getElementById('po-psa-lbl-' + v)
+    if (lbl) lbl.style.borderColor = v === 'no' ? 'var(--accent)' : 'var(--border2)'
+  })
   document.getElementById('po-note').value  = ''
   document.getElementById('po-preview').style.display = 'none'
   poPhotos = []; poImageB64 = null
@@ -7354,12 +7368,13 @@ function addPOItem() {
   const rarity = document.getElementById('po-rarity')?.value || ''
   const set    = document.getElementById('po-set')?.value?.trim() || ''
   const source = document.getElementById('po-source')?.value || ''
-  const isPSA  = document.getElementById('po-psa-yes')?.checked || false
-  const psaGrade = isPSA ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
+  const isPSA  = document.querySelector('input[name="po-psa"]:checked')?.value || 'no'
+  const needsGradeInline = isPSA === 'gem' || isPSA === 'auto'
+  const psaGrade = needsGradeInline ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
   if (!name) { showToast('กรุณากรอกชื่อการ์ด', 'var(--orange)'); return }
   if (!cost) { showToast('กรุณากรอกราคาต้นทุน', 'var(--orange)'); return }
   poItems.push({ name, brand, qty, cost, sell:0, rarity, set, source,
-    psa:isPSA, psaGrade, photos:[...poPhotos] })
+    psa: isPSA !== 'no', psaType: isPSA, psaGrade, photos:[...poPhotos] })
   renderPOAddedList()
   showToast('✅ เพิ่ม '+name+' ×'+qty+' แล้ว', 'var(--green)')
   resetPOForm(true)
@@ -7405,10 +7420,11 @@ function savePurchase(){
     const rarity = document.getElementById('po-rarity')?.value || ''
     const set    = document.getElementById('po-set')?.value?.trim() || ''
     const source = document.getElementById('po-source')?.value || ''
-    const isPSA  = document.getElementById('po-psa-yes')?.checked || false
-    const psaGrade = isPSA ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
+    const isPSA  = document.querySelector('input[name="po-psa"]:checked')?.value || 'no'
+    const needsGrade = isPSA === 'gem' || isPSA === 'auto'
+    const psaGrade = needsGrade ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
     poItems.push({ name, brand, qty, cost, sell, rarity, set, source,
-      psa:isPSA, psaGrade, photos:[...poPhotos] })
+      psa: isPSA !== 'no', psaType: isPSA, psaGrade, photos:[...poPhotos] })
   }
   if (poItems.length === 0) { showToast('ไม่มีรายการ กรุณาเพิ่มการ์ดก่อน', 'var(--orange)'); return }
 
@@ -7597,31 +7613,43 @@ function goToStep2(card) {
 }
 
 function togglePSA() {
-  const isPSA = document.getElementById('po-psa-yes').checked
-  document.getElementById('po-psa-grade-wrap').style.display = isPSA ? 'block' : 'none'
-  // highlight label
-  document.getElementById('po-psa-lbl-yes').style.borderColor = isPSA ? 'var(--accent)' : 'var(--border2)'
-  document.getElementById('po-psa-lbl-no').style.borderColor  = isPSA ? 'var(--border2)' : 'var(--accent)'
+  const val = document.querySelector('input[name="po-psa"]:checked')?.value || 'no'
+  const gradeWrap = document.getElementById('po-psa-grade-wrap')
+  const needsGrade = val === 'gem' || val === 'auto'
+  if (gradeWrap) gradeWrap.style.display = needsGrade ? 'block' : 'none'
+
+  // highlight selected label
+  ;['no','gem','auto','auth'].forEach(v => {
+    const lbl = document.getElementById('po-psa-lbl-' + v)
+    if (lbl) lbl.style.borderColor = val === v ? 'var(--accent)' : 'var(--border2)'
+  })
+
+  // build grade buttons เฉพาะตอนที่เปิด grade wrap
+  if (needsGrade) buildGradeButtons()
+}
+
+function buildGradeButtons() {
+  const container = document.getElementById('po-grade-buttons')
+  if (!container) return
+  const grades = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6','6.5','7','7.5','8','8.5','9','9.5','10']
+  const current = document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10'
+  container.innerHTML = grades.map(g => `
+    <label id="po-psa-g${g.replace('.','_')}-lbl" onclick="selectPSAGrade('${g}')"
+      style="min-width:36px;text-align:center;padding:5px 4px;border:1px solid ${g===current?'var(--accent)':'var(--border2)'};border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:700;background:${g===current?'rgba(124,109,250,0.08)':'transparent'};color:${g===current?'var(--accent2)':'var(--text)'};transition:all 0.15s">
+      <input type="radio" name="po-psa-grade" value="${g}" ${g===current?'checked':''} style="display:none">${g}
+    </label>`).join('')
 }
 
 function selectPSAGrade(grade) {
-  ;['5','6','7','8','9','10'].forEach(g => {
-    const lbl = document.getElementById('po-psa-g'+g+'-lbl')
-    if (!lbl) return
-    const active = g === String(grade)
-    lbl.style.borderColor  = active ? 'var(--accent)' : 'var(--border2)'
-    lbl.style.background   = active ? 'rgba(124,109,250,0.08)' : 'transparent'
-    lbl.style.color        = active ? 'var(--accent2)' : 'var(--text)'
+  document.querySelectorAll('[id^="po-psa-g"][id$="-lbl"]').forEach(lbl => {
+    const active = lbl.id === `po-psa-g${grade.replace('.','_')}-lbl`
+    lbl.style.borderColor = active ? 'var(--accent)' : 'var(--border2)'
+    lbl.style.background  = active ? 'rgba(124,109,250,0.08)' : 'transparent'
+    lbl.style.color       = active ? 'var(--accent2)' : 'var(--text)'
   })
-  // set radio
-  const radio = document.getElementById('po-psa-g'+grade)
+  const radio = document.querySelector(`input[name="po-psa-grade"][value="${grade}"]`)
   if (radio) radio.checked = true
 }
-
-// bind grade click
-document.addEventListener('change', e => {
-  if (e.target.name === 'po-psa-grade') selectPSAGrade(e.target.value)
-})
 
 function skipAI() {
   goToStep2(null)
