@@ -410,6 +410,12 @@ select option{background:var(--bg3);}
   z-index:40;padding:0 8px;
   grid-template-columns:repeat(6,1fr);align-items:center;
 }
+/* Desktop — ซ่อน bottom-nav ทั้งหมด ใช้ sidebar แทน */
+@media (min-width:769px) {
+  .bottom-nav { display:none !important; }
+  #appScreen.side-nav-active .main { margin-left:0 !important; }
+  #appScreen.side-nav-active .sidebar { display:flex !important; }
+}
 .bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;
   cursor:pointer;border-radius:8px;transition:all 0.15s;color:var(--text3);font-size:9px;font-family:var(--mono);}
 .bnav-item:hover{color:var(--text);background:var(--bg3);}
@@ -960,6 +966,7 @@ select option{background:var(--bg3);}
         <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchDashTab('overview',this)">Overview</div>
           <div class="setup-tab" onclick="switchDashTab('portfolio',this)">📦 Portfolio</div>
+          <div class="setup-tab" onclick="switchDashTab('aging',this)" data-i18n="dash_aging_tab">📊 สินค้าไม่เคลื่อนไหว</div>
         </div>
 
         <!-- TAB: Overview -->
@@ -995,6 +1002,7 @@ select option{background:var(--bg3);}
                 style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
                 <option value="month" data-i18n="chart_monthly">รายเดือน</option>
                 <option value="week" data-i18n="chart_weekly">รายสัปดาห์</option>
+                <option value="day" data-i18n="chart_daily">รายวัน</option>
               </select>
               <select id="chart-year-filter" onchange="renderSalesChart()"
                 style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
@@ -1092,6 +1100,73 @@ select option{background:var(--bg3);}
           </div>
 
         </div><!-- end dtab-portfolio -->
+
+        <!-- TAB: Aging Report -->
+        <div id="dtab-aging" style="display:none">
+          <!-- Summary KPI -->
+          <div class="kpi-row" style="margin-bottom:20px" id="aging-kpi-row">
+            <div class="kpi-card" style="--kpi-color:#f59e0b">
+              <div class="kpi-label" data-i18n="aging_kpi_total">สินค้าค้างสต็อก</div>
+              <div class="kpi-value" id="aging-kpi-items">0</div>
+              <div class="kpi-sub" data-i18n="aging_kpi_items_sub">รายการ</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:#ef4444">
+              <div class="kpi-label" data-i18n="aging_kpi_cost">มูลค่าค้างสต็อก</div>
+              <div class="kpi-value" id="aging-kpi-cost">฿0</div>
+              <div class="kpi-sub" data-i18n="aging_kpi_cost_sub">ราคาทุนรวม</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:#8b5cf6">
+              <div class="kpi-label" data-i18n="aging_kpi_avg">Aging เฉลี่ย</div>
+              <div class="kpi-value" id="aging-kpi-avg">0</div>
+              <div class="kpi-sub" data-i18n="aging_kpi_avg_sub">วัน</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:#dc2626">
+              <div class="kpi-label" data-i18n="aging_kpi_old">ค้างนาน > 31 วัน</div>
+              <div class="kpi-value" id="aging-kpi-old">0</div>
+              <div class="kpi-sub" data-i18n="aging_kpi_old_sub">รายการ</div>
+            </div>
+          </div>
+
+          <!-- Period Buckets -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="aging-buckets">
+            <!-- filled by JS -->
+          </div>
+
+          <!-- Table -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="aging_table_title">รายการสินค้าค้างสต็อก</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="aging-period-filter" onchange="renderAgingReport()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
+                  <option value="all" data-i18n="aging_all">ทั้งหมด</option>
+                  <option value="1-7" data-i18n="aging_p1">1–7 วัน</option>
+                  <option value="7-14" data-i18n="aging_p2">7–14 วัน</option>
+                  <option value="14-31" data-i18n="aging_p3">14–31 วัน</option>
+                  <option value="31+" data-i18n="aging_p4">31+ วัน</option>
+                </select>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <th style="text-align:left;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_name">การ์ด</th>
+                    <th style="text-align:left;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_brand">แบรนด์</th>
+                    <th style="text-align:center;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_stock">คงเหลือ</th>
+                    <th style="text-align:right;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_cost">ต้นทุน/ใบ</th>
+                    <th style="text-align:right;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_total_cost">มูลค่ารวม</th>
+                    <th style="text-align:center;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_received">วันที่รับเข้า</th>
+                    <th style="text-align:center;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_days">Aging (วัน)</th>
+                    <th style="text-align:center;padding:10px 12px;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;font-weight:600" data-i18n="aging_col_period">ช่วง</th>
+                  </tr>
+                </thead>
+                <tbody id="aging-table-body">
+                  <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);font-size:12px">กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end dtab-aging -->
 
       </div>
     </div>
@@ -1349,11 +1424,19 @@ select option{background:var(--bg3);}
           </div>
         </div>
 
-        <!-- Brand margin -->
-        <div class="panel" style="margin-top:16px">
-          <div class="panel-head"><span class="panel-title" data-i18n="rpt_brand_margin">Margin ตาม Brand</span></div>
-          <div id="rpt-brand-margin" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
-            <div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>
+        <!-- Top 10 Best Margin + Brand Margin side by side -->
+        <div class="chart-row">
+          <!-- Top 10 Best Margin -->
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title" data-i18n="rpt_top_margin">Top 10 Margin ดีสุด</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px" id="topMarginReport"></div>
+          </div>
+          <!-- Brand margin -->
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title" data-i18n="rpt_brand_margin">Margin ตาม Brand</span></div>
+            <div id="rpt-brand-margin" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+              <div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>
+            </div>
           </div>
         </div>
 
@@ -1471,8 +1554,8 @@ select option{background:var(--bg3);}
               <thead>
                 <tr>
                   <th data-i18n="pur_col_po">PO NO.</th><th data-i18n="pur_col_card">การ์ด</th><th data-i18n="pur_col_brand">แบรนด์</th><th data-i18n="pur_col_qty">จำนวน</th>
-                  <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th><th data-i18n="pur_col_price">ราคาขาย/ใบ</th>
-                  <th data-i18n="pur_col_margin">Margin</th><th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th>
+                  <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th>
+                  <th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th>
                 </tr>
               </thead>
               <tbody id="purchaseTable"></tbody>
@@ -1529,8 +1612,8 @@ select option{background:var(--bg3);}
                 <thead>
                   <tr>
                     <th data-i18n="pur_col_po">PO NO.</th><th data-i18n="th_card">การ์ด</th><th data-i18n="th_brand">แบรนด์</th><th data-i18n="th_qty">จำนวน</th>
-                    <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th><th data-i18n="pur_col_price">ราคาขาย/ใบ</th>
-                    <th data-i18n="pur_col_margin">Margin</th><th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th><th></th>
+                    <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th>
+                    <th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th><th></th>
                   </tr>
                 </thead>
                 <tbody id="purchaseTable2"></tbody>
@@ -3933,7 +4016,7 @@ const LANG = {
     po_ai_result:'AI อ่านข้อมูลให้แล้ว กรุณาตรวจสอบความถูกต้อง', pur_kpi_pending:'รอรับสินค้า', pur_kpi_received:'รับแล้วทั้งหมด', pur_kpi_value:'มูลค่ารอรับ',
     // Reports
     rpt_revenue:'รายได้รวม', rpt_cost:'ต้นทุนรวม', rpt_profit:'กำไรสุทธิ', rpt_orders:'ออเดอร์ทั้งหมด',
-    rpt_top_cards:'Top 10 การ์ดขายดี', rpt_channels:'ช่องทางขาย',
+    rpt_top_cards:'Top 10 การ์ดขายดี', rpt_top_margin:'Top 10 Margin ดีสุด', rpt_channels:'ช่องทางขาย',
     rpt_brand_margin:'Margin ตาม Brand', rpt_monthly:'สรุปรายเดือน',
     // Customers
     cust_list:'รายชื่อลูกค้า',
@@ -4021,7 +4104,17 @@ const LANG = {
     pf_qty_sub:'ใบในสต็อก', pf_avg_sub:'ต้นทุนเฉลี่ยต่อใบ',
     // Dashboard KPI subs (static)
     dash_stock_sub:'การ์ดทั้งหมดในสต็อก',
-    chart_monthly:'รายเดือน', chart_weekly:'รายสัปดาห์',
+    chart_monthly:'รายเดือน', chart_weekly:'รายสัปดาห์', chart_daily:'รายวัน',
+    dash_aging_tab:'📊 สินค้าไม่เคลื่อนไหว',
+    aging_kpi_total:'สินค้าค้างสต็อก', aging_kpi_items_sub:'รายการ',
+    aging_kpi_cost:'มูลค่าค้างสต็อก', aging_kpi_cost_sub:'ราคาทุนรวม',
+    aging_kpi_avg:'Aging เฉลี่ย', aging_kpi_avg_sub:'วัน',
+    aging_kpi_old:'ค้างนาน > 31 วัน', aging_kpi_old_sub:'รายการ',
+    aging_table_title:'รายการสินค้าค้างสต็อก',
+    aging_all:'ทั้งหมด', aging_p1:'1–7 วัน', aging_p2:'7–14 วัน', aging_p3:'14–31 วัน', aging_p4:'31+ วัน',
+    aging_col_name:'การ์ด', aging_col_brand:'แบรนด์', aging_col_stock:'คงเหลือ',
+    aging_col_cost:'ต้นทุน/ใบ', aging_col_total_cost:'มูลค่ารวม',
+    aging_col_received:'วันที่รับเข้า', aging_col_days:'Aging (วัน)', aging_col_period:'ช่วง',
     // Validation hints
     email_invalid:'รูปแบบ Email ไม่ถูกต้อง', email_disposable:'ไม่รองรับ Email ชั่วคราว', email_valid:'รูปแบบ Email ถูกต้อง ✓',
     pwd_short:'ต้องมีอย่างน้อย 8 ตัวอักษร', pwd_match:'รหัสผ่านตรงกัน ✓', pwd_no_match:'รหัสผ่านไม่ตรงกัน',
@@ -4121,7 +4214,7 @@ const LANG = {
     po_ai_result:'AI has read the card info, please verify',
     pur_btn_new:'+ New Purchase', pur_kpi_pending:'Pending', pur_kpi_received:'Received', pur_kpi_value:'Pending Value',
     rpt_revenue:'Total Revenue', rpt_cost:'Total Cost', rpt_profit:'Net Profit', rpt_orders:'Total Orders',
-    rpt_top_cards:'Top 10 Best Sellers', rpt_channels:'Sales Channels',
+    rpt_top_cards:'Top 10 Best Sellers', rpt_top_margin:'Top 10 Best Margin', rpt_channels:'Sales Channels',
     rpt_brand_margin:'Margin by Brand', rpt_monthly:'Monthly Summary',
     cust_list:'Customer List',
     cust_col_name:'Customer', cust_col_orders:'Orders', cust_col_total:'Total Spent',
@@ -4197,7 +4290,17 @@ const LANG = {
     pf_value_sub:'Total stock value', pf_pnl_sub_up:'📈 Unrealized gain', pf_pnl_sub_down:'📉 Unrealized loss',
     pf_qty_sub:'Cards in stock', pf_avg_sub:'Avg cost per card',
     dash_stock_sub:'All cards in stock',
-    chart_monthly:'Monthly', chart_weekly:'Weekly',
+    chart_monthly:'Monthly', chart_weekly:'Weekly', chart_daily:'Daily',
+    dash_aging_tab:'📊 Aging Report',
+    aging_kpi_total:'Items in Stock', aging_kpi_items_sub:'items',
+    aging_kpi_cost:'Stock Value', aging_kpi_cost_sub:'Total cost',
+    aging_kpi_avg:'Avg. Aging', aging_kpi_avg_sub:'days',
+    aging_kpi_old:'Aged > 31 days', aging_kpi_old_sub:'items',
+    aging_table_title:'Slow-Moving Inventory',
+    aging_all:'All', aging_p1:'1–7 days', aging_p2:'7–14 days', aging_p3:'14–31 days', aging_p4:'31+ days',
+    aging_col_name:'Card', aging_col_brand:'Brand', aging_col_stock:'Stock',
+    aging_col_cost:'Cost/unit', aging_col_total_cost:'Total value',
+    aging_col_received:'Received date', aging_col_days:'Aging (days)', aging_col_period:'Period',
     email_invalid:'Invalid email format', email_disposable:'Disposable email not allowed', email_valid:'Valid email ✓',
     pwd_short:'At least 8 characters required', pwd_match:'Passwords match ✓', pwd_no_match:'Passwords do not match',
     creating_account:'Creating account...', login_btn_loading:'Verifying...',
@@ -4333,6 +4436,12 @@ function applyLang() {
   if (logoutBtn) logoutBtn.textContent = L.logout
   const langLabel = document.getElementById('lang-label')
   if (langLabel) langLabel.textContent = L.language
+
+  // re-render aging tab ถ้ากำลังแสดงอยู่
+  const agingTab = document.getElementById('dtab-aging')
+  if (agingTab && agingTab.style.display !== 'none') {
+    try { renderAgingReport() } catch(e) {}
+  }
 }
 
 function toggleTheme() {
@@ -4515,7 +4624,7 @@ function renderCardsDisplay(data) {
         const label = t === 'auth' ? 'G Auth'
                     : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
                     :                ('G Gem'  + (grade ? ' '+grade : ''))
-        return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
@@ -4573,7 +4682,7 @@ function renderCardsEdit(data) {
         const label = t === 'auth' ? 'G Auth'
                     : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
                     :                ('G Gem'  + (grade ? ' '+grade : ''))
-        return `<div style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
       <!-- Brand + Rarity editable -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
@@ -5426,25 +5535,43 @@ function cancelOrder() {
 
   showConfirm('✕', 'ยกเลิก Order ' + o.id, o.customer + ' · ฿' + (o.total||0).toLocaleString() + ' · Stock การ์ดจะถูกคืนกลับ', '✕ ยืนยันยกเลิก').then(ok => {
     if (!ok) return
-    // คืน stock — ใช้ cardIdx ก่อน fallback name+brand
+    // คืน stock — ใช้ cardIdx ก่อน fallback name+brand+psaType+psaGrade
     if (o.orderItems) {
       o.orderItems.forEach(item => {
         let card = null
-        if (item.cardIdx >= 0 && cards[item.cardIdx]) {
+        // 1. ลอง cardIdx ก่อน
+        if (item.cardIdx >= 0 && cards[item.cardIdx] &&
+            cards[item.cardIdx].name === item.name &&
+            cards[item.cardIdx].brand === item.brand) {
           card = cards[item.cardIdx]
-        } else {
-          card = cards.find(cd => cd.name===item.name && cd.brand===item.brand)
+        }
+        // 2. fallback: match name + brand + psaType + psaGrade
+        if (!card) {
+          card = cards.find(cd =>
+            cd.name === item.name &&
+            cd.brand === item.brand &&
+            (cd.psaType || 'no') === (item.psaType || 'no') &&
+            String(cd.psaGrade || '') === String(item.psaGrade || '')
+          )
+        }
+        // 3. fallback กว้างขึ้น: name + brand เท่านั้น
+        if (!card) {
+          card = cards.find(cd => cd.name === item.name && cd.brand === item.brand)
         }
         if (card) {
-          card.stock = (card.stock||0) + item.qty
+          card.stock = (card.stock || 0) + (item.qty || 1)
         }
       })
     } else if (o.items) {
-      // fallback: order เก่าที่ไม่มี orderItems — หาจากชื่อใน items string
-      const names = o.items.split(',').map(s=>s.trim())
-      names.forEach(name => {
+      // order เก่าที่ไม่มี orderItems — parse qty จาก items string ถ้าทำได้
+      const parts = o.items.split(',').map(s => s.trim()).filter(Boolean)
+      parts.forEach(part => {
+        // รูปแบบ "ชื่อการ์ด ×N" หรือแค่ "ชื่อการ์ด"
+        const qtyMatch = part.match(/[×x](\d+)$/)
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1
+        const name = part.replace(/\s*[×x]\d+$/, '').trim()
         const card = cards.find(cd => cd.name === name)
-        if (card) card.stock = (card.stock||0) + 1
+        if (card) card.stock = (card.stock || 0) + qty
       })
     }
     o.status = 'cancel'
@@ -6242,6 +6369,7 @@ function renderReports() {
 
   // Top cards
   renderTopCards()
+  renderTopMargin()
 }
 
 function renderTopCards(){
@@ -6278,6 +6406,65 @@ function renderTopCards(){
         <div style="width:${Math.round(c.rev/mx*100)}%;height:100%;background:${bc[c.brand]||bc.default};border-radius:2px"></div>
       </div>
     </div>`).join('')
+}
+
+function renderTopMargin() {
+  const el = document.getElementById('topMarginReport')
+  if (!el) return
+
+  // คำนวณ margin ต่อการ์ด จาก orders
+  const cardMap = {}
+  orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled').forEach(o => {
+    if (!o.orderItems) return
+    o.orderItems.forEach(it => {
+      const key = it.name + '|' + it.brand
+      if (!cardMap[key]) cardMap[key] = { name: it.name, brand: it.brand, rev: 0, cost: 0, qty: 0 }
+      cardMap[key].rev  += (it.price || 0) * it.qty
+      cardMap[key].qty  += it.qty
+      const card = cards.find(cd => cd.name === it.name && cd.brand === it.brand)
+      cardMap[key].cost += (card?.cost || 0) * it.qty
+    })
+  })
+
+  // เรียงตามกำไรสุทธิ (฿) มากสุด
+  const marginList = Object.values(cardMap)
+    .map(c => ({
+      ...c,
+      profit: c.rev - c.cost,
+      margin: c.cost > 0 ? Math.round(((c.rev - c.cost) / c.cost) * 100) : 0
+    }))
+    .filter(c => c.profit > 0)
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 10)
+
+  if (marginList.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:12px;padding:24px">' + t('chart_no_data') + '</div>'
+    return
+  }
+
+  const bc = { Pokemon: 'var(--yellow)', ['Yu-Gi-Oh']: 'var(--blue)', MTG: 'var(--pink)', ['One Piece']: 'var(--orange)', 'default': 'var(--accent)' }
+  const maxProfit = Math.max(...marginList.map(c => c.profit), 1)
+
+  el.innerHTML = marginList.map((c, i) => {
+    const mColor = c.margin > 50 ? 'var(--green)' : c.margin > 20 ? 'var(--yellow)' : c.margin >= 0 ? 'var(--orange)' : 'var(--red)'
+    const barW   = Math.max(2, Math.round((c.profit / maxProfit) * 100))
+    const barColor = bc[c.brand] || bc.default
+    return `<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
+        <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;overflow:hidden">
+          <span style="font-family:var(--mono);color:var(--text3);font-size:10px;flex-shrink:0">${String(i + 1).padStart(2, '0')}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:8px">
+          <span style="color:${mColor};font-family:var(--mono);font-weight:700">${c.margin > 0 ? '+' : ''}${c.margin}%</span>
+          <span style="color:var(--green);font-family:var(--mono);font-size:11px">฿${c.profit.toLocaleString()}</span>
+        </span>
+      </div>
+      <div style="height:4px;background:var(--border2);border-radius:2px">
+        <div style="width:${barW}%;height:100%;background:${barColor};border-radius:2px;opacity:0.85"></div>
+      </div>
+    </div>`
+  }).join('')
 }
 
 // ── Purchase ──────────────────────────────────────────────────────────────────
@@ -6401,8 +6588,6 @@ function renderPurchase(data){
       <td style="font-family:var(--mono);text-align:center">${p.qty}</td>
       <td style="font-family:var(--mono);color:var(--text2)">฿${p.cost.toLocaleString()}</td>
       <td style="font-family:var(--mono);color:var(--red);font-weight:700">฿${total.toLocaleString()}</td>
-      <td style="font-family:var(--mono);color:var(--yellow)">฿${p.sell.toLocaleString()}</td>
-      <td style="font-family:var(--mono);color:${mColor};font-weight:700">${margin>0?"+":""}${margin}%</td>
       <td>${statusHtml(p.status)}</td>
       <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${fmtD(p.date)}</td>
     </tr>`
@@ -6410,9 +6595,6 @@ function renderPurchase(data){
 
   const rows2 = list.map(p => {
     const total  = p.cost * p.qty
-    const profit = p.sell - p.cost
-    const margin = p.cost > 0 ? Math.round((profit/p.cost)*100) : 0
-    const mColor = margin > 20 ? 'var(--green)' : margin >= 0 ? 'var(--yellow)' : 'var(--red)'
     const thumb  = p.photos && p.photos.length
       ? `<img src="${p.photos[0]}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid var(--border2);vertical-align:middle;margin-right:6px">`
       : `<span style="display:inline-block;width:32px;height:32px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);vertical-align:middle;margin-right:6px;text-align:center;line-height:32px;font-size:14px">🃏</span>`
@@ -6423,8 +6605,6 @@ function renderPurchase(data){
       <td style="font-family:var(--mono);text-align:center">${p.qty}</td>
       <td style="font-family:var(--mono);color:var(--text2)">฿${p.cost.toLocaleString()}</td>
       <td style="font-family:var(--mono);color:var(--red);font-weight:700">฿${total.toLocaleString()}</td>
-      <td style="font-family:var(--mono);color:var(--yellow)">฿${p.sell.toLocaleString()}</td>
-      <td style="font-family:var(--mono);color:${mColor};font-weight:700">${margin>0?"+":""}${margin}%</td>
       <td>${statusHtml(p.status)}</td>
       <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${fmtD(p.date)}</td>
       <td>
@@ -6647,10 +6827,18 @@ function cancelPO(idx) {
   if (p.status === 'cancelled') {
     showToast('⚠️ PO นี้ถูกยกเลิกไปแล้ว', 'var(--orange)'); return
   }
-  // ตรวจว่าขายไปแล้วหรือยัง
+
+  // helper: เช็คว่าเป็นการ์ดเดียวกัน (name + brand + psaType + psaGrade)
+  const isSameCard = (it, po) =>
+    it.name === po.name &&
+    it.brand === po.brand &&
+    (it.psaType || 'no') === (po.psaType || 'no') &&
+    String(it.psaGrade || '') === String(po.psaGrade || '')
+
+  // ตรวจว่าขายไปแล้วหรือยัง — match ครบทุก field
   const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
   const isSoldAlready = activeOrders.some(o =>
-    o.orderItems && o.orderItems.some(it => it.name === p.name && it.brand === p.brand)
+    o.orderItems && o.orderItems.some(it => isSameCard(it, p))
   )
   if (isSoldAlready) {
     showToast('⚠️ การ์ดนี้ถูกขายไปแล้ว — กรุณายกเลิกออเดอร์ก่อน', 'var(--orange)')
@@ -6658,11 +6846,6 @@ function cancelPO(idx) {
   }
 
   const wasReceived = p.status === 'received'
-  const msg = wasReceived
-    ? `ยืนยันการยกเลิกซื้อ: ${p.name} (${p.po})?
-
-เนื่องจากรับสินค้าแล้ว ระบบจะหัก Stock ${p.qty} ใบออกด้วย`
-    : `ยืนยันการยกเลิกซื้อ: ${p.name} (${p.po})?`
   showConfirm(
     wasReceived ? '⚠️' : '🗑',
     'ยกเลิกซื้อ ' + p.po,
@@ -6674,13 +6857,19 @@ function cancelPO(idx) {
     if (!ok) return
     p.status = 'cancelled'
     if (wasReceived) {
-      // ลบการ์ดออกจาก cards array เลย
-      const cardIdx = cards.findIndex(cd => cd.name === p.name && cd.brand === p.brand)
+      // match ด้วย name + brand + psaType + psaGrade
+      const cardIdx = cards.findIndex(cd =>
+        cd.name === p.name &&
+        cd.brand === p.brand &&
+        (cd.psaType || 'no') === (p.psaType || 'no') &&
+        String(cd.psaGrade || '') === String(p.psaGrade || '')
+      )
       if (cardIdx !== -1) {
         const card = cards[cardIdx]
-        card.stock = card.stock - p.qty
+        // หักได้สูงสุดแค่ stock ปัจจุบัน ป้องกัน stock ติดลบ
+        const deduct = Math.min(p.qty, card.stock || 0)
+        card.stock = (card.stock || 0) - deduct
         if (card.stock <= 0) {
-          // stock หมด → ลบการ์ดออก
           cards.splice(cardIdx, 1)
           showToast('🗑 ยกเลิกซื้อ ' + p.po + ' และลบการ์ดออกจากสต็อกแล้ว', 'var(--orange)')
         } else {
@@ -6760,6 +6949,51 @@ function renderSalesChart() {
       active: m === String(now.getMonth()+1).padStart(2,'0') && selYear === now.getFullYear()
     })), totalEl, countEl)
 
+  } else if (mode === 'day') {
+    // day mode — แสดง month filter เพื่อเลือกเดือน
+    const months = [...new Set(validOrders.map(o => {
+      const p = parseDate(o.date); return p ? String(p.m).padStart(2,'0') : null
+    }).filter(Boolean))].sort((a,b)=>parseInt(a)-parseInt(b))
+
+    if (monthFilt) {
+      monthFilt.style.display = 'block'
+      const prev = monthFilt.value
+      monthFilt.innerHTML = months.map(m =>
+        `<option value="${m}">${MONTH_TH_SHORT[parseInt(m)]||m}</option>`
+      ).join('')
+      if (months.includes(prev)) monthFilt.value = prev
+      else if (months.length) monthFilt.value = months[months.length-1]
+    }
+
+    const selMonth = monthFilt?.value || String(new Date().getMonth()+1).padStart(2,'0')
+    const mo = parseInt(selMonth)
+    const daysInMonth = new Date(selYear, mo, 0).getDate()
+    const byDay = {}
+    for (let d = 1; d <= daysInMonth; d++) byDay[d] = { total: 0, count: 0 }
+
+    validOrders.filter(o => {
+      const p = parseDate(o.date); return p && p.m === mo
+    }).forEach(o => {
+      const p = parseDate(o.date)
+      if (byDay[p.d] !== undefined) {
+        byDay[p.d].total += o.total || 0
+        byDay[p.d].count++
+      }
+    })
+
+    const today = new Date()
+    const todayD = today.getDate(), todayM = today.getMonth()+1, todayY = today.getFullYear()
+
+    renderBars(barsEl, emptyEl, Array.from({length: daysInMonth}, (_,i) => {
+      const d = i + 1
+      return {
+        label: String(d),
+        value: byDay[d].total,
+        count: byDay[d].count,
+        active: d === todayD && mo === todayM && selYear === todayY
+      }
+    }), totalEl, countEl)
+
   } else {
     // week mode — populate month dropdown
     const months = [...new Set(validOrders.map(o => {
@@ -6835,7 +7069,130 @@ function switchDashTab(tab, el) {
   if (el) el.classList.add('active')
   document.getElementById('dtab-overview').style.display  = tab==='overview'  ? 'block' : 'none'
   document.getElementById('dtab-portfolio').style.display = tab==='portfolio' ? 'block' : 'none'
+  document.getElementById('dtab-aging').style.display     = tab==='aging'     ? 'block' : 'none'
   if (tab==='portfolio') renderPortfolio()
+  if (tab==='aging') renderAgingReport()
+}
+
+function renderAgingReport() {
+  const periodFilter = document.getElementById('aging-period-filter')?.value || 'all'
+  const now = Date.now()
+  const MS_DAY = 86400000
+
+  // i18n period labels
+  const pLabels = {
+    '1-7':   t('aging_p1') || '1–7 วัน',
+    '7-14':  t('aging_p2') || '7–14 วัน',
+    '14-31': t('aging_p3') || '14–31 วัน',
+    '31+':   t('aging_p4') || '31+ วัน',
+    'unknown': '-'
+  }
+
+  // ── หา purchase วันที่รับเข้า (received) ต่อ card ──────────────────────
+  const receivedMap = {}
+  purchases.filter(p => p.status === 'received').forEach(p => {
+    const key = (p.name||'') + '|' + (p.brand||'')
+    let ts = null
+    if (p.receivedAt) {
+      ts = new Date(p.receivedAt).getTime()
+    } else if (p.date) {
+      const parts = p.date.split('/')
+      if (parts.length === 3) {
+        let y = parseInt(parts[2])
+        if (y < 100) y += 2000
+        ts = new Date(y, parseInt(parts[1])-1, parseInt(parts[0])).getTime()
+      } else {
+        ts = new Date(p.date).getTime()
+      }
+    }
+    if (ts && !isNaN(ts)) {
+      if (!receivedMap[key] || ts < receivedMap[key]) receivedMap[key] = ts
+    }
+  })
+
+  // ── build aging list ──────────────────────────────────────────────────
+  const agingList = cards
+    .filter(c => (c.stock||0) > 0)
+    .map(c => {
+      const key = (c.name||'') + '|' + (c.brand||'')
+      const receivedTs = receivedMap[key]
+      const days = receivedTs ? Math.floor((now - receivedTs) / MS_DAY) : null
+      let period = 'unknown'
+      if (days !== null) {
+        if (days <= 7)       period = '1-7'
+        else if (days <= 14) period = '7-14'
+        else if (days <= 31) period = '14-31'
+        else                  period = '31+'
+      }
+      return { ...c, days, period, receivedTs, totalCost: (c.cost||0) * (c.stock||0) }
+    })
+    .sort((a,b) => (b.days||0) - (a.days||0))
+
+  // ── KPI ─────────────────────────────────────────────────────────────────
+  const totalItems = agingList.length
+  const totalCost  = agingList.reduce((s,c) => s+c.totalCost, 0)
+  const withDays   = agingList.filter(c => c.days !== null)
+  const avgDays    = withDays.length ? Math.round(withDays.reduce((s,c)=>s+c.days,0)/withDays.length) : 0
+  const oldItems   = agingList.filter(c => c.period === '31+').length
+
+  const el = id => document.getElementById(id)
+  if(el('aging-kpi-items')) el('aging-kpi-items').textContent = totalItems
+  if(el('aging-kpi-cost'))  el('aging-kpi-cost').textContent  = '฿'+totalCost.toLocaleString()
+  if(el('aging-kpi-avg'))   el('aging-kpi-avg').textContent   = avgDays
+  if(el('aging-kpi-old'))   el('aging-kpi-old').textContent   = oldItems
+
+  // ── Period Buckets (ใช้ i18n label) ──────────────────────────────────
+  const buckets = [
+    { key:'1-7',   color:'#22c55e', bg:'rgba(34,197,94,0.08)',  border:'rgba(34,197,94,0.25)' },
+    { key:'7-14',  color:'#f59e0b', bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.25)' },
+    { key:'14-31', color:'#f97316', bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.25)' },
+    { key:'31+',   color:'#ef4444', bg:'rgba(239,68,68,0.08)',  border:'rgba(239,68,68,0.25)' },
+  ]
+  const bucketsEl = document.getElementById('aging-buckets')
+  if (bucketsEl) {
+    bucketsEl.innerHTML = buckets.map(b => {
+      const items = agingList.filter(c => c.period === b.key)
+      const cost  = items.reduce((s,c)=>s+c.totalCost,0)
+      return `<div style="background:${b.bg};border:1px solid ${b.border};border-radius:14px;padding:16px 18px;cursor:pointer;transition:all 0.2s"
+        onclick="document.getElementById('aging-period-filter').value='${b.key}';renderAgingReport()">
+        <div style="font-size:12px;font-weight:700;color:${b.color};letter-spacing:1px;margin-bottom:8px">${pLabels[b.key]}</div>
+        <div style="font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px">${items.length}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">฿${cost.toLocaleString()}</div>
+      </div>`
+    }).join('')
+  }
+
+  // ── Table ─────────────────────────────────────────────────────────────
+  const filtered = periodFilter === 'all' ? agingList : agingList.filter(c => c.period === periodFilter)
+  const periodColor = { '1-7':'#22c55e','7-14':'#f59e0b','14-31':'#f97316','31+':'#ef4444','unknown':'var(--text3)' }
+
+  const tbody = document.getElementById('aging-table-body')
+  if (!tbody) return
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);font-size:12px;font-family:var(--mono)">${t('no_data')||'ไม่มีข้อมูล'}</td></tr>`
+    return
+  }
+
+  tbody.innerHTML = filtered.map(c => {
+    const dateStr = c.receivedTs ? new Date(c.receivedTs).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-'
+    const daysStr = c.days !== null ? c.days : '-'
+    const pColor  = periodColor[c.period] || 'var(--text3)'
+    const pLabel  = pLabels[c.period] || '-'
+    const daysColor = c.period==='31+' ? '#ef4444' : c.period==='14-31' ? '#f97316' : c.period==='7-14' ? '#f59e0b' : '#22c55e'
+    return `<tr style="border-bottom:0.5px solid var(--border2);transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <td style="padding:11px 12px;font-weight:600;color:var(--text)">${c.name||'-'}</td>
+      <td style="padding:11px 12px;color:var(--text2)">${c.brand||'-'}</td>
+      <td style="padding:11px 12px;text-align:center;font-family:var(--mono)">${c.stock}</td>
+      <td style="padding:11px 12px;text-align:right;font-family:var(--mono);color:var(--red)">฿${(c.cost||0).toLocaleString()}</td>
+      <td style="padding:11px 12px;text-align:right;font-family:var(--mono);font-weight:700;color:var(--red)">฿${c.totalCost.toLocaleString()}</td>
+      <td style="padding:11px 12px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text2)">${dateStr}</td>
+      <td style="padding:11px 12px;text-align:center;font-family:var(--mono);font-weight:800;font-size:15px;color:${daysColor}">${daysStr}</td>
+      <td style="padding:11px 12px;text-align:center">
+        <span style="background:${pColor}22;color:${pColor};border:1px solid ${pColor}55;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;font-family:var(--mono);white-space:nowrap">${pLabel}</span>
+      </td>
+    </tr>`
+  }).join('')
 }
 
 function renderPortfolio() {
