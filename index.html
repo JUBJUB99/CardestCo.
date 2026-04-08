@@ -895,7 +895,7 @@ select option{background:var(--bg3);}
       </div>
       <div class="nav-section" data-i18n="nav_section_sales">TRADING</div>
       <div class="nav-item" id="nav-orders" onclick="showPageMobile('orders',null,t('title_orders'));closeSidebar()">
-        <span class="nav-icon">◈</span><span data-i18n="nav_orders">ออเดอร์</span>
+        <span class="nav-icon">◈</span><span data-i18n="nav_orders">ขายการ์ด</span>
         <span class="notif"></span>
       </div>
       <div class="nav-item" id="nav-purchase" onclick="showPageMobile('purchase',null,t('title_purchase'));closeSidebar()">
@@ -991,6 +991,11 @@ select option{background:var(--bg3);}
             <div class="kpi-label" id="kpi-label-margin" data-i18n="kpi_margin">GROSS MARGIN</div>
             <div class="kpi-val" id="dash-margin">0%</div>
             <div class="kpi-sub" id="kpi-sub-margin">ราคาขาย - ต้นทุน</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--accent2)">
+            <div class="kpi-label" data-i18n="kpi_net_profit">NET PROFIT</div>
+            <div class="kpi-val" id="dash-net-profit">฿0</div>
+            <div class="kpi-sub" id="kpi-sub-net-profit" data-i18n="kpi_net_profit_sub">หลังหักค่าใช้จ่ายแฝง</div>
           </div>
         </div>
         <!-- Sales Chart -->
@@ -1218,7 +1223,7 @@ select option{background:var(--bg3);}
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-orders">ออเดอร์</span></div>
         <div class="topbar-right" style="gap:8px;display:flex">
           <button class="btn btn-sm" onclick="exportExcel('orders')" id="btn-export-orders" title="Export to Excel (Basic only)" style="font-size:11px;padding:4px 10px">↓ Excel</button>
-          <button class="btn btn-primary btn-sm" onclick="openNewSaleModal()" id="btn-new-order" data-i18n="ord_btn_new">+ สร้างออเดอร์</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewSaleModal()" id="btn-new-order" data-i18n="ord_btn_new">+ ขายการ์ด</button>
         </div>
       </div>
       <div class="content">
@@ -1234,17 +1239,14 @@ select option{background:var(--bg3);}
             <input class="search-input" id="search-orders" placeholder="ค้นหาออเดอร์หรือลูกค้า...">
             <select class="select-sm" id="order-status-filter" onchange="renderOrders()">
               <option value="" data-i18n="all_status">ทุกสถานะ</option>
-              <option value="pending" data-i18n="status_pending_pay">รอชำระ</option>
-              <option value="paid" data-i18n="status_paid_done">ชำระแล้ว</option>
-              <option value="shipped" data-i18n="status_shipped_done">จัดส่งแล้ว</option>
-              <option value="cancel" data-i18n="status_cancelled">ยกเลิก</option>
               <option value="completed" data-i18n="status_completed">Completed</option>
+              <option value="cancel" data-i18n="status_cancelled">ยกเลิก</option>
             </select>
           </div>
           <div class="panel">
             <div class="table-wrap">
               <table>
-                <thead><tr><th data-i18n="ord_col_id">ORDER ID</th><th data-i18n="ord_col_customer">ลูกค้า</th><th data-i18n="ord_col_items">รายการ</th><th data-i18n="ord_col_total">ยอดรวม</th><th data-i18n="ord_col_channel">ช่องทาง</th><th data-i18n="ord_col_status">สถานะ</th><th data-i18n="ord_col_date">วันที่</th></tr></thead>
+                <thead><tr><th data-i18n="ord_col_id">ORDER ID</th><th data-i18n="ord_col_customer">ลูกค้า</th><th data-i18n="ord_col_items">รายการ</th><th data-i18n="ord_col_total">ยอดรวม</th><th data-i18n="ord_col_hidden_cost">ค่าใช้จ่ายแฝง</th><th data-i18n="ord_col_channel">ช่องทาง</th><th data-i18n="ord_col_status">สถานะ</th><th data-i18n="ord_col_date">วันที่</th></tr></thead>
                 <tbody id="ordersTable"></tbody>
               </table>
             </div>
@@ -1385,7 +1387,7 @@ select option{background:var(--bg3);}
             style="flex:1;padding:6px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--mono)">
           </select>
         </div>
-        <!-- KPI row — 2x2 grid สำหรับมือถือ -->
+        <!-- KPI row — 2x3 grid -->
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px">
           <div class="kpi-card" style="--kpi-color:var(--yellow);padding:14px 12px">
             <div class="kpi-label" data-i18n="rpt_revenue" style="font-size:10px;margin-bottom:6px">รายได้รวม</div>
@@ -1398,9 +1400,19 @@ select option{background:var(--bg3);}
             <div class="kpi-sub" data-i18n="pur_kpi_cost_sub" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">จาก PO ที่รับแล้ว</div>
           </div>
           <div class="kpi-card" style="--kpi-color:var(--green);padding:14px 12px">
-            <div class="kpi-label" data-i18n="rpt_profit" style="font-size:10px;margin-bottom:6px">กำไรสุทธิ</div>
+            <div class="kpi-label" data-i18n="rpt_profit" style="font-size:10px;margin-bottom:6px">Gross Profit</div>
             <div class="kpi-val" id="rpt-profit" style="font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">฿0</div>
             <div class="kpi-sub" id="rpt-margin-sub" style="font-size:10px">Margin 0%</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--orange);padding:14px 12px">
+            <div class="kpi-label" data-i18n="rpt_hidden_cost" style="font-size:10px;margin-bottom:6px">ค่าใช้จ่ายแฝง</div>
+            <div class="kpi-val" id="rpt-hidden-cost" style="font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">฿0</div>
+            <div class="kpi-sub" id="rpt-hidden-cost-sub" style="font-size:10px">0 orders</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--accent2);padding:14px 12px">
+            <div class="kpi-label" data-i18n="kpi_net_profit" style="font-size:10px;margin-bottom:6px">NET PROFIT</div>
+            <div class="kpi-val" id="rpt-net-profit" style="font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">฿0</div>
+            <div class="kpi-sub" id="rpt-net-profit-sub" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Gross − Hidden Cost</div>
           </div>
           <div class="kpi-card" style="--kpi-color:var(--accent2);padding:14px 12px">
             <div class="kpi-label" data-i18n="rpt_orders" style="font-size:10px;margin-bottom:6px">ออเดอร์ทั้งหมด</div>
@@ -1461,7 +1473,7 @@ select option{background:var(--bg3);}
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-purchase">สั่งซื้อการ์ด</span></div>
         <div class="topbar-right" style="gap:8px;display:flex">
           <button class="btn btn-sm" onclick="exportExcel('purchases')" id="btn-export-purchases" title="Export to Excel (Basic only)" style="font-size:11px;padding:4px 10px">↓ Excel</button>
-          <button class="btn btn-primary btn-sm" id="btnNewPO" style="display:none" onclick="openModal('newPurchase')" data-i18n="pur_btn_new">+ สร้างใบสั่งซื้อ</button>
+          <button class="btn btn-primary btn-sm" id="btnNewPO" style="display:none" onclick="openModal('newPurchase')" data-i18n="pur_btn_new">+ สั่งซื้อการ์ด</button>
         </div>
       </div>
       <div class="content">
@@ -1555,6 +1567,7 @@ select option{background:var(--bg3);}
                 <tr>
                   <th data-i18n="pur_col_po">PO NO.</th><th data-i18n="pur_col_card">การ์ด</th><th data-i18n="pur_col_brand">แบรนด์</th><th data-i18n="pur_col_qty">จำนวน</th>
                   <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th>
+                  <th data-i18n="pur_col_condition">Condition</th><th data-i18n="pur_col_seller">ผู้ขาย</th>
                   <th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th>
                 </tr>
               </thead>
@@ -1571,7 +1584,7 @@ select option{background:var(--bg3);}
               <div style="font-size:15px;font-weight:700" data-i18n="pur_section_title">สั่งซื้อการ์ด</div>
               <div style="font-size:12px;color:var(--text2);margin-top:2px" data-i18n="pur_section_desc">สร้างและติดตามใบสั่งซื้อการ์ดเข้าสต็อก</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="checkLimitThenOpenPO()" data-i18n="pur_btn_new">+ สร้างใบสั่งซื้อ</button>
+            <button class="btn btn-primary btn-sm" onclick="checkLimitThenOpenPO()" data-i18n="pur_btn_new">+ สั่งซื้อการ์ด</button>
           </div>
 
           <!-- Quick stats row -->
@@ -1613,6 +1626,7 @@ select option{background:var(--bg3);}
                   <tr>
                     <th data-i18n="pur_col_po">PO NO.</th><th data-i18n="th_card">การ์ด</th><th data-i18n="th_brand">แบรนด์</th><th data-i18n="th_qty">จำนวน</th>
                     <th data-i18n="pur_col_cost">ต้นทุน/ใบ</th><th data-i18n="pur_col_total_cost">รวมต้นทุน</th>
+                    <th data-i18n="pur_col_condition">Condition</th><th data-i18n="pur_col_seller">ผู้ขาย</th>
                     <th data-i18n="pur_col_status">สถานะ</th><th data-i18n="pur_col_date">วันที่</th><th></th>
                   </tr>
                 </thead>
@@ -1981,6 +1995,27 @@ select option{background:var(--bg3);}
       </div>
     </div>
 
+    <!-- ค่าใช้จ่ายแฝง (Header level — กรอกครั้งเดียวสำหรับทั้งออเดอร์) -->
+    <div class="form-group">
+      <label data-i18n="sale_hidden_cost_label">ค่าใช้จ่ายแฝง</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-no">
+          <input type="radio" name="sale-hc" value="no" id="sale-hc-no" onchange="toggleHiddenCost()" checked style="width:15px;height:15px;flex-shrink:0">
+          <span data-i18n="sale_hc_none">ไม่มี</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-yes">
+          <input type="radio" name="sale-hc" value="yes" id="sale-hc-yes" onchange="toggleHiddenCost()" style="width:15px;height:15px;flex-shrink:0">
+          <span data-i18n="sale_hc_has">มี</span>
+        </label>
+      </div>
+      <div id="sale-hc-wrap" style="display:none">
+        <input type="number" id="sale-hc-amount" placeholder="0" min="0"
+          style="width:100%;border-color:var(--accent)"
+          oninput="updateSaleTotal()">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px" data-i18n="sale_hc_hint">เช่น ค่าซอง, ค่ากล่อง, ค่าส่ง (฿)</div>
+      </div>
+    </div>
+
     <!-- หมายเหตุ -->
     <div class="form-group">
       <label data-i18n="sale_note_label">หมายเหตุ</label>
@@ -2128,7 +2163,7 @@ select option{background:var(--bg3);}
           </div>
           <div class="form-row" style="margin-bottom:0">
             <div class="form-group" style="margin-bottom:0">
-              <label>แบรนด์</label>
+              <label data-i18n="po_lbl_brand">Brand</label>
               <select id="po-brand" onchange="updatePoMargin()">
               </select>
             </div>
@@ -2139,11 +2174,6 @@ select option{background:var(--bg3);}
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="po_lbl_set">Set / ชุด</label>
-        <input type="text" id="po-set" placeholder="เช่น Stellar Crown">
       </div>
 
       <!-- Graded -->
@@ -2195,6 +2225,51 @@ select option{background:var(--bg3);}
         </div>
         <!-- hidden sell field for compat -->
         <input type="hidden" id="po-sell" value="0">
+      </div>
+
+      <!-- Defect -->
+      <div class="form-group">
+        <label data-i18n="po_lbl_defect">สภาพการ์ด (Condition)</label>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-no">
+            <input type="radio" name="po-defect" value="no" id="po-defect-no" onchange="toggleDefect()" checked style="width:15px;height:15px;flex-shrink:0">
+            <span data-i18n="po_no_defect">✅ No Defect</span>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-yes">
+            <input type="radio" name="po-defect" value="yes" id="po-defect-yes" onchange="toggleDefect()" style="width:15px;height:15px;flex-shrink:0">
+            <span data-i18n="po_has_defect">⚠️ Defect</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Seller Type -->
+      <div class="form-group">
+        <label data-i18n="po_lbl_seller_type">ประเภทผู้ขาย</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-anon">
+            <input type="radio" name="po-seller-type" value="anonymous" id="po-seller-anon" onchange="toggleSellerType()" checked style="width:15px;height:15px;flex-shrink:0">
+            <span>👤 <span data-i18n="po_seller_anon">ผู้ขายไม่ระบุตัวตน</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-existing">
+            <input type="radio" name="po-seller-type" value="existing" id="po-seller-existing" onchange="toggleSellerType()" style="width:15px;height:15px;flex-shrink:0">
+            <span>🔄 <span data-i18n="po_seller_existing">ผู้ขายเดิม</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-new">
+            <input type="radio" name="po-seller-type" value="new" id="po-seller-new" onchange="toggleSellerType()" style="width:15px;height:15px;flex-shrink:0">
+            <span>🆕 <span data-i18n="po_seller_new">ผู้ขายใหม่</span></span>
+          </label>
+        </div>
+        <!-- ชื่อผู้ขาย — แสดงเฉพาะ existing / new -->
+        <!-- ชื่อผู้ขายเดิม — dropdown ดึงจาก purchases ที่ผ่านมา -->
+        <div id="po-seller-existing-wrap" style="display:none;margin-top:8px">
+          <select id="po-seller-existing-select" style="width:100%" onchange="document.getElementById('po-seller-name').value=this.value">
+            <option value="">— เลือกผู้ขาย —</option>
+          </select>
+        </div>
+        <!-- ชื่อผู้ขายใหม่ — text input -->
+        <div id="po-seller-new-wrap" style="display:none;margin-top:8px">
+          <input type="text" id="po-seller-name" placeholder="ชื่อผู้ขายใหม่..." style="width:100%">
+        </div>
       </div>
 
       <!-- ต้นทุนรวม preview -->
@@ -3984,13 +4059,13 @@ let currentLang = (() => { try { return localStorage.getItem('cv_lang') || 'th' 
 const LANG = {
   th: {
     // Nav
-    nav_dashboard:'Dashboard', nav_inventory:'สต็อกการ์ด', nav_orders:'ออเดอร์',
+    nav_dashboard:'Dashboard', nav_inventory:'สต็อกการ์ด', nav_orders:'ขายการ์ด',
     nav_purchase:'สั่งซื้อการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
     // Bottom nav
-    bnav_home:'หน้าหลัก', bnav_stock:'สต็อก', bnav_orders:'ออเดอร์',
+    bnav_home:'หน้าหลัก', bnav_stock:'สต็อก', bnav_orders:'ขายการ์ด',
     bnav_buy:'ซื้อ', bnav_reports:'รายงาน', bnav_settings:'ตั้งค่า', bnav_back:'สลับ',
     // Page titles
-    title_dashboard:'Dashboard', title_inventory:'สต็อกการ์ด', title_orders:'ออเดอร์',
+    title_dashboard:'Dashboard', title_inventory:'สต็อกการ์ด', title_orders:'ขายการ์ด',
     title_purchase:'สั่งซื้อการ์ด', title_customers:'ลูกค้า',
     title_reports:'รายงาน & Analytics', title_setup:'ตั้งค่า / Setup',
     // Dashboard KPI
@@ -4007,13 +4082,15 @@ const LANG = {
     inv_tab_display:'สต็อก', inv_tab_edit:'✏️ แก้ไข', inv_btn_add:'+ เพิ่มการ์ด', inv_btn_share:'📤 แชร์',
     inv_search:'ค้นหาการ์ด...',
     // Orders
-    ord_btn_new:'+ สร้างออเดอร์', ord_tab_list:'รายการออเดอร์', ord_tab_cancel:'🗑 ยกเลิก / ลบ',
+    ord_btn_new:'+ ขายการ์ด', ord_tab_list:'รายการออเดอร์', ord_tab_cancel:'🗑 ยกเลิก / ลบ',
     ord_search:'ค้นหาออเดอร์หรือลูกค้า...',
     ord_col_id:'ORDER ID', ord_col_customer:'ลูกค้า', ord_col_items:'รายการ',
-    ord_col_total:'ยอดรวม', ord_col_channel:'ช่องทาง', ord_col_status:'สถานะ', ord_col_date:'วันที่',
+    ord_col_total:'ยอดรวม', ord_col_hidden_cost:'ค่าใช้จ่ายแฝง', ord_col_channel:'ช่องทาง', ord_col_status:'สถานะ', ord_col_date:'วันที่',
+    kpi_net_profit:'NET PROFIT', kpi_net_profit_sub:'หลังหักค่าใช้จ่ายแฝง',
+    sale_hidden_cost_label:'ค่าใช้จ่ายแฝง', sale_hc_none:'ไม่มี', sale_hc_has:'มี', sale_hc_hint:'เช่น ค่าซอง, ค่ากล่อง, ค่าส่ง (฿)',
     // Purchase
     pur_tab_overview:'Overview', pur_tab_orders:'สั่งซื้อการ์ด', pur_tab_cancel:'🗑 ยกเลิกซื้อ',
-    pur_btn_new:'+ สร้างใบสั่งซื้อ', pur_section_title:'สั่งซื้อการ์ด', pur_section_desc:'สร้างและติดตามใบสั่งซื้อการ์ดเข้าสต็อก', pur_search_po:'ค้นหา PO...',
+    pur_btn_new:'+ สั่งซื้อการ์ด', pur_section_title:'สั่งซื้อการ์ด', pur_section_desc:'สร้างและติดตามใบสั่งซื้อการ์ดเข้าสต็อก', pur_search_po:'ค้นหา PO...',
     po_step1_title:'ถ่ายรูปการ์ด', po_step1_sub:'AI จะอ่านข้อมูลให้อัตโนมัติ',
     po_dropzone_title:'คลิกหรือลากรูปการ์ดมาวาง', po_dropzone_sub:'รองรับ JPG, PNG · AI จะอ่านชื่อการ์ด, แบรนด์, Rarity ให้',
     po_btn_camera:'ถ่ายรูป', po_btn_album:'เลือกจากอัลบั้ม',
@@ -4030,7 +4107,7 @@ const LANG = {
     po_btn_add_more:'+ เพิ่มการ์ดอีก', po_btn_save_all:'บันทึกทั้งหมด',
     po_ai_result:'AI อ่านข้อมูลให้แล้ว กรุณาตรวจสอบความถูกต้อง', pur_kpi_pending:'รอรับสินค้า', pur_kpi_received:'รับแล้วทั้งหมด', pur_kpi_value:'มูลค่ารอรับ',
     // Reports
-    rpt_revenue:'รายได้รวม', rpt_cost:'ต้นทุนรวม', rpt_profit:'กำไรสุทธิ', rpt_orders:'ออเดอร์ทั้งหมด',
+    rpt_revenue:'รายได้รวม', rpt_cost:'ต้นทุนรวม', rpt_profit:'Gross Profit', rpt_orders:'ออเดอร์ทั้งหมด', rpt_hidden_cost:'ค่าใช้จ่ายแฝง',
     rpt_top_cards:'Top 10 การ์ดขายดี', rpt_top_margin:'Top 10 Margin ดีสุด', rpt_channels:'ช่องทางขาย',
     rpt_brand_margin:'Margin ตาม Brand', rpt_monthly:'สรุปรายเดือน',
     // Customers
@@ -4152,6 +4229,9 @@ const LANG = {
     export_excel:'↓ Excel', export_excel_tooltip:'Export to Excel (Basic only)',
     export_basic_only:'ฟีเจอร์นี้ใช้ได้เฉพาะ Basic Plan — Upgrade เพื่อ Export Excel',
     sale_select_card:'— เลือกการ์ด —', sale_qty:'จำนวน', sale_price:'ราคา/ใบ (฿)',
+    sale_item_subtotal:'รวม:', sale_toast_no_items:'กรุณาเพิ่มรายการการ์ดอย่างน้อย 1 รายการ',
+    sale_toast_no_card:'กรุณาเลือกการ์ดในแต่ละรายการ', sale_toast_need_name:'กรุณากรอกชื่อลูกค้า',
+    sale_toast_select_cust:'กรุณาเลือกลูกค้า', sale_item_label:'รายการการ์ด',
     // Inventory card labels
     inv_cost:'ต้นทุน', inv_sell:'ราคาขาย', inv_sell_baht:'ราคาขาย (฿)',
     inv_n_cards:' ใบ', inv_cost_short:'ต้นทุน ฿',
@@ -4184,18 +4264,21 @@ const LANG = {
     // Purchase table headers
     pur_col_po:'PO NO.', pur_col_card:'การ์ด', pur_col_brand:'แบรนด์', pur_col_qty:'จำนวน',
     pur_col_cost:'ต้นทุน/ใบ', pur_col_total_cost:'รวมต้นทุน', pur_col_price:'ราคาขาย/ใบ',
-    pur_col_margin:'Margin', pur_col_status:'สถานะ', pur_col_date:'วันที่',
+    pur_col_margin:'Margin', pur_col_condition:'Condition', pur_col_seller:'ผู้ขาย',
+    pur_col_status:'สถานะ', pur_col_date:'วันที่',
+    po_lbl_brand:'Brand', po_lbl_defect:'สภาพการ์ด', po_no_defect:'✅ No Defect', po_has_defect:'⚠️ Defect',
+    po_lbl_seller_type:'ประเภทผู้ขาย', po_seller_anon:'ผู้ขายไม่ระบุตัวตน', po_seller_existing:'ผู้ขายเดิม', po_seller_new:'ผู้ขายใหม่',
     // Monthly report table
     rpt_col_month:'เดือน', rpt_col_orders:'ออเดอร์', rpt_col_revenue:'รายได้',
     rpt_col_cost:'ต้นทุน', rpt_col_profit:'กำไร', rpt_col_margin:'Margin',
     status_paid:'ชำระแล้ว', status_shipped:'จัดส่งแล้ว', status_pending:'รอชำระ', status_cancel:'ยกเลิก',
   },
   en: {
-    nav_dashboard:'Dashboard', nav_inventory:'Inventory', nav_orders:'Orders',
+    nav_dashboard:'Dashboard', nav_inventory:'Inventory', nav_orders:'Sell Cards',
     nav_purchase:'Purchase', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
-    bnav_home:'Home', bnav_stock:'Stock', bnav_orders:'Orders',
+    bnav_home:'Home', bnav_stock:'Stock', bnav_orders:'Sell Cards',
     bnav_buy:'Buy', bnav_reports:'Reports', bnav_settings:'Settings', bnav_back:'Back',
-    title_dashboard:'Dashboard', title_inventory:'Card Inventory', title_orders:'Orders',
+    title_dashboard:'Dashboard', title_inventory:'Card Inventory', title_orders:'Sell Cards',
     title_purchase:'Purchase', title_customers:'Customers',
     title_reports:'Reports & Analytics', title_setup:'Settings',
     kpi_revenue:'REVENUE MTD', kpi_margin:'GROSS MARGIN', kpi_stock:'TOTAL STOCK', kpi_orders:'TOTAL ORDERS',
@@ -4207,10 +4290,12 @@ const LANG = {
     pf_col_cost:'Cost/ea', pf_col_price:'Price/ea', pf_col_value:'Total Value', pf_col_pnl:'P&L',
     inv_tab_display:'Stock', inv_tab_edit:'✏️ Edit', inv_btn_add:'+ Add Card', inv_btn_share:'📤 Share',
     inv_search:'Search cards...',
-    ord_btn_new:'+ New Order', ord_tab_list:'Orders', ord_tab_cancel:'🗑 Cancel / Delete',
+    ord_btn_new:'+ Sell Cards', ord_tab_list:'Orders', ord_tab_cancel:'🗑 Cancel / Delete',
     ord_search:'Search orders or customers...',
     ord_col_id:'ORDER ID', ord_col_customer:'Customer', ord_col_items:'Items',
-    ord_col_total:'Total', ord_col_channel:'Channel', ord_col_status:'Status', ord_col_date:'Date',
+    ord_col_total:'Total', ord_col_hidden_cost:'Hidden Cost', ord_col_channel:'Channel', ord_col_status:'Status', ord_col_date:'Date',
+    kpi_net_profit:'NET PROFIT', kpi_net_profit_sub:'After hidden costs',
+    sale_hidden_cost_label:'Hidden Cost', sale_hc_none:'None', sale_hc_has:'Yes', sale_hc_hint:'e.g. sleeve, box, shipping (฿)',
     pur_tab_overview:'Overview', pur_tab_orders:'Purchase Cards', pur_tab_cancel:'🗑 Cancel Purchase', pur_cancel_select:'Select PO to Cancel', pur_cancel_history:'Cancellation History', pur_filter_month:'Filter Month', pur_select_po:'Select PO', pur_no_cancel_history:'No cancellation history', pur_select_po_first:'Please select a PO first', pur_section_title:'Purchase Cards', pur_section_desc:'Create and track purchase orders into stock', pur_search_po:'Search PO...',
     po_step1_title:'Card Photo', po_step1_sub:'AI will auto-read card info',
     po_dropzone_title:'Click or drag card image here', po_dropzone_sub:'Supports JPG, PNG · AI reads card name, brand, rarity',
@@ -4227,8 +4312,8 @@ const LANG = {
     po_lbl_total_cost:'Total Cost', po_added_list:'✅ Items added',
     po_btn_add_more:'+ Add more cards', po_btn_save_all:'Save All',
     po_ai_result:'AI has read the card info, please verify',
-    pur_btn_new:'+ New Purchase', pur_kpi_pending:'Pending', pur_kpi_received:'Received', pur_kpi_value:'Pending Value',
-    rpt_revenue:'Total Revenue', rpt_cost:'Total Cost', rpt_profit:'Net Profit', rpt_orders:'Total Orders',
+    pur_btn_new:'+ Purchase Cards', pur_kpi_pending:'Pending', pur_kpi_received:'Received', pur_kpi_value:'Pending Value',
+    rpt_revenue:'Total Revenue', rpt_cost:'Total Cost', rpt_profit:'Gross Profit', rpt_orders:'Total Orders', rpt_hidden_cost:'Hidden Costs',
     rpt_top_cards:'Top 10 Best Sellers', rpt_top_margin:'Top 10 Best Margin', rpt_channels:'Sales Channels',
     rpt_brand_margin:'Margin by Brand', rpt_monthly:'Monthly Summary',
     cust_list:'Customer List',
@@ -4335,6 +4420,9 @@ const LANG = {
     export_excel:'↓ Excel', export_excel_tooltip:'Export to Excel (Basic only)',
     export_basic_only:'This feature requires Basic Plan — Upgrade to export Excel',
     sale_select_card:'— Select Card —', sale_qty:'Qty', sale_price:'Price/ea (฿)',
+    sale_item_subtotal:'Subtotal:', sale_toast_no_items:'Please add at least 1 card item',
+    sale_toast_no_card:'Please select a card for each item', sale_toast_need_name:'Please enter customer name',
+    sale_toast_select_cust:'Please select a customer', sale_item_label:'Card Item',
     inv_cost:'Cost', inv_sell:'Price', inv_sell_baht:'Sell Price (฿)',
     inv_n_cards:' cards', inv_cost_short:'Cost ฿',
     inv_filter_brand:'All Brands', inv_filter_rarity:'All Rarity',
@@ -4359,7 +4447,10 @@ const LANG = {
     ord_mgmt_title:'Select Order to Manage', ord_cancel_history:'Cancellation History',
     pur_col_po:'PO NO.', pur_col_card:'Card', pur_col_brand:'Brand', pur_col_qty:'Qty',
     pur_col_cost:'Cost/ea', pur_col_total_cost:'Total Cost', pur_col_price:'Price/ea',
-    pur_col_margin:'Margin', pur_col_status:'Status', pur_col_date:'Date',
+    pur_col_margin:'Margin', pur_col_condition:'Condition', pur_col_seller:'Seller',
+    pur_col_status:'Status', pur_col_date:'Date',
+    po_lbl_brand:'Brand', po_lbl_defect:'Card Condition', po_no_defect:'✅ No Defect', po_has_defect:'⚠️ Defect',
+    po_lbl_seller_type:'Seller Type', po_seller_anon:'Anonymous', po_seller_existing:'Existing Seller', po_seller_new:'New Seller',
     rpt_col_month:'Month', rpt_col_orders:'Orders', rpt_col_revenue:'Revenue',
     rpt_col_cost:'Cost', rpt_col_profit:'Profit', rpt_col_margin:'Margin',
     status_paid:'Paid', status_shipped:'Shipped', status_pending:'Pending', status_cancel:'Cancelled',
@@ -4372,6 +4463,16 @@ function setLang(lang) {
   currentLang = lang
   localStorage.setItem('cv_lang', lang)
   applyLang()
+  // re-render sale modal content หลัง applyLang เสร็จ
+  setTimeout(() => {
+    const saleModal = document.getElementById('modal-newSale')
+    if (saleModal && saleModal.classList.contains('open')) {
+      // rebuild All pill
+      const allPill = saleModal.querySelector('.sale-brand-pill[data-brand=""]')
+      if (allPill) allPill.textContent = t('sale_all_brands')
+      try { renderSaleItems() } catch(e) {}
+    }
+  }, 0)
 }
 
 function applyLang() {
@@ -4456,6 +4557,16 @@ function applyLang() {
   const agingTab = document.getElementById('dtab-aging')
   if (agingTab && agingTab.style.display !== 'none') {
     try { renderAgingReport() } catch(e) {}
+  }
+  // re-render sale items และ brand pills ถ้า modal เปิดอยู่
+  const saleModal = document.getElementById('modal-newSale')
+  if (saleModal && saleModal.classList.contains('open')) {
+    try {
+      // rebuild "All" pill ให้ใช้ภาษาใหม่
+      const allPill = saleModal.querySelector('.sale-brand-pill[data-brand=""]')
+      if (allPill) allPill.textContent = t('sale_all_brands')
+      renderSaleItems()
+    } catch(e) {}
   }
 }
 
@@ -4632,6 +4743,7 @@ function renderCardsDisplay(data) {
       </div>
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
       ${(()=>{
         if (!c.psa) return ''
         const t = c.psaType || 'gem'
@@ -4639,16 +4751,18 @@ function renderCardsDisplay(data) {
         const label = t === 'auth' ? 'G Auth'
                     : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
                     :                ('G Gem'  + (grade ? ' '+grade : ''))
-        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
+      ${c.hasDefect ? '<div style="display:inline-flex;align-items:center;background:#7f1d1d;border:1px solid #dc2626;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</div>' : ''}
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--red);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text2);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_sell')}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--yellow)">฿${(c.price||0).toLocaleString()}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--green)">฿${(c.price||0).toLocaleString()}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -4690,6 +4804,7 @@ function renderCardsEdit(data) {
       <input type="file" id="card-upload-${cardIdx}" accept="image/*" style="display:none" onchange="handleCardPhoto(event,${cardIdx})">
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
       ${(()=>{
         if (!c.psa) return ''
         const t = c.psaType || 'gem'
@@ -4697,8 +4812,10 @@ function renderCardsEdit(data) {
         const label = t === 'auth' ? 'G Auth'
                     : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
                     :                ('G Gem'  + (grade ? ' '+grade : ''))
-        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;margin-bottom:8px;letter-spacing:0.5px">🏅 ${label}</div>`
+        return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${label}</div>`
       })()}
+      ${c.hasDefect ? '<div style="display:inline-flex;align-items:center;background:#7f1d1d;border:1px solid #dc2626;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</div>' : ''}
+      </div>
       <!-- Brand + Rarity editable -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
         <div style="background:var(--bg3);border-radius:8px;padding:6px 8px">
@@ -4776,11 +4893,11 @@ function renderCards(data){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--red);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text2);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_sell')}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--yellow)">฿${(c.price||0).toLocaleString()}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--green)">฿${(c.price||0).toLocaleString()}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -5210,12 +5327,21 @@ function openNewSaleModal() {
     document.getElementById('sale-cust-existing-select').value = ''
   toggleSaleCust()
   document.getElementById('sale-note').value = ''
+  // reset hidden cost
+  document.getElementById('sale-hc-no').checked = true
+  document.getElementById('sale-hc-wrap').style.display = 'none'
+  const hcAmt = document.getElementById('sale-hc-amount')
+  if (hcAmt) hcAmt.value = ''
+  ;['no','yes'].forEach(v => {
+    const lbl = document.getElementById('sale-hc-lbl-' + v)
+    if (lbl) lbl.style.borderColor = v === 'no' ? 'var(--accent)' : 'var(--border2)'
+  })
   // populate brand filter pills
   const pillsEl = document.getElementById('sale-brand-pills')
   if (pillsEl) {
     const activeBrands = setupData.brands.filter(b=>b.status==='active')
     pillsEl.innerHTML = `<button type="button" class="sale-brand-pill active" data-brand="" onclick="setSaleBrand(this,'')"
-      style="padding:5px 14px;border-radius:20px;font-size:12px;font-family:var(--mono);border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap">ทั้งหมด</button>`
+      style="padding:5px 14px;border-radius:20px;font-size:12px;font-family:var(--mono);border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-weight:600;white-space:nowrap">${t('sale_all_brands')}</button>`
       + activeBrands.map(b=>`<button type="button" class="sale-brand-pill" data-brand="${b.name}" onclick="setSaleBrand(this,'${b.name}')"
         style="padding:5px 14px;border-radius:20px;font-size:12px;font-family:var(--mono);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap">${b.emoji||''} ${b.name}</button>`).join('')
     window._saleBrandFilter = ''
@@ -5264,6 +5390,21 @@ function addSaleItem() {
   renderSaleItems()
 }
 
+function toggleHiddenCost() {
+  const hasHC = document.getElementById('sale-hc-yes')?.checked || false
+  const wrap = document.getElementById('sale-hc-wrap')
+  if (wrap) wrap.style.display = hasHC ? 'block' : 'none'
+  ;['no','yes'].forEach(v => {
+    const lbl = document.getElementById('sale-hc-lbl-' + v)
+    if (lbl) lbl.style.borderColor = (v==='yes'&&hasHC)||(v==='no'&&!hasHC) ? 'var(--accent)' : 'var(--border2)'
+  })
+  if (!hasHC) {
+    const amt = document.getElementById('sale-hc-amount')
+    if (amt) amt.value = ''
+  }
+  updateSaleTotal()
+}
+
 function removeSaleItem(i) {
   saleItems.splice(i, 1)
   renderSaleItems()
@@ -5304,11 +5445,11 @@ function renderSaleItems() {
       const ci = cards.indexOf(card)
       const alreadyUsed = usedIdx.includes(ci)
       const isSelectedButFiltered = selectedCard === card && selBrand && card.brand !== selBrand
-      return `<option value="${ci}" ${item.cardIdx===ci?'selected':''} ${alreadyUsed && item.cardIdx!==ci?'disabled':''} style="${alreadyUsed && item.cardIdx!==ci?'color:var(--text3)':''}">${alreadyUsed && item.cardIdx!==ci?'✗ ':''} ${card.name} · ฿${(card.price||0).toLocaleString()} (${card.stock}ใบ)${isSelectedButFiltered?' ★':''}</option>`
+      return `<option value="${ci}" ${item.cardIdx===ci?'selected':''} ${alreadyUsed && item.cardIdx!==ci?'disabled':''} style="${alreadyUsed && item.cardIdx!==ci?'color:var(--text3)':''}">${alreadyUsed && item.cardIdx!==ci?'✗ ':''} ${card.name} · ฿${(card.price||0).toLocaleString()} (${card.stock}${currentLang==='en'?' cards':' ใบ'})${isSelectedButFiltered?' ★':''}</option>`
     }).join('')
     return `<div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${t('sale_items_label')} ${i+1}</span>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${t('sale_item_label')} ${i+1}</span>
         <button type="button" onclick="removeSaleItem(${i})" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">✕</button>
       </div>
       <div class="form-group" style="margin-bottom:8px">
@@ -5332,7 +5473,7 @@ function renderSaleItems() {
             style="width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
         </div>
       </div>
-      ${item.cardIdx >= 0 ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px">รวม: <span style="color:var(--yellow);font-weight:700">฿${((item.price||0)*item.qty).toLocaleString()}</span></div>` : ''}
+      ${item.cardIdx >= 0 ? `<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px">${t('sale_item_subtotal')} <span style="color:var(--yellow);font-weight:700">฿${((item.price||0)*item.qty).toLocaleString()}</span></div>` : ''}
     </div>`
   }).join('')
 
@@ -5365,21 +5506,23 @@ function onSalePriceChange(i, val) {
 }
 
 function saveOrder() {
-  if (saleItems.length === 0) { showToast('กรุณาเพิ่มรายการการ์ดอย่างน้อย 1 รายการ','var(--orange)'); return }
+  if (saleItems.length === 0) { showToast(t('sale_toast_no_items'),'var(--orange)'); return }
   const validItems = saleItems.filter(it => it.cardIdx >= 0)
-  if (validItems.length === 0) { showToast('กรุณาเลือกการ์ดในแต่ละรายการ','var(--orange)'); return }
+  if (validItems.length === 0) { showToast(t('sale_toast_no_card'),'var(--orange)'); return }
 
   const custType = document.querySelector('input[name="sale-cust-type"]:checked')?.value || 'anon'
   let custName = 'Anonymous'
   if (custType === 'new') {
     custName = document.getElementById('sale-cust-name').value.trim()
-    if (!custName) { showToast('กรุณากรอกชื่อลูกค้า', 'var(--orange)'); return }
+    if (!custName) { showToast(t('sale_toast_need_name'), 'var(--orange)'); return }
   } else if (custType === 'existing') {
     custName = document.getElementById('sale-cust-existing-select').value
-    if (!custName) { showToast('กรุณาเลือกลูกค้า', 'var(--orange)'); return }
+    if (!custName) { showToast(t('sale_toast_select_cust'), 'var(--orange)'); return }
   }
   const channel = document.getElementById('sale-channel').value || 'หน้าร้าน'
   const note    = document.getElementById('sale-note').value.trim()
+  const hasHC   = document.getElementById('sale-hc-yes')?.checked || false
+  const hiddenCost = hasHC ? (parseFloat(document.getElementById('sale-hc-amount')?.value) || 0) : 0
   const total   = validItems.reduce((s,it)=>s+(it.price||0)*it.qty, 0)
   const itemStr = validItems.map(it=>cards[it.cardIdx]?.name || '-').join(', ')
 
@@ -5395,6 +5538,7 @@ function saveOrder() {
     items:    itemStr,
     qty:      validItems.reduce((s,it)=>s+it.qty, 0),
     total,
+    hiddenCost,
     channel,
     note,
     status:   'completed',
@@ -6005,6 +6149,7 @@ function renderOrders(){
       <td>${o.customer}</td>
       <td style="color:var(--text2);font-size:12px">${o.items}</td>
       <td style="color:var(--yellow);font-weight:700">฿${o.total.toLocaleString()}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:${(o.hiddenCost||0)>0?'var(--orange)':'var(--text3)'}">${(o.hiddenCost||0)>0?'฿'+(o.hiddenCost).toLocaleString():'-'}</td>
       <td style="color:var(--text2);font-size:12px">${o.channel}</td>
       <td><span class="order-status ${sm[o.status]}">${st[o.status]}</span></td>
       <td style="color:var(--text3);font-family:var(--mono)">${fmtD(o.date)}</td>
@@ -6277,11 +6422,20 @@ function renderReports() {
   const margin = totalCost > 0 ? Math.round((profit/totalCost)*100) : 0
   const mColor = margin>20?'var(--green)':margin>=0?'var(--yellow)':'var(--red)'
 
+  // Hidden Cost รวมจาก orders ที่ filter แล้ว
+  const totalHiddenCost = activeOrders.reduce((s,o) => s+(o.hiddenCost||0), 0)
+  const hiddenOrderCount = activeOrders.filter(o=>(o.hiddenCost||0)>0).length
+  const netProfit = profit - totalHiddenCost
+
   const ss = (id,v,col) => { const el=document.getElementById(id); if(el){el.textContent=v; if(col)el.style.color=col} }
   ss('rpt-revenue', '฿'+totalRev.toLocaleString())
   ss('rpt-cost',    '฿'+totalCost.toLocaleString())
   ss('rpt-profit',  (profit>=0?'+':'')+'฿'+Math.abs(profit).toLocaleString(), profit>=0?'var(--green)':'var(--red)')
-  ss('rpt-margin-sub', 'Margin '+(margin>0?'+':'')+margin+'%', mColor)
+  ss('rpt-margin-sub', 'Gross Margin '+(margin>0?'+':'')+margin+'%', mColor)
+  ss('rpt-hidden-cost', '฿'+totalHiddenCost.toLocaleString(), totalHiddenCost>0?'var(--orange)':'var(--text2)')
+  ss('rpt-hidden-cost-sub', hiddenOrderCount+' '+(currentLang==='en'?'orders with cost':'orders มีค่าใช้จ่าย'))
+  ss('rpt-net-profit', (netProfit>=0?'+ ':'')+'฿'+Math.abs(netProfit).toLocaleString(), netProfit>=0?'var(--green)':'var(--red)')
+  ss('rpt-net-profit-sub', 'Gross '+(profit>=0?'+':'')+'฿'+Math.abs(profit).toLocaleString()+' − ฿'+totalHiddenCost.toLocaleString())
   ss('rpt-orders',  activeOrders.length)
   ss('rpt-orders-sub', cancelledOrders.length+t('n_cancelled'))
 
@@ -6603,6 +6757,8 @@ function renderPurchase(data){
       <td style="font-family:var(--mono);text-align:center">${p.qty}</td>
       <td style="font-family:var(--mono);color:var(--text2)">฿${p.cost.toLocaleString()}</td>
       <td style="font-family:var(--mono);color:var(--red);font-weight:700">฿${total.toLocaleString()}</td>
+      <td style="text-align:center">${p.hasDefect ? '<span style="background:#7f1d1d;border:1px solid #dc2626;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</span>' : '<span style="color:var(--green);font-size:11px;font-family:var(--mono)">OK</span>'}</td>
+      <td style="font-size:11px;color:var(--text2)">${p.sellerType==='anonymous'?'–':(p.sellerName||p.sellerType)}</td>
       <td>${statusHtml(p.status)}</td>
       <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${fmtD(p.date)}</td>
     </tr>`
@@ -6620,6 +6776,8 @@ function renderPurchase(data){
       <td style="font-family:var(--mono);text-align:center">${p.qty}</td>
       <td style="font-family:var(--mono);color:var(--text2)">฿${p.cost.toLocaleString()}</td>
       <td style="font-family:var(--mono);color:var(--red);font-weight:700">฿${total.toLocaleString()}</td>
+      <td style="text-align:center">${p.hasDefect ? '<span style="background:#7f1d1d;border:1px solid #dc2626;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</span>' : '<span style="color:var(--green);font-size:11px;font-family:var(--mono)">OK</span>'}</td>
+      <td style="font-size:11px;color:var(--text2)">${p.sellerType==='anonymous'?'–':(p.sellerName||p.sellerType)}</td>
       <td>${statusHtml(p.status)}</td>
       <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${fmtD(p.date)}</td>
       <td>
@@ -6675,6 +6833,7 @@ function markReceived(idx){
       psa:      p.psa || false,
       psaType:  psaType,
       psaGrade: psaGrade,
+      hasDefect: p.hasDefect || false,
       poRefs: [{ po: p.po, qty: p.qty }]
     })
   }
@@ -7211,7 +7370,7 @@ function renderAgingReport() {
   }
 
   tbody.innerHTML = filtered.map(c => {
-    const dateStr = c.receivedTs ? new Date(c.receivedTs).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-'
+    const dateStr = c.receivedTs ? new Date(c.receivedTs).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-'
     const daysStr = c.days !== null ? c.days : '-'
     const pColor  = periodColor[c.period] || 'var(--text3)'
     const pLabel  = pLabels[c.period] || '-'
@@ -7706,6 +7865,15 @@ function renderDashboard(){
   if(el_margin){ el_margin.textContent = (margin>0?'+':'')+margin+'%'; el_margin.style.color = mColor }
   if(el_margin_sub) el_margin_sub.textContent = t('dash_profit')+' ฿'+profit.toLocaleString()
 
+  // Net Profit = Gross Profit - ค่าใช้จ่ายแฝงจากทุก order
+  const totalHiddenCost = soldOrders.reduce((s,o) => s + (o.hiddenCost||0), 0)
+  const netProfit = profit - totalHiddenCost
+  const el_net = document.getElementById('dash-net-profit')
+  const el_net_sub = document.getElementById('kpi-sub-net-profit')
+  const netColor = netProfit >= 0 ? 'var(--green)' : 'var(--red)'
+  if(el_net){ el_net.textContent = (netProfit>=0?'+':'')+' ฿'+Math.abs(netProfit).toLocaleString(); el_net.style.color = netColor }
+  if(el_net_sub) el_net_sub.textContent = t('kpi_net_profit_sub') + (totalHiddenCost>0?' (หัก ฿'+totalHiddenCost.toLocaleString()+')':'')
+
   // Recent orders table
   const tbody = document.getElementById('recentOrdersTable')
   if(tbody){
@@ -7751,12 +7919,35 @@ function resetPOForm(keepOpen) {
   document.getElementById('po-cost').value  = ''
   document.getElementById('po-sell').value  = '0'
   document.getElementById('po-qty').value   = '1'
-  document.getElementById('po-set').value   = ''
+  const poSet = document.getElementById('po-set')
+  if (poSet) poSet.value = ''
   document.getElementById('po-psa-no').checked = true
   document.getElementById('po-psa-grade-wrap').style.display = 'none'
   ;['no','gem','auto','auth'].forEach(v => {
     const lbl = document.getElementById('po-psa-lbl-' + v)
     if (lbl) lbl.style.borderColor = v === 'no' ? 'var(--accent)' : 'var(--border2)'
+  })
+  // reset defect
+  const defNo = document.getElementById('po-defect-no')
+  if (defNo) defNo.checked = true
+  ;['no','yes'].forEach(v => {
+    const lbl = document.getElementById('po-defect-lbl-' + v)
+    if (lbl) lbl.style.borderColor = v === 'no' ? 'var(--accent)' : 'var(--border2)'
+  })
+  // reset seller type
+  const selAnon = document.getElementById('po-seller-anon')
+  if (selAnon) selAnon.checked = true
+  const existingWrap = document.getElementById('po-seller-existing-wrap')
+  const newWrap = document.getElementById('po-seller-new-wrap')
+  if (existingWrap) existingWrap.style.display = 'none'
+  if (newWrap) newWrap.style.display = 'none'
+  const selName = document.getElementById('po-seller-name')
+  if (selName) selName.value = ''
+  const selDropdown = document.getElementById('po-seller-existing-select')
+  if (selDropdown) selDropdown.value = ''
+  ;['anon','existing','new'].forEach(v => {
+    const lbl = document.getElementById('po-seller-lbl-' + v)
+    if (lbl) lbl.style.borderColor = v === 'anon' ? 'var(--accent)' : 'var(--border2)'
   })
   document.getElementById('po-note').value  = ''
   document.getElementById('po-preview').style.display = 'none'
@@ -7801,10 +7992,19 @@ function addPOItem() {
   const isPSA  = document.querySelector('input[name="po-psa"]:checked')?.value || 'no'
   const needsGradeInline = isPSA === 'gem' || isPSA === 'auto'
   const psaGrade = needsGradeInline ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
+  const hasDefect = document.getElementById('po-defect-yes')?.checked || false
+  const sellerType = document.querySelector('input[name="po-seller-type"]:checked')?.value || 'anonymous'
+  const sellerName = sellerType === 'existing'
+    ? (document.getElementById('po-seller-existing-select')?.value?.trim() || document.getElementById('po-seller-name')?.value?.trim() || '')
+    : sellerType === 'new'
+    ? (document.getElementById('po-seller-name')?.value?.trim() || '')
+    : ''
   if (!name) { showToast('กรุณากรอกชื่อการ์ด', 'var(--orange)'); return }
   if (!cost) { showToast('กรุณากรอกราคาต้นทุน', 'var(--orange)'); return }
   poItems.push({ name, brand, qty, cost, sell:0, rarity, set, source,
-    psa: isPSA !== 'no', psaType: isPSA, psaGrade, photos:[...poPhotos] })
+    psa: isPSA !== 'no', psaType: isPSA, psaGrade,
+    hasDefect, sellerType, sellerName,
+    photos:[...poPhotos] })
   renderPOAddedList()
   showToast('✅ เพิ่ม '+name+' ×'+qty+' แล้ว', 'var(--green)')
   resetPOForm(true)
@@ -7853,8 +8053,17 @@ function savePurchase(){
     const isPSA  = document.querySelector('input[name="po-psa"]:checked')?.value || 'no'
     const needsGrade = isPSA === 'gem' || isPSA === 'auto'
     const psaGrade = needsGrade ? (document.querySelector('input[name="po-psa-grade"]:checked')?.value || '10') : null
+    const hasDefect = document.getElementById('po-defect-yes')?.checked || false
+    const sellerType = document.querySelector('input[name="po-seller-type"]:checked')?.value || 'anonymous'
+    const sellerName = sellerType === 'existing'
+    ? (document.getElementById('po-seller-existing-select')?.value?.trim() || document.getElementById('po-seller-name')?.value?.trim() || '')
+    : sellerType === 'new'
+    ? (document.getElementById('po-seller-name')?.value?.trim() || '')
+    : ''
     poItems.push({ name, brand, qty, cost, sell, rarity, set, source,
-      psa: isPSA !== 'no', psaType: isPSA, psaGrade, photos:[...poPhotos] })
+      psa: isPSA !== 'no', psaType: isPSA, psaGrade,
+      hasDefect, sellerType, sellerName,
+      photos:[...poPhotos] })
   }
   if (poItems.length === 0) { showToast('ไม่มีรายการ กรุณาเพิ่มการ์ดก่อน', 'var(--orange)'); return }
 
@@ -7872,6 +8081,9 @@ function savePurchase(){
       name:it.name, brand:it.brand, qty:it.qty, cost:it.cost, sell:it.sell||0,
       rarity:it.rarity, set:it.set, source:it.source,
       psa:it.psa, psaType: it.psaType || 'no', psaGrade:it.psaGrade,
+      hasDefect: it.hasDefect || false,
+      sellerType: it.sellerType || 'anonymous',
+      sellerName: it.sellerName || '',
       status: 'pending',
       photos: it.photos||[],
       date
@@ -8079,6 +8291,49 @@ function selectPSAGrade(grade) {
   })
   const radio = document.querySelector(`input[name="po-psa-grade"][value="${grade}"]`)
   if (radio) radio.checked = true
+}
+
+function toggleDefect() {
+  const hasDefect = document.getElementById('po-defect-yes')?.checked || false
+  ;['no','yes'].forEach(v => {
+    const lbl = document.getElementById('po-defect-lbl-' + v)
+    if (lbl) lbl.style.borderColor = (v==='yes'&&hasDefect)||(v==='no'&&!hasDefect) ? 'var(--accent)' : 'var(--border2)'
+  })
+}
+
+function toggleSellerType() {
+  const val = document.querySelector('input[name="po-seller-type"]:checked')?.value || 'anonymous'
+  const existingWrap = document.getElementById('po-seller-existing-wrap')
+  const newWrap      = document.getElementById('po-seller-new-wrap')
+
+  if (existingWrap) existingWrap.style.display = val === 'existing' ? 'block' : 'none'
+  if (newWrap)      newWrap.style.display      = val === 'new'      ? 'block' : 'none'
+
+  // populate dropdown ผู้ขายเดิมจาก purchases history
+  if (val === 'existing') {
+    const sel = document.getElementById('po-seller-existing-select')
+    if (sel) {
+      const existingSellers = [...new Set(
+        purchases
+          .filter(p => p.sellerType === 'existing' || p.sellerType === 'new')
+          .map(p => p.sellerName)
+          .filter(n => n && n.trim())
+      )].sort()
+      sel.innerHTML = '<option value="">— เลือกผู้ขาย —</option>' +
+        existingSellers.map(n => `<option value="${n}">${n}</option>`).join('')
+      // sync กับ hidden input
+      sel.onchange = () => {
+        const inp = document.getElementById('po-seller-name')
+        if (inp) inp.value = sel.value
+      }
+    }
+  }
+
+  ;['anon','existing','new'].forEach(v => {
+    const lbl = document.getElementById('po-seller-lbl-' + v)
+    const map = { anon:'anonymous', existing:'existing', new:'new' }
+    if (lbl) lbl.style.borderColor = val === map[v] ? 'var(--accent)' : 'var(--border2)'
+  })
 }
 
 function skipAI() {
@@ -8566,7 +8821,7 @@ document.addEventListener('change', e=>{
     <span class="bnav-icon">◫</span><span data-i18n="bnav_stock">สต็อก</span>
   </div>
   <div class="bnav-item" onclick="showPageMobile('orders',this,t('title_orders'))">
-    <span class="bnav-icon">◈</span><span data-i18n="bnav_orders">ออเดอร์</span>
+    <span class="bnav-icon">◈</span><span data-i18n="bnav_orders">ขายการ์ด</span>
   </div>
   <div class="bnav-item" onclick="showPageMobile('purchase',this,t('title_purchase'))">
     <span class="bnav-icon">◉</span><span data-i18n="bnav_buy">ซื้อ</span>
