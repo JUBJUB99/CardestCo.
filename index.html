@@ -2710,12 +2710,27 @@ function applySnapshot(data) {
   let needsMigration = false
   cards.forEach(c => {
     if (c.psa && !c.psaType) {
-      // การ์ดเก่าที่ psa=true แต่ไม่มี psaType
-      // ถ้ามี psaGrade → gem, ไม่มี → auth
       c.psaType = c.psaGrade ? 'gem' : 'auth'
       needsMigration = true
     } else if (!c.psa && c.psaType !== 'no') {
       c.psaType = 'no'
+    }
+    // ── migrate poRefs: card เก่าที่ไม่มี poRefs → reconstruct จาก purchases ──
+    if (!c.poRefs) {
+      c.poRefs = []
+      const receivedPOs = purchases.filter(p =>
+        p.status === 'received' &&
+        p.name === c.name &&
+        p.brand === c.brand &&
+        (p.psaType || (p.psa ? 'gem' : 'no')) === (c.psaType || 'no') &&
+        String(p.psaGrade || '') === String(c.psaGrade || '')
+      )
+      receivedPOs.forEach(p => {
+        if (!c.poRefs.find(r => r.po === p.po)) {
+          c.poRefs.push({ po: p.po, qty: p.qty })
+        }
+      })
+      if (c.poRefs.length > 0) needsMigration = true
     }
   })
   // save กลับถ้ามีการ migrate
@@ -6625,11 +6640,11 @@ function markReceived(idx){
   p.status = 'received'
   const poPhoto = p.photos && p.photos[0] ? p.photos[0] : null
 
-  // หาการ์ดที่ตรงกัน — match ทั้งชื่อ+แบรนด์+psaType+psaGrade
-  // ถ้าชื่อซ้ำแต่ graded ต่างกัน → สร้าง entry ใหม่แยกกัน
   const psaType  = p.psaType || (p.psa ? 'gem' : 'no')
   const psaGrade = p.psaGrade || null
 
+  // หา card ที่มี poRef ของ PO นี้อยู่แล้ว (กรณี markReceived ซ้ำ)
+  // หรือ match name+brand+psaType+psaGrade เหมือนเดิม
   const card = cards.find(c =>
     c.name === p.name &&
     c.brand === p.brand &&
@@ -6641,9 +6656,15 @@ function markReceived(idx){
     card.stock += p.qty
     if(poPhoto && (!card.photo || card.photo.length === 0)) card.photo = poPhoto
     if(p.psa) {
-      card.psa     = true
+      card.psa      = true
       card.psaType  = psaType
       card.psaGrade = psaGrade
+    }
+    // เพิ่ม poRef เข้าไปใน card
+    if (!card.poRefs) card.poRefs = []
+    const existingRef = card.poRefs.find(r => r.po === p.po)
+    if (!existingRef) {
+      card.poRefs.push({ po: p.po, qty: p.qty })
     }
   } else {
     cards.push({
@@ -6653,7 +6674,8 @@ function markReceived(idx){
       photo: poPhoto || '',
       psa:      p.psa || false,
       psaType:  psaType,
-      psaGrade: psaGrade
+      psaGrade: psaGrade,
+      poRefs: [{ po: p.po, qty: p.qty }]
     })
   }
   saveData()
@@ -6857,18 +6879,32 @@ function cancelPO(idx) {
     if (!ok) return
     p.status = 'cancelled'
     if (wasReceived) {
-      // match ด้วย name + brand + psaType + psaGrade
-      const cardIdx = cards.findIndex(cd =>
-        cd.name === p.name &&
-        cd.brand === p.brand &&
-        (cd.psaType || 'no') === (p.psaType || 'no') &&
-        String(cd.psaGrade || '') === String(p.psaGrade || '')
+      // หา card จาก poRefs ก่อน (แม่นยำ 100%)
+      let cardIdx = cards.findIndex(cd =>
+        cd.poRefs && cd.poRefs.some(r => r.po === p.po)
       )
+      // fallback: match name+brand+psaType+psaGrade
+      if (cardIdx === -1) {
+        cardIdx = cards.findIndex(cd =>
+          cd.name === p.name &&
+          cd.brand === p.brand &&
+          (cd.psaType || 'no') === (p.psaType || 'no') &&
+          String(cd.psaGrade || '') === String(p.psaGrade || '')
+        )
+      }
+
       if (cardIdx !== -1) {
         const card = cards[cardIdx]
-        // หักได้สูงสุดแค่ stock ปัจจุบัน ป้องกัน stock ติดลบ
-        const deduct = Math.min(p.qty, card.stock || 0)
-        card.stock = (card.stock || 0) - deduct
+        // หา qty จาก poRefs ถ้ามี ไม่งั้นใช้ p.qty
+        const ref = card.poRefs?.find(r => r.po === p.po)
+        const deduct = ref ? ref.qty : Math.min(p.qty, card.stock || 0)
+
+        card.stock = Math.max(0, (card.stock || 0) - deduct)
+        // ลบ poRef ออก
+        if (card.poRefs) {
+          card.poRefs = card.poRefs.filter(r => r.po !== p.po)
+        }
+
         if (card.stock <= 0) {
           cards.splice(cardIdx, 1)
           showToast('🗑 ยกเลิกซื้อ ' + p.po + ' และลบการ์ดออกจากสต็อกแล้ว', 'var(--orange)')
