@@ -1017,9 +1017,11 @@ select option{background:var(--bg3);}
               </select>
             </div>
           </div>
-          <div style="position:relative;height:160px;margin-top:12px" id="sales-chart-wrap">
-            <div id="sales-chart-bars" style="display:flex;align-items:flex-end;gap:4px;height:140px;padding:0 4px"></div>
-            <div id="sales-chart-empty" style="display:none;height:140px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="chart_no_data">ยังไม่มีข้อมูลยอดขาย</div>
+          <div style="position:relative;margin-top:12px" id="sales-chart-wrap">
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px" id="sales-chart-scroll">
+              <div id="sales-chart-bars" style="display:flex;align-items:flex-end;gap:3px;height:140px;padding:0 4px;min-width:100%"></div>
+            </div>
+            <div id="sales-chart-empty" style="display:none;height:140px;align-items:center;justify-content:center;color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="chart_no_data">ยังไม่มีข้อมูลยอดขาย</div>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;padding:0 4px">
             <span style="font-size:11px;color:var(--text3);font-family:var(--mono)"><span data-i18n="chart_total">รวม:</span> <span id="chart-total" style="color:var(--yellow);font-weight:700">฿0</span></span>
@@ -7187,7 +7189,19 @@ function renderSalesChart() {
         count: byDay[d].count,
         active: d === todayD && mo === todayM && selYear === todayY
       }
-    }), totalEl, countEl)
+    }), totalEl, countEl, true)
+
+    // auto-scroll ไปที่วันนี้ถ้าอยู่ในเดือนนี้
+    if (mo === todayM && selYear === todayY) {
+      setTimeout(() => {
+        const scrollEl = document.getElementById('sales-chart-scroll')
+        if (scrollEl) {
+          const barW = 28 // 24px bar + 4px gap
+          const scrollTo = Math.max(0, (todayD - 8) * barW)
+          scrollEl.scrollLeft = scrollTo
+        }
+      }, 100)
+    }
 
   } else {
     // week mode — populate month dropdown
@@ -7229,7 +7243,7 @@ function renderSalesChart() {
   }
 }
 
-function renderBars(barsEl, emptyEl, data, totalEl, countEl) {
+function renderBars(barsEl, emptyEl, data, totalEl, countEl, isDailyMode) {
   const maxVal = Math.max(...data.map(d=>d.value), 1)
   const grandTotal = data.reduce((s,d)=>s+d.value, 0)
   const grandCount = data.reduce((s,d)=>s+d.count, 0)
@@ -7239,18 +7253,45 @@ function renderBars(barsEl, emptyEl, data, totalEl, countEl) {
     if (emptyEl) emptyEl.style.display = 'flex'
   } else {
     if (emptyEl) emptyEl.style.display = 'none'
-    barsEl.innerHTML = data.map(d => {
-      const pct = Math.max(d.value>0?4:0, Math.round((d.value/maxVal)*100))
-      const color = d.active ? 'var(--yellow)' : 'var(--accent)'
-      const valStr = d.value >= 1000 ? (d.value/1000).toFixed(1)+'K' : d.value > 0 ? '฿'+d.value : ''
-      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
-        ${valStr ? `<div style="font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap">${valStr}</div>` : '<div style="height:13px"></div>'}
-        <div style="width:100%;background:var(--border2);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;height:110px">
-          <div style="width:100%;height:${pct}%;background:${color};border-radius:4px 4px 0 0;transition:height 0.4s ease;min-height:${d.value>0?'4px':'0'}"></div>
-        </div>
-        <div style="font-size:9px;color:${d.active?'var(--yellow)':'var(--text3)'};font-family:var(--mono);font-weight:${d.active?'700':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center">${d.label}</div>
-      </div>`
-    }).join('')
+
+    if (isDailyMode) {
+      // Daily mode — fixed width per bar + horizontal scroll
+      const barW = 24
+      const totalW = data.length * (barW + 4)
+      barsEl.style.minWidth = totalW + 'px'
+      barsEl.style.width = totalW + 'px'
+      barsEl.innerHTML = data.map((d, i) => {
+        const pct = Math.max(d.value>0?4:0, Math.round((d.value/maxVal)*100))
+        const color = d.active ? 'var(--yellow)' : d.value>0 ? 'var(--accent)' : 'var(--border2)'
+        const valStr = d.value >= 1000 ? (d.value/1000).toFixed(1)+'K' : d.value > 0 ? '฿'+d.value : ''
+        // แสดง label เฉพาะวันที่ 1, 5, 10, 15, 20, 25, 30 หรือ active
+        const dayNum = parseInt(d.label)
+        const showLabel = d.active || dayNum === 1 || dayNum % 5 === 0
+        return `<div style="width:${barW}px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px">
+          ${valStr && d.value > 0 ? `<div style="font-size:8px;color:${d.active?'var(--yellow)':'var(--text3)'};font-family:var(--mono);white-space:nowrap;writing-mode:horizontal-tb">${valStr}</div>` : '<div style="height:11px"></div>'}
+          <div style="width:${barW-4}px;background:var(--border2);border-radius:3px 3px 0 0;display:flex;align-items:flex-end;height:100px">
+            <div style="width:100%;height:${pct}%;background:${color};border-radius:3px 3px 0 0;transition:height 0.3s ease;min-height:${d.value>0?'3px':'0'}"></div>
+          </div>
+          <div style="font-size:${d.active?'10':'8'}px;color:${d.active?'var(--yellow)':'var(--text3)'};font-family:var(--mono);font-weight:${d.active?'700':'400'};visibility:${showLabel?'visible':'hidden'}">${d.label}</div>
+        </div>`
+      }).join('')
+    } else {
+      // Monthly / Weekly mode — flex:1 เหมือนเดิม
+      barsEl.style.minWidth = '100%'
+      barsEl.style.width = ''
+      barsEl.innerHTML = data.map(d => {
+        const pct = Math.max(d.value>0?4:0, Math.round((d.value/maxVal)*100))
+        const color = d.active ? 'var(--yellow)' : 'var(--accent)'
+        const valStr = d.value >= 1000 ? (d.value/1000).toFixed(1)+'K' : d.value > 0 ? '฿'+d.value : ''
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
+          ${valStr ? `<div style="font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap">${valStr}</div>` : '<div style="height:13px"></div>'}
+          <div style="width:100%;background:var(--border2);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;height:110px">
+            <div style="width:100%;height:${pct}%;background:${color};border-radius:4px 4px 0 0;transition:height 0.4s ease;min-height:${d.value>0?'4px':'0'}"></div>
+          </div>
+          <div style="font-size:9px;color:${d.active?'var(--yellow)':'var(--text3)'};font-family:var(--mono);font-weight:${d.active?'700':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center">${d.label}</div>
+        </div>`
+      }).join('')
+    }
   }
 
   if (totalEl) totalEl.textContent = '฿'+grandTotal.toLocaleString()
