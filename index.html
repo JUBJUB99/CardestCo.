@@ -4752,10 +4752,10 @@ function showPageMobile(id, el, title) {
   document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'))
   if (el) el.classList.add('active')
 
-  // sync sidebar nav active
-  const pageToIndex = {dashboard:0,inventory:1,orders:2,purchase:3,customers:4,reports:5,setup:6}
-  document.querySelectorAll('.nav-item').forEach((n,i) => {
-    n.classList.toggle('active', i === (pageToIndex[id] ?? -1))
+  // sync sidebar nav active — ใช้ id element แทน index
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const navId = n.id?.replace('nav-', '')
+    n.classList.toggle('active', navId === id)
   })
 
   // update page title
@@ -4773,7 +4773,7 @@ function showPage(id,el){
   if(el){
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
     el.classList.add('active')
-    const pageLabels = {dashboard:0,inventory:1,orders:2,purchase:3,customers:-1,reports:4,setup:5}
+    const pageLabels = {dashboard:0,inventory:1,orders:2,break:2,purchase:3,customers:-1,reports:4,setup:5}
     const idx = pageLabels[id]
     document.querySelectorAll('.bnav-item').forEach((b,i) => b.classList.toggle('active', i===idx))
     const titles = {dashboard:t('title_dashboard'),inventory:t('title_inventory'),orders:t('title_orders'),purchase:t('title_purchase'),customers:t('title_customers'),reports:t('title_reports'),setup:t('title_setup')}
@@ -6970,13 +6970,13 @@ function renderBreakSpots() {
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:28px">${String(i+1).padStart(2,'0')}</span>
       <input type="text" placeholder="ชื่อผู้ซื้อ Spot นี้..."
         value="${escHtml(spot.name)}"
-        oninput="breakSpots[${i}].name=this.value;updateBreakSummary()"
+        oninput="breakSpots[${i}].name=this.value"
         style="flex:1;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px">
-      <span style="font-family:var(--mono);font-size:12px;color:var(--text3);min-width:52px;text-align:right">฿${price.toLocaleString()}</span>
+      <span data-spot-price style="font-family:var(--mono);font-size:12px;color:var(--text3);min-width:52px;text-align:right">฿${price.toLocaleString()}</span>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary()"
           style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
-        <span style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">จ่ายแล้ว</span>
+        <span data-paid-label style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">จ่ายแล้ว</span>
       </label>
     </div>`).join('')
 }
@@ -6996,8 +6996,15 @@ function updateBreakSummary() {
   ss('brk-sum-paid', '฿' + paidAmt.toLocaleString())
   ss('brk-sum-remain', '฿' + remainAmt.toLocaleString())
 
-  // re-render spots (update สี paid label)
-  renderBreakSpots()
+  // อัพเดทสีและราคาแต่ละ spot โดยไม่ re-render DOM
+  document.querySelectorAll('#break-spots-list > div').forEach((row, i) => {
+    const spot = breakSpots[i]
+    if (!spot) return
+    const priceEl = row.querySelector('[data-spot-price]')
+    if (priceEl) priceEl.textContent = '฿' + price.toLocaleString()
+    const paidLabel = row.querySelector('[data-paid-label]')
+    if (paidLabel) paidLabel.style.color = spot.paid ? 'var(--green)' : 'var(--text3)'
+  })
 }
 
 function endBreak() {
