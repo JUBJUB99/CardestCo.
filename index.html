@@ -4230,7 +4230,7 @@ const LANG = {
     sale_cancel:'ยกเลิก', sale_save:'บันทึกออเดอร์', toast_order_saved:'✅ บันทึกออเดอร์ {id} เรียบร้อย', toast_po_saved:'✅ บันทึก {n} รายการเรียบร้อย', toast_po_cancelled:'🗑 ยกเลิกซื้อ {po} เรียบร้อย',
     export_excel:'↓ Excel', export_excel_tooltip:'Export to Excel (Basic only)',
     export_basic_only:'ฟีเจอร์นี้ใช้ได้เฉพาะ Basic Plan — Upgrade เพื่อ Export Excel',
-    sale_select_card:'— เลือกการ์ด —', sale_qty:'จำนวน', sale_price:'ราคา/ใบ (฿)',
+    sale_select_card:'— เลือกการ์ด —', sale_search_card:'พิมพ์ชื่อการ์ด...', sale_qty:'จำนวน', sale_price:'ราคา/ใบ (฿)',
     sale_item_subtotal:'รวม:', sale_toast_no_items:'กรุณาเพิ่มรายการการ์ดอย่างน้อย 1 รายการ',
     sale_toast_no_card:'กรุณาเลือกการ์ดในแต่ละรายการ', sale_toast_need_name:'กรุณากรอกชื่อลูกค้า',
     sale_toast_select_cust:'กรุณาเลือกลูกค้า', sale_item_label:'รายการการ์ด',
@@ -4421,7 +4421,7 @@ const LANG = {
     sale_cancel:'Cancel', sale_save:'Save Order', toast_order_saved:'✅ Order {id} saved successfully', toast_po_saved:'✅ {n} item(s) saved successfully', toast_po_cancelled:'🗑 Purchase {po} cancelled',
     export_excel:'↓ Excel', export_excel_tooltip:'Export to Excel (Basic only)',
     export_basic_only:'This feature requires Basic Plan — Upgrade to export Excel',
-    sale_select_card:'— Select Card —', sale_qty:'Qty', sale_price:'Price/ea (฿)',
+    sale_select_card:'— Select Card —', sale_search_card:'Search card name...', sale_qty:'Qty', sale_price:'Price/ea (฿)',
     sale_item_subtotal:'Subtotal:', sale_toast_no_items:'Please add at least 1 card item',
     sale_toast_no_card:'Please select a card for each item', sale_toast_need_name:'Please enter customer name',
     sale_toast_select_cust:'Please select a customer', sale_item_label:'Card Item',
@@ -5388,8 +5388,14 @@ function toggleSaleCust() {
 }
 
 function addSaleItem() {
-  saleItems.push({ cardIdx: -1, qty: 1, price: 0 })
+  saleItems.push({ cardIdx: -1, qty: 1, price: 0, _search: '' })
   renderSaleItems()
+  // focus search input ของ item ใหม่
+  setTimeout(() => {
+    const i = saleItems.length - 1
+    const inp = document.getElementById('sale-search-' + i)
+    if (inp) inp.focus()
+  }, 50)
 }
 
 function toggleHiddenCost() {
@@ -5427,40 +5433,48 @@ function setSaleBrand(el, brand) {
 function renderSaleItems() {
   const container = document.getElementById('sale-items')
   if (!container) return
-  const bc = {Pokemon:'tag-poke',['Yu-Gi-Oh']:'tag-yugi',MTG:'tag-mtg',['One Piece']:'tag-op'}
 
   container.innerHTML = saleItems.map((item, i) => {
     const selBrand = window._saleBrandFilter || ''
-    // รวม cardIdx ที่ถูกเลือกในรายการอื่นแล้ว
     const usedIdx = saleItems.map((it,j) => j!==i ? it.cardIdx : -1).filter(x=>x>=0)
-    const filteredCards = cards.filter(card => {
-      if ((card.stock||0) < 1) return false
-      if (selBrand && card.brand !== selBrand) return false
-      return true
-    })
-    // ถ้ามีการ์ดที่เลือกไว้แล้วแต่ถูก filter ออก ให้ยังคง show ไว้
     const selectedCard = item.cardIdx >= 0 ? cards[item.cardIdx] : null
-    const cardSet = [...filteredCards]
-    if (selectedCard && !cardSet.includes(selectedCard)) cardSet.unshift(selectedCard)
+    const searchVal = item._search !== undefined ? item._search : (selectedCard ? selectedCard.name : '')
 
-    const cardOpts = cardSet.map(card => {
-      const ci = cards.indexOf(card)
-      const alreadyUsed = usedIdx.includes(ci)
-      const isSelectedButFiltered = selectedCard === card && selBrand && card.brand !== selBrand
-      return `<option value="${ci}" ${item.cardIdx===ci?'selected':''} ${alreadyUsed && item.cardIdx!==ci?'disabled':''} style="${alreadyUsed && item.cardIdx!==ci?'color:var(--text3)':''}">${alreadyUsed && item.cardIdx!==ci?'✗ ':''} ${card.name} · ฿${(card.price||0).toLocaleString()} (${card.stock}${currentLang==='en'?' cards':' ใบ'})${isSelectedButFiltered?' ★':''}</option>`
-    }).join('')
     return `<div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${t('sale_item_label')} ${i+1}</span>
         <button type="button" onclick="removeSaleItem(${i})" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1">✕</button>
       </div>
-      <div class="form-group" style="margin-bottom:8px">
-        <select onchange="onSaleCardSelect(${i},this.value)"
-          style="width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
-          <option value="-1">${t('sale_select_card')}</option>
-          ${cardOpts}
-        </select>
+
+      <!-- searchable card picker -->
+      <div class="form-group" style="margin-bottom:8px;position:relative">
+        <div style="position:relative">
+          <input type="text" id="sale-search-${i}"
+            value="${escHtml(searchVal)}"
+            placeholder="${t('sale_search_card')}"
+            autocomplete="off"
+            oninput="onSaleSearchInput(${i},this.value)"
+            onfocus="if(this.value.length>0)showSaleDropdown(${i})"
+            style="width:100%;padding:8px 36px 8px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
+          ${selectedCard
+            ? `<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--green);font-size:14px;pointer-events:none">✓</span>`
+            : `<button type="button" onclick="toggleSaleAllCards(${i})" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">🔍</button>`
+          }
+        </div>
+        <!-- dropdown results -->
+        <div id="sale-drop-${i}" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)">
+        </div>
       </div>
+
+      ${selectedCard ? `
+      <div style="background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        ${selectedCard.photo ? `<img src="${selectedCard.photo}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:32px;height:32px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🃏</div>`}
+        <div style="min-width:0;flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${selectedCard.name}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${selectedCard.brand} · stock ${selectedCard.stock}${currentLang==='en'?' cards':' ใบ'}</div>
+        </div>
+      </div>` : ''}
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
           <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">${t('sale_qty')}</div>
@@ -5485,15 +5499,122 @@ function renderSaleItems() {
   const totalEl  = document.getElementById('sale-total')
   if (totalRow) totalRow.style.display = saleItems.length ? 'flex' : 'none'
   if (totalEl)  totalEl.textContent = '฿'+total.toLocaleString()
+
+  // close dropdowns on outside click
+  setTimeout(() => {
+    document.querySelectorAll('[id^="sale-drop-"]').forEach(d => {
+      if (!d._outsideListener) {
+        d._outsideListener = true
+        document.addEventListener('click', (e) => {
+          if (!d.parentElement?.contains(e.target)) d.style.display = 'none'
+        }, {once:false})
+      }
+    })
+  }, 0)
 }
 
-function onSaleCardSelect(i, val) {
-  const ci = parseInt(val)
+function onSaleSearchInput(i, query) {
+  saleItems[i]._search = query
+  saleItems[i].cardIdx = -1  // reset selection
+  saleItems[i].price = 0
+  saleItems[i].qty = 1
+  // อัพเดทเฉพาะ dropdown + card preview — ไม่ re-render ทั้งหมด
+  showSaleDropdown(i, query)
+  updateSaleItemPreview(i)
+  updateSaleTotal()
+}
+
+function updateSaleItemPreview(i) {
+  // update checkmark icon บน input
+  const inp = document.getElementById('sale-search-' + i)
+  if (!inp) return
+  const icon = inp.parentElement?.querySelector('span:last-child')
+  if (icon) {
+    icon.textContent = saleItems[i].cardIdx >= 0 ? '✓' : '🔍'
+    icon.style.color = saleItems[i].cardIdx >= 0 ? 'var(--green)' : 'var(--text3)'
+    icon.style.fontSize = saleItems[i].cardIdx >= 0 ? '14px' : '12px'
+  }
+}
+
+function updateSaleTotal() {
+  const total = saleItems.reduce((s,it)=>s+(it.price||0)*it.qty, 0)
+  const totalRow = document.getElementById('sale-total-row')
+  const totalEl  = document.getElementById('sale-total')
+  if (totalRow) totalRow.style.display = saleItems.length ? 'flex' : 'none'
+  if (totalEl)  totalEl.textContent = '฿'+total.toLocaleString()
+}
+
+function toggleSaleAllCards(i) {
+  const drop = document.getElementById('sale-drop-' + i)
+  if (!drop) return
+  if (drop.style.display === 'block') {
+    drop.style.display = 'none'
+    return
+  }
+  // แสดง card ทั้งหมด (ไม่ filter ตาม query)
+  showSaleDropdown(i, '')
+  // focus input ด้วย
+  const inp = document.getElementById('sale-search-' + i)
+  if (inp) inp.focus()
+}
+
+function showSaleDropdown(i, query) {
+  const inp = document.getElementById('sale-search-' + i)
+  const drop = document.getElementById('sale-drop-' + i)
+  if (!drop) return
+
+  const q = (query !== undefined ? query : (inp?.value || '')).toLowerCase().trim()
+  const selBrand = window._saleBrandFilter || ''
+  const usedIdx = saleItems.map((it,j) => j!==i ? it.cardIdx : -1).filter(x=>x>=0)
+
+  const filtered = cards
+    .map((card, ci) => ({ card, ci }))
+    .filter(({ card, ci }) => {
+      if ((card.stock||0) < 1) return false
+      if (selBrand && card.brand !== selBrand) return false
+      if (usedIdx.includes(ci)) return false
+      if (!q) return true
+      return (card.name.toLowerCase().includes(q) || (card.brand||'').toLowerCase().includes(q))
+    })
+    .slice(0, 30)
+
+  if (filtered.length === 0) {
+    drop.innerHTML = `<div style="padding:12px 14px;font-size:12px;color:var(--text3);text-align:center">${q ? 'ไม่พบการ์ด "'+q+'"' : t('no_cards_stock')}</div>`
+  } else {
+    drop.innerHTML = filtered.map(({ card, ci }) => {
+      const gradeLabel = card.psa
+        ? `<span style="font-size:10px;background:rgba(124,109,250,0.15);color:var(--accent2);border-radius:4px;padding:1px 6px;font-family:var(--mono)">G ${card.psaType==='auth'?'Auth':card.psaType==='auto'?'Auto '+card.psaGrade:'Gem '+card.psaGrade}</span>`
+        : ''
+      return `<div onclick="onSaleCardSelect(${i},${ci})"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
+        onmouseover="this.style.background='var(--bg3)'"
+        onmouseout="this.style.background='transparent'">
+        ${card.photo ? `<img src="${card.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${card.name} ${gradeLabel}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${card.brand} · stock ${card.stock} · ฿${(card.price||0).toLocaleString()}</div>
+        </div>
+      </div>`
+    }).join('')
+  }
+  drop.style.display = 'block'
+}
+
+function onSaleCardSelect(i, ci) {
+  ci = parseInt(ci)
   saleItems[i].cardIdx = ci
   if (ci >= 0 && cards[ci]) {
     saleItems[i].price = cards[ci].price || 0
     saleItems[i].qty   = 1
+    saleItems[i]._search = cards[ci].name
+    // update input text
+    const inp = document.getElementById('sale-search-' + i)
+    if (inp) inp.value = cards[ci].name
   }
+  // ปิด dropdown
+  const drop = document.getElementById('sale-drop-' + i)
+  if (drop) drop.style.display = 'none'
+  // re-render ทั้งหมดเพื่อแสดง card preview + qty/price
   renderSaleItems()
 }
 
