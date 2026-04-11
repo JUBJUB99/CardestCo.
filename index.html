@@ -898,6 +898,9 @@ select option{background:var(--bg3);}
         <span class="nav-icon">◈</span><span data-i18n="nav_orders">ขายการ์ด</span>
         <span class="notif"></span>
       </div>
+      <div class="nav-item" id="nav-break" onclick="showPageMobile('break',null,t('title_break'));closeSidebar()">
+        <span class="nav-icon">◐</span><span data-i18n="nav_break">เบรคการ์ด</span>
+      </div>
       <div class="nav-item" id="nav-purchase" onclick="showPageMobile('purchase',null,t('title_purchase'));closeSidebar()">
         <span class="nav-icon">◉</span><span data-i18n="nav_purchase">สั่งซื้อการ์ด</span>
       </div>
@@ -1470,6 +1473,112 @@ select option{background:var(--bg3);}
     </div>
 
     <!-- PURCHASE -->
+    <!-- ═══ PAGE: เบรคการ์ด ═══ -->
+    <div id="page-break" class="page">
+      <div class="content">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button class="btn-ham" onclick="toggleSidebar()">☰</button>
+            <span class="page-title" data-i18n="title_break">เบรคการ์ด</span>
+          </div>
+        </div>
+        <div style="padding:20px 16px;max-width:760px;margin:0 auto">
+
+          <!-- Setup Panel -->
+          <div id="break-setup-panel" class="panel" style="margin-bottom:16px">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="break_setup_title">ตั้งค่าการเบรค</span>
+            </div>
+
+            <!-- เลือกการ์ด -->
+            <div class="form-group" style="margin-bottom:14px">
+              <label data-i18n="break_card_label">การ์ดที่จะเบรค</label>
+              <div style="position:relative">
+                <input type="text" id="break-card-search"
+                  placeholder="พิมพ์ชื่อการ์ด..."
+                  autocomplete="off"
+                  oninput="onBreakCardSearch(this.value)"
+                  onfocus="if(this.value.length>0)showBreakDropdown()"
+                  style="width:100%;padding-right:36px">
+                <button type="button" onclick="toggleBreakAllCards()"
+                  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px"
+                  onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">🔍</button>
+                <div id="break-card-drop" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+              </div>
+              <!-- selected card preview -->
+              <div id="break-card-preview" style="display:none;margin-top:10px;background:var(--bg3);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+                <img id="break-card-img" src="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;display:none">
+                <div id="break-card-icon" style="width:44px;height:44px;border-radius:6px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🃏</div>
+                <div>
+                  <div id="break-card-name" style="font-size:14px;font-weight:700;color:var(--text)">-</div>
+                  <div id="break-card-meta" style="font-size:12px;color:var(--text3);font-family:var(--mono)">-</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-bottom:14px">
+              <div class="form-group" style="margin-bottom:0">
+                <label data-i18n="break_spots_label">จำนวน Spot</label>
+                <input type="number" id="break-spots" min="1" max="100" placeholder="เช่น 30"
+                  oninput="generateBreakSpots()">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label data-i18n="break_price_label">ราคาต่อ Spot (฿)</label>
+                <input type="number" id="break-spot-price" min="0" placeholder="0"
+                  oninput="updateBreakSummary()">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0">
+              <label data-i18n="break_name_label">ชื่อเบรค (ไม่บังคับ)</label>
+              <input type="text" id="break-session-name" placeholder="เช่น เบรค Topps Chrome เม.ย.">
+            </div>
+          </div>
+
+          <!-- Spots Table -->
+          <div id="break-spots-panel" style="display:none">
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-head">
+                <span class="panel-title" data-i18n="break_spots_title">รายการ Spot</span>
+                <!-- Summary -->
+                <div style="display:flex;gap:16px;align-items:center">
+                  <span style="font-size:12px;color:var(--text3)">จ่ายแล้ว <span id="break-paid-count" style="color:var(--green);font-weight:700">0</span>/<span id="break-total-spots">0</span></span>
+                  <span style="font-size:14px;font-weight:700;color:var(--yellow)" id="break-revenue-display">฿0</span>
+                </div>
+              </div>
+
+              <div id="break-spots-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
+
+              <!-- Summary bar -->
+              <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+                <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;letter-spacing:1px" data-i18n="break_summary">SUMMARY</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                  <div>
+                    <div style="font-size:10px;color:var(--text3);margin-bottom:3px" data-i18n="break_sum_spots">Spots ทั้งหมด</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--text);font-family:var(--mono)" id="brk-sum-spots">0</div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:var(--text3);margin-bottom:3px" data-i18n="break_sum_paid">จ่ายแล้ว</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--green);font-family:var(--mono)" id="brk-sum-paid">฿0</div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:var(--text3);margin-bottom:3px" data-i18n="break_sum_remain">ค้างจ่าย</div>
+                    <div style="font-size:18px;font-weight:700;color:var(--red);font-family:var(--mono)" id="brk-sum-remain">฿0</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- End Break Button -->
+              <button onclick="endBreak()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700" data-i18n="break_btn_end">
+                🎯 End Break — บันทึกออเดอร์
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <div id="page-purchase" class="page">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-purchase">สั่งซื้อการ์ด</span></div>
@@ -2605,6 +2714,10 @@ let cards = []
 let orders = []
 let customers = []
 let topCards = []
+
+// ── Break Data ─────────────────────────────────────────────────────────────────
+let breakCardIdx = -1   // index ของการ์ดที่เลือก
+let breakSpots  = []    // [{name:'', paid:false}]
 
 // ── Purchase Data ─────────────────────────────────────────────────────────────
 let purchases = []
@@ -4062,13 +4175,13 @@ const LANG = {
   th: {
     // Nav
     nav_dashboard:'Dashboard', nav_inventory:'สต็อกการ์ด', nav_orders:'ขายการ์ด',
-    nav_purchase:'สั่งซื้อการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
+    nav_purchase:'สั่งซื้อการ์ด', nav_break:'เบรคการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
     // Bottom nav
     bnav_home:'หน้าหลัก', bnav_stock:'สต็อก', bnav_orders:'ขายการ์ด',
     bnav_buy:'ซื้อ', bnav_reports:'รายงาน', bnav_settings:'ตั้งค่า', bnav_back:'สลับ',
     // Page titles
     title_dashboard:'Dashboard', title_inventory:'สต็อกการ์ด', title_orders:'ขายการ์ด',
-    title_purchase:'สั่งซื้อการ์ด', title_customers:'ลูกค้า',
+    title_purchase:'สั่งซื้อการ์ด', title_break:'เบรคการ์ด', title_customers:'ลูกค้า',
     title_reports:'รายงาน & Analytics', title_setup:'ตั้งค่า / Setup',
     // Dashboard KPI
     kpi_revenue:'REVENUE MTD', kpi_margin:'GROSS MARGIN', kpi_stock:'TOTAL STOCK', kpi_orders:'TOTAL ORDERS',
@@ -4277,7 +4390,7 @@ const LANG = {
   },
   en: {
     nav_dashboard:'Dashboard', nav_inventory:'Inventory', nav_orders:'Sell Cards',
-    nav_purchase:'Purchase', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
+    nav_purchase:'Purchase', nav_break:'Card Break', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
     bnav_home:'Home', bnav_stock:'Stock', bnav_orders:'Sell Cards',
     bnav_buy:'Buy', bnav_reports:'Reports', bnav_settings:'Settings', bnav_back:'Back',
     title_dashboard:'Dashboard', title_inventory:'Card Inventory', title_orders:'Sell Cards',
@@ -4676,6 +4789,7 @@ function showPage(id,el){
   if(id==='purchase') renderPurchase()
   if(id==='setup') renderSetup()
   if(id==='dashboard') renderDashboard()
+  if(id==='break') renderBreakPage()
 }
 
 // Modals
@@ -6757,6 +6871,206 @@ function renderTopMargin() {
       </div>
     </div>`
   }).join('')
+}
+
+// ── Break ─────────────────────────────────────────────────────────────────────
+function renderBreakPage() {
+  // reset ถ้ายังไม่มี session
+}
+
+function onBreakCardSearch(query) {
+  showBreakDropdown(query)
+}
+
+function toggleBreakAllCards() {
+  const drop = document.getElementById('break-card-drop')
+  if (!drop) return
+  if (drop.style.display === 'block') { drop.style.display = 'none'; return }
+  showBreakDropdown('')
+  document.getElementById('break-card-search')?.focus()
+}
+
+function showBreakDropdown(query) {
+  const drop = document.getElementById('break-card-drop')
+  if (!drop) return
+  const q = (query || '').toLowerCase().trim()
+  const list = cards
+    .map((c, ci) => ({ c, ci }))
+    .filter(({ c }) => (c.stock||0) > 0 && (!q || c.name.toLowerCase().includes(q) || (c.brand||'').toLowerCase().includes(q)))
+    .slice(0, 30)
+
+  if (list.length === 0) {
+    drop.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--text3);text-align:center">${q ? 'ไม่พบการ์ด "'+q+'"' : 'ไม่มีการ์ดในสต็อก'}</div>`
+  } else {
+    drop.innerHTML = list.map(({ c, ci }) => {
+      const badge = c.psa ? `<span style="font-size:10px;background:rgba(124,109,250,0.15);color:var(--accent2);border-radius:4px;padding:1px 5px;font-family:var(--mono)">G ${c.psaType==='auth'?'Auth':c.psaType==='auto'?'Auto '+c.psaGrade:'Gem '+c.psaGrade}</span>` : ''
+      return `<div onclick="selectBreakCard(${ci})"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
+        onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        ${c.photo ? `<img src="${c.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name} ${badge}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${c.brand} · stock ${c.stock}</div>
+        </div>
+      </div>`
+    }).join('')
+  }
+  drop.style.display = 'block'
+
+  // ปิดเมื่อคลิกนอก
+  setTimeout(() => {
+    const handler = e => {
+      if (!drop.parentElement?.contains(e.target)) { drop.style.display = 'none'; document.removeEventListener('click', handler) }
+    }
+    document.addEventListener('click', handler)
+  }, 0)
+}
+
+function selectBreakCard(ci) {
+  breakCardIdx = ci
+  const c = cards[ci]
+  const inp = document.getElementById('break-card-search')
+  if (inp) inp.value = c.name
+  document.getElementById('break-card-drop').style.display = 'none'
+
+  // show preview
+  const preview = document.getElementById('break-card-preview')
+  const img = document.getElementById('break-card-img')
+  const icon = document.getElementById('break-card-icon')
+  if (preview) preview.style.display = 'flex'
+  if (c.photo) { img.src = c.photo; img.style.display = 'block'; icon.style.display = 'none' }
+  else { img.style.display = 'none'; icon.style.display = 'flex' }
+  document.getElementById('break-card-name').textContent = c.name
+  document.getElementById('break-card-meta').textContent = `${c.brand} · stock ${c.stock} ใบ · ต้นทุน ฿${(c.cost||0).toLocaleString()}`
+}
+
+function generateBreakSpots() {
+  const n = parseInt(document.getElementById('break-spots')?.value) || 0
+  if (n < 1 || n > 200) return
+
+  // keep existing spot names ถ้ามี
+  const oldSpots = [...breakSpots]
+  breakSpots = Array.from({length: n}, (_, i) => ({
+    name: oldSpots[i]?.name || '',
+    paid: oldSpots[i]?.paid || false
+  }))
+
+  document.getElementById('break-spots-panel').style.display = 'block'
+  renderBreakSpots()
+  updateBreakSummary()
+}
+
+function renderBreakSpots() {
+  const list = document.getElementById('break-spots-list')
+  if (!list) return
+  const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
+
+  list.innerHTML = breakSpots.map((spot, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:28px">${String(i+1).padStart(2,'0')}</span>
+      <input type="text" placeholder="ชื่อผู้ซื้อ Spot นี้..."
+        value="${escHtml(spot.name)}"
+        oninput="breakSpots[${i}].name=this.value;updateBreakSummary()"
+        style="flex:1;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text3);min-width:52px;text-align:right">฿${price.toLocaleString()}</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary()"
+          style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
+        <span style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">จ่ายแล้ว</span>
+      </label>
+    </div>`).join('')
+}
+
+function updateBreakSummary() {
+  const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
+  const total = breakSpots.length
+  const paid  = breakSpots.filter(s => s.paid).length
+  const paidAmt = paid * price
+  const remainAmt = (total - paid) * price
+
+  const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  ss('break-paid-count', paid)
+  ss('break-total-spots', total)
+  ss('break-revenue-display', '฿' + (total * price).toLocaleString())
+  ss('brk-sum-spots', total)
+  ss('brk-sum-paid', '฿' + paidAmt.toLocaleString())
+  ss('brk-sum-remain', '฿' + remainAmt.toLocaleString())
+
+  // re-render spots (update สี paid label)
+  renderBreakSpots()
+}
+
+function endBreak() {
+  if (breakCardIdx < 0) { showToast('กรุณาเลือกการ์ดที่จะเบรค', 'var(--orange)'); return }
+  if (breakSpots.length === 0) { showToast('กรุณาใส่จำนวน Spot', 'var(--orange)'); return }
+
+  const card = cards[breakCardIdx]
+  const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
+  const sessionName = document.getElementById('break-session-name')?.value.trim() || `Break ${card.name}`
+  const paidSpots = breakSpots.filter(s => s.paid)
+
+  if (paidSpots.length === 0) {
+    showToast('ยังไม่มี Spot ที่จ่ายเงิน', 'var(--orange)'); return
+  }
+
+  // สร้าง order 1 ใบ รวม Spots ที่จ่ายแล้ว
+  const custNames = [...new Set(paidSpots.map(s => s.name).filter(Boolean))]
+  const custStr = custNames.length > 0 ? custNames.join(', ') : 'Anonymous'
+  const total = paidSpots.length * price
+
+  // ลด stock 1 ใบ (การ์ด 1 ใบที่เบรค)
+  if (card) card.stock = Math.max(0, (card.stock||0) - 1)
+
+  const newOrder = {
+    id: 'ORD-' + String(orders.length + 1).padStart(4,'0'),
+    customer: custStr,
+    items: `[Break] ${sessionName}`,
+    qty: paidSpots.length,
+    total,
+    hiddenCost: 0,
+    channel: 'หน้าร้าน',
+    note: `Break: ${sessionName} | ${paidSpots.length}/${breakSpots.length} spots | ฿${price}/spot`,
+    status: 'completed',
+    date: formatDate(),
+    orderItems: [{
+      cardIdx: breakCardIdx,
+      name: card?.name || '-',
+      brand: card?.brand || '-',
+      qty: 1,
+      price: total
+    }],
+    isBreak: true,
+    breakSession: sessionName,
+    breakSpots: breakSpots.map(s => ({ ...s }))
+  }
+
+  orders.unshift(newOrder)
+  saveData()
+  renderOrders()
+  renderDashboard()
+  filterCards()
+
+  showToast(`🎯 Break "${sessionName}" — บันทึก ${paidSpots.length} spots ฿${total.toLocaleString()}`, 'var(--green)')
+
+  // reset
+  breakCardIdx = -1
+  breakSpots = []
+  const inp = document.getElementById('break-card-search')
+  if (inp) inp.value = ''
+  const preview = document.getElementById('break-card-preview')
+  if (preview) preview.style.display = 'none'
+  const spotsEl = document.getElementById('break-spots')
+  if (spotsEl) spotsEl.value = ''
+  const priceEl = document.getElementById('break-spot-price')
+  if (priceEl) priceEl.value = ''
+  const nameEl = document.getElementById('break-session-name')
+  if (nameEl) nameEl.value = ''
+  document.getElementById('break-spots-panel').style.display = 'none'
+  updateBreakSummary()
+
+  // ไปหน้าออเดอร์
+  showPage('orders', null)
+  showToast(`✅ ดูออเดอร์ Break ได้ที่หน้าขายการ์ด`, 'var(--accent)')
 }
 
 // ── Purchase ──────────────────────────────────────────────────────────────────
