@@ -2930,24 +2930,50 @@ function applySnapshot(data) {
 }
 
 // ── Save: localStorage + Supabase ────────────────────────────────────────────
+let _isSaving = false  // ป้องกัน double-save
+
 async function saveData() {
   if (!currentUser?.email) return
+  if (_isSaving) return  // ถ้ากำลัง save อยู่ให้ skip
+  _isSaving = true
+
   const email    = currentUser.email
   const snapshot = buildSnapshot()
 
   // 1. บันทึก localStorage ทันที
   try { localStorage.setItem('cv_data_' + email, JSON.stringify(snapshot)) } catch(e) {}
 
-  // 2. sync ไป Supabase REST API
+  // 2. sync ไป Supabase REST API พร้อม conflict check
   try {
-    // ดึง data เดิมก่อนเพื่อ merge (preserve userInfo, trialData)
     const getRes = await fetch(
       SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
-    const existing = await getRes.json()
+    const existing     = await getRes.json()
     const existing_data = (Array.isArray(existing) && existing[0]?.data) || {}
-    // merge: ข้อมูลร้านทับลงไป แต่เก็บ userInfo / trialData ที่มีอยู่
+
+    // ── Conflict detection ────────────────────────────────────────────────
+    const remoteSavedAt = existing_data?.savedAt || 0
+    const localSavedAt  = _lastSyncedAt || 0
+    if (remoteSavedAt > localSavedAt + 3000) {
+      // มีเครื่องอื่น save หลังจากที่เราโหลดมา
+      showToast('⚠️ มีการแก้ไขจากเครื่องอื่น — กำลังรวมข้อมูล...', 'var(--orange)')
+      // merge orders และ purchases — เอาของที่มี id ไม่ซ้ำ
+      const remoteOrders    = existing_data.orders    || []
+      const remotePurchases = existing_data.purchases || []
+      const localOrderIds   = new Set(snapshot.orders.map(o=>o.id))
+      const localPOIds      = new Set(snapshot.purchases.map(p=>p.po))
+      // เพิ่ม remote records ที่ local ไม่มี
+      const mergedOrders    = [...snapshot.orders,    ...remoteOrders.filter(o=>!localOrderIds.has(o.id))]
+      const mergedPurchases = [...snapshot.purchases, ...remotePurchases.filter(p=>!localPOIds.has(p.po))]
+      snapshot.orders    = mergedOrders
+      snapshot.purchases = mergedPurchases
+      // apply merged ลง memory ด้วย
+      orders.length = 0;    orders.push(...mergedOrders)
+      purchases.length = 0; purchases.push(...mergedPurchases)
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const merged = { ...existing_data, ...snapshot }
     await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
       method: 'POST',
@@ -2957,8 +2983,12 @@ async function saveData() {
       },
       body: JSON.stringify({ shop_id: email, data: merged, updated_at: new Date().toISOString() })
     })
+    _lastSyncedAt = snapshot.savedAt  // บันทึกเวลา sync ล่าสุด
   } catch(e) { console.warn('saveData Supabase failed:', e) }
+  finally { _isSaving = false }
 }
+
+let _lastSyncedAt = Date.now()  // timestamp ที่ sync ล่าสุด
 
 // ── Load: Supabase ก่อน → fallback localStorage ───────────────────────────────
 async function loadData() {
@@ -2993,10 +3023,57 @@ async function loadData() {
       if (cloudSaved >= localSaved) {
         applySnapshot(cloudData)
         try { localStorage.setItem('cv_data_' + email, JSON.stringify(cloudData)) } catch(e) {}
+        _lastSyncedAt = cloudSaved || Date.now()
         renderDashboard()
       }
     } catch(e) {}
   })()
+}
+
+// ── Background polling — sync ทุก 30 วิ ─────────────────────────────────────
+let _pollingInterval = null
+function startPolling() {
+  if (_pollingInterval) clearInterval(_pollingInterval)
+  _pollingInterval = setInterval(async () => {
+    if (!currentUser?.email || _isSaving) return
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(currentUser.email) + '&select=data',
+        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+      )
+      if (!res.ok) return
+      const rows = await res.json()
+      const cloudData = Array.isArray(rows) && rows[0]?.data
+      if (!cloudData) return
+      const cloudSaved = cloudData.savedAt || 0
+      if (cloudSaved > (_lastSyncedAt || 0) + 3000) {
+        // มีข้อมูลใหม่จากเครื่องอื่น — merge แล้ว apply
+        const remoteOrders    = cloudData.orders    || []
+        const remotePurchases = cloudData.purchases || []
+        const localOrderIds   = new Set(orders.map(o=>o.id))
+        const localPOIds      = new Set(purchases.map(p=>p.po))
+        const newOrders    = remoteOrders.filter(o => !localOrderIds.has(o.id))
+        const newPurchases = remotePurchases.filter(p => !localPOIds.has(p.po))
+        if (newOrders.length > 0 || newPurchases.length > 0) {
+          orders.unshift(...newOrders)
+          purchases.unshift(...newPurchases)
+          // sync cards stock จาก cloud (ใหม่กว่า)
+          if (cloudData.cards) { cards.length = 0; cards.push(...cloudData.cards) }
+          _lastSyncedAt = cloudSaved
+          renderDashboard()
+          renderOrders()
+          filterCards()
+          showToast('🔄 ซิงค์ข้อมูลจากอีกเครื่อง (+' + (newOrders.length + newPurchases.length) + ' รายการ)', 'var(--accent2)')
+        } else {
+          _lastSyncedAt = cloudSaved
+        }
+      }
+    } catch(e) {}
+  }, 30000)  // ทุก 30 วินาที
+}
+
+function stopPolling() {
+  if (_pollingInterval) { clearInterval(_pollingInterval); _pollingInterval = null }
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
@@ -3931,6 +4008,7 @@ async function enterApp() {
   syncMasterToAllPages()
   applyLang()
   renderDashboard()
+  startPolling()  // เริ่ม background sync ทุก 30 วิ
   // re-render portfolio ถ้า tab กำลังแสดงอยู่
   const pt = document.getElementById('dtab-portfolio')
   if (pt && pt.style.display !== 'none') renderPortfolio()
@@ -4043,7 +4121,7 @@ function doLogin(){
 }
 
 function doLogout(){
-  // ล้าง data ทั้งหมด ป้องกัน user เห็นข้อมูลของ user อื่น
+  stopPolling()  // หยุด background sync
   cards.length = 0; orders.length = 0; purchases.length = 0
   currentUser = null
 
