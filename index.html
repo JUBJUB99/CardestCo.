@@ -1495,6 +1495,7 @@ select option{background:var(--bg3);}
               <label data-i18n="break_card_label">การ์ดที่จะเบรค</label>
               <div style="position:relative">
                 <input type="text" id="break-card-search"
+                  data-ph-i18n="break_card_search_ph"
                   placeholder="พิมพ์ชื่อการ์ด..."
                   autocomplete="off"
                   oninput="onBreakCardSearch(this.value)"
@@ -1531,7 +1532,7 @@ select option{background:var(--bg3);}
 
             <div class="form-group" style="margin-bottom:0">
               <label data-i18n="break_name_label">ชื่อเบรค (ไม่บังคับ)</label>
-              <input type="text" id="break-session-name" placeholder="เช่น เบรค Topps Chrome เม.ย.">
+              <input type="text" id="break-session-name" data-ph-i18n="break_name_ph" placeholder="เช่น เบรค Topps Chrome เม.ย.">
             </div>
           </div>
 
@@ -4254,6 +4255,16 @@ const LANG = {
     // Nav
     nav_dashboard:'Dashboard', nav_inventory:'สต็อกการ์ด', nav_orders:'ขายการ์ด',
     nav_purchase:'สั่งซื้อการ์ด', nav_break:'เบรคการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
+    title_break:'เบรคการ์ด',
+    break_setup_title:'ตั้งค่าการเบรค', break_card_label:'การ์ดที่จะเบรค',
+    break_card_search_ph:'พิมพ์ชื่อการ์ด...',
+    break_spots_label:'จำนวน Spot', break_price_label:'ราคาต่อ Spot (฿)',
+    break_name_label:'ชื่อเบรค (ไม่บังคับ)', break_name_ph:'เช่น เบรค Topps Chrome เม.ย.',
+    break_spots_title:'รายการ Spot', break_spot_ph:'ชื่อผู้ซื้อ Spot นี้...',
+    break_paid_label:'จ่ายแล้ว', break_summary:'SUMMARY',
+    break_sum_spots:'Spots ทั้งหมด', break_sum_paid:'จ่ายแล้ว', break_sum_remain:'ค้างจ่าย',
+    break_btn_end:'🎯 End Break — บันทึกออเดอร์',
+    break_warn_unpaid:'ยังมี {n} Spot ที่ยังไม่จ่ายเงิน — กรุณาติ๊กจ่ายแล้วให้ครบก่อน',
     // Bottom nav
     bnav_home:'หน้าหลัก', bnav_stock:'สต็อก', bnav_orders:'ขายการ์ด',
     bnav_buy:'ซื้อ', bnav_reports:'รายงาน', bnav_settings:'ตั้งค่า', bnav_back:'สลับ',
@@ -4469,6 +4480,16 @@ const LANG = {
   en: {
     nav_dashboard:'Dashboard', nav_inventory:'Inventory', nav_orders:'Sell Cards',
     nav_purchase:'Purchase', nav_break:'Card Break', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
+    title_break:'Card Break',
+    break_setup_title:'Break Settings', break_card_label:'Card to Break',
+    break_card_search_ph:'Search card name...',
+    break_spots_label:'Number of Spots', break_price_label:'Price per Spot (฿)',
+    break_name_label:'Break Name (optional)', break_name_ph:'e.g. Topps Chrome Apr Break',
+    break_spots_title:'Spot List', break_spot_ph:'Buyer name for this spot...',
+    break_paid_label:'Paid', break_summary:'SUMMARY',
+    break_sum_spots:'Total Spots', break_sum_paid:'Paid', break_sum_remain:'Unpaid',
+    break_btn_end:'🎯 End Break — Save Orders',
+    break_warn_unpaid:'{n} spot(s) not paid yet — please mark all as paid first',
     bnav_home:'Home', bnav_stock:'Stock', bnav_orders:'Sell Cards',
     bnav_buy:'Buy', bnav_reports:'Reports', bnav_settings:'Settings', bnav_back:'Back',
     title_dashboard:'Dashboard', title_inventory:'Card Inventory', title_orders:'Sell Cards',
@@ -4751,7 +4772,11 @@ function applyLang() {
   if (agingTab && agingTab.style.display !== 'none') {
     try { renderAgingReport() } catch(e) {}
   }
-  // re-render sale items และ brand pills ถ้า modal เปิดอยู่
+  // re-render break spots ถ้า break page กำลังแสดงอยู่ (update จ่ายแล้ว label + placeholder)
+  const breakPage = document.getElementById('page-break')
+  if (breakPage && breakPage.classList.contains('active') && breakSpots.length > 0) {
+    try { renderBreakSpots(); updateEndBreakBtn() } catch(e) {}
+  }
   const saleModal = document.getElementById('modal-newSale')
   if (saleModal && saleModal.classList.contains('open')) {
     try {
@@ -7022,6 +7047,21 @@ function selectBreakCard(ci) {
   document.getElementById('break-card-meta').textContent = `${c.brand} · stock ${c.stock} ใบ · ต้นทุน ฿${(c.cost||0).toLocaleString()}`
 }
 
+function updateEndBreakBtn() {
+  const btn = document.querySelector('#break-spots-panel .btn-primary')
+  if (!btn || breakSpots.length === 0) return
+  const unpaid = breakSpots.filter(s => !s.paid).length
+  const allPaid = unpaid === 0
+  btn.disabled = !allPaid
+  btn.style.opacity = allPaid ? '1' : '0.45'
+  btn.style.cursor = allPaid ? 'pointer' : 'not-allowed'
+  if (!allPaid) {
+    btn.title = t('break_warn_unpaid').replace('{n}', unpaid)
+  } else {
+    btn.title = ''
+  }
+}
+
 function generateBreakSpots() {
   const n = parseInt(document.getElementById('break-spots')?.value) || 0
   if (n < 1 || n > 200) return
@@ -7036,6 +7076,7 @@ function generateBreakSpots() {
   document.getElementById('break-spots-panel').style.display = 'block'
   renderBreakSpots()
   updateBreakSummary()
+  updateEndBreakBtn()
 }
 
 function renderBreakSpots() {
@@ -7046,15 +7087,15 @@ function renderBreakSpots() {
   list.innerHTML = breakSpots.map((spot, i) => `
     <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:28px">${String(i+1).padStart(2,'0')}</span>
-      <input type="text" placeholder="ชื่อผู้ซื้อ Spot นี้..."
+      <input type="text" placeholder="${t('break_spot_ph')}"
         value="${escHtml(spot.name)}"
         oninput="breakSpots[${i}].name=this.value"
         style="flex:1;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px">
       <span data-spot-price style="font-family:var(--mono);font-size:12px;color:var(--text3);min-width:52px;text-align:right">฿${price.toLocaleString()}</span>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
-        <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary()"
+        <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary();updateEndBreakBtn()"
           style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
-        <span data-paid-label style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">จ่ายแล้ว</span>
+        <span data-paid-label style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">${t('break_paid_label')}</span>
       </label>
     </div>`).join('')
 }
@@ -7083,6 +7124,7 @@ function updateBreakSummary() {
     const paidLabel = row.querySelector('[data-paid-label]')
     if (paidLabel) paidLabel.style.color = spot.paid ? 'var(--green)' : 'var(--text3)'
   })
+  updateEndBreakBtn()
 }
 
 function endBreak() {
