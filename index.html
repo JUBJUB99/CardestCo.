@@ -556,6 +556,30 @@ select option{background:var(--bg3);}
 
   /* Tab bars */
   .setup-tab{padding:8px 12px;font-size:12px;}
+
+  /* Pending breaks sidebar — mobile: กลับเป็น static ด้านบนฟอร์ม */
+  #pending-breaks-sidebar{
+    position:static !important;
+    width:100% !important;
+    margin-bottom:12px;
+  }
+  #pending-breaks-sidebar .panel{padding:10px;}
+  #pending-breaks-list{
+    flex-direction:row !important;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:10px !important;
+    padding-bottom:4px;
+    max-height:none !important;
+  }
+  #pending-breaks-list > div{
+    min-width:190px;
+    flex-shrink:0;
+  }
+  #break-new-layout{
+    display:flex !important;
+    flex-direction:column !important;
+  }
 }
 
 /* ── Small mobile (≤380px) ── */
@@ -970,6 +994,8 @@ select option{background:var(--bg3);}
           <div class="setup-tab active" onclick="switchDashTab('overview',this)">Overview</div>
           <div class="setup-tab" onclick="switchDashTab('portfolio',this)">📦 Portfolio</div>
           <div class="setup-tab" onclick="switchDashTab('aging',this)" data-i18n="dash_aging_tab">📊 สินค้าไม่เคลื่อนไหว</div>
+          <!-- Trends tab hidden per request -->
+          <!-- <div class="setup-tab" onclick="switchDashTab('trends',this)">📈 Trends</div> -->
         </div>
 
         <!-- TAB: Overview -->
@@ -1177,6 +1203,63 @@ select option{background:var(--bg3);}
             </div>
           </div>
         </div><!-- end dtab-aging -->
+
+        <!-- TAB: Trends -->
+        <div id="dtab-trends" style="display:none">
+          <div class="kpi-row" style="margin-bottom:20px">
+            <div class="kpi-card" style="--kpi-color:var(--accent2)">
+              <div class="kpi-label">BEST MONTH</div>
+              <div class="kpi-val" id="trend-best-month" style="font-size:18px">—</div>
+              <div class="kpi-sub" id="trend-best-month-val">เดือนที่ขายดีสุด</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--green)">
+              <div class="kpi-label">AVG MONTHLY REVENUE</div>
+              <div class="kpi-val" id="trend-avg-rev" style="font-size:22px">฿0</div>
+              <div class="kpi-sub">เฉลี่ยต่อเดือน</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--yellow)">
+              <div class="kpi-label">GROWTH MOM</div>
+              <div class="kpi-val" id="trend-mom" style="font-size:22px">0%</div>
+              <div class="kpi-sub" id="trend-mom-sub">เทียบเดือนที่แล้ว</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--blue)">
+              <div class="kpi-label">TOTAL ALL TIME</div>
+              <div class="kpi-val" id="trend-total-all" style="font-size:22px">฿0</div>
+              <div class="kpi-sub">รายได้รวมทั้งหมด</div>
+            </div>
+          </div>
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head">
+              <span class="panel-title">📈 Revenue Trend (12 เดือนล่าสุด)</span>
+              <select id="trend-year-select" onchange="renderTrendChart()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)"></select>
+            </div>
+            <div style="overflow-x:auto">
+              <svg id="trend-line-svg" viewBox="0 0 760 200" style="width:100%;min-width:340px;height:200px;display:block"></svg>
+            </div>
+            <div id="trend-line-legend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding:0 8px"></div>
+          </div>
+          <div class="chart-row" style="margin-bottom:16px">
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">🏆 Brand Revenue Ranking</span></div>
+              <div id="trend-brand-bars" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">💹 Profit Margin by Brand</span></div>
+              <div id="trend-brand-margin" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+            </div>
+          </div>
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head">
+              <span class="panel-title">🗓 Revenue Heatmap รายเดือน</span>
+              <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">สีเข้ม = ขายดีกว่า</span>
+            </div>
+            <div id="trend-heatmap" style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:8px"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title">🃏 Top 5 การ์ดขายดีตลอดกาล</span></div>
+            <div id="trend-top-cards" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
+          </div>
+        </div><!-- end dtab-trends -->
 
       </div>
     </div>
@@ -1472,17 +1555,35 @@ select option{background:var(--bg3);}
       </div>
     </div>
 
-    <!-- PURCHASE -->
     <!-- ═══ PAGE: เบรคการ์ด ═══ -->
     <div id="page-break" class="page">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" data-i18n="title_break">เบรคการ์ด</span></div>
+        <div class="topbar-right"></div>
+      </div>
       <div class="content">
-        <div class="topbar">
-          <div class="topbar-left">
-            <button class="btn-ham" onclick="toggleSidebar()">☰</button>
-            <span class="page-title" data-i18n="title_break">เบรคการ์ด</span>
-          </div>
+        <!-- Break Tabs -->
+        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+          <div class="setup-tab active" id="brtab-btn-new" onclick="switchBreakTab('new',this)" data-i18n="break_tab_new">🎯 เบรคใหม่</div>
+          <div class="setup-tab" id="brtab-btn-history" onclick="switchBreakTab('history',this)" data-i18n="break_tab_history">📋 ประวัติ</div>
+          <div class="setup-tab" id="brtab-btn-analytics" onclick="switchBreakTab('analytics',this)" data-i18n="break_tab_analytics">📊 Analytics</div>
         </div>
-        <div style="padding:20px 16px;max-width:760px;margin:0 auto">
+
+        <!-- TAB: New Break -->
+        <div id="brtab-new">
+        <!-- Wrapper: relative ให้ sidebar absolute ทางซ้าย ฟอร์มอยู่กลางเสมอ -->
+        <div id="break-new-layout" style="position:relative;min-height:200px">
+
+          <!-- Pending Breaks Sidebar — absolute ซ้าย ไม่กระทบ centering ของฟอร์ม -->
+          <div id="pending-breaks-sidebar" style="position:absolute;left:0;top:0;width:220px;display:none;z-index:2">
+            <div class="panel" style="padding:14px">
+              <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:12px"data-i18n="break_pending_label">⏸ PENDING BREAKS</div>
+              <div id="pending-breaks-list" style="display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 220px);overflow-y:auto"></div>
+            </div>
+          </div>
+
+        <!-- ฟอร์มอยู่กึ่งกลางเสมอ max-width คงที่ margin auto -->
+        <div style="max-width:760px;margin:0 auto;position:relative;z-index:1">
 
           <!-- Setup Panel -->
           <div id="break-setup-panel" class="panel" style="margin-bottom:16px">
@@ -1520,7 +1621,7 @@ select option{background:var(--bg3);}
             <div class="form-row" style="margin-bottom:14px">
               <div class="form-group" style="margin-bottom:0">
                 <label data-i18n="break_spots_label">จำนวน Spot</label>
-                <input type="number" id="break-spots" min="1" max="100" placeholder="เช่น 30"
+                <input type="number" id="break-spots" min="1" max="200" data-ph-i18n="break_spots_ph" placeholder="เช่น 30"
                   oninput="generateBreakSpots()">
               </div>
               <div class="form-group" style="margin-bottom:0">
@@ -1548,6 +1649,17 @@ select option{background:var(--bg3);}
                 </div>
               </div>
 
+              <!-- Fill rate progress bar -->
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">
+                  <span data-i18n="break_fill_rate">Fill Rate</span>
+                  <span id="break-fill-pct">0%</span>
+                </div>
+                <div style="height:8px;background:var(--border2);border-radius:4px;overflow:hidden">
+                  <div id="break-fill-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:4px;transition:width 0.3s ease"></div>
+                </div>
+              </div>
+
               <div id="break-spots-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
 
               <!-- Summary bar -->
@@ -1569,14 +1681,104 @@ select option{background:var(--bg3);}
                 </div>
               </div>
 
-              <!-- End Break Button -->
-              <button onclick="endBreak()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700" data-i18n="break_btn_end">
-                🎯 End Break — บันทึกออเดอร์
-              </button>
+              <!-- Action Buttons -->
+              <div style="display:flex;gap:10px">
+                <button onclick="savePendingBreak()" class="btn" style="flex:1;padding:14px;font-size:14px;font-weight:700;border-color:var(--orange);color:var(--orange)" data-i18n-title="break_pending_btn_title" title="พักการเบรคนี้ไว้ก่อน สามารถกลับมาแก้ไขได้">
+                  <span data-i18n="break_pending_btn">⏸ Pending Break</span>
+                </button>
+                <button onclick="endBreak()" id="end-break-btn" class="btn btn-primary" style="flex:2;padding:14px;font-size:15px;font-weight:700" data-i18n="break_btn_end">
+                  🎯 End Break — บันทึกออเดอร์
+                </button>
+              </div>
+              <div id="break-action-hint" style="margin-top:8px;font-size:11px;color:var(--text3);text-align:center;font-family:var(--mono)">
+                ⏸ Pending = พักไว้ก่อน กลับมาแก้ไขได้ &nbsp;|&nbsp; 🎯 End Break = สร้าง Order ทันที (ต้องจ่ายครบ)
+              </div>
             </div>
           </div>
 
-        </div>
+        </div><!-- end form col (centered) -->
+        </div><!-- end break-new-layout (relative) -->
+        </div><!-- end brtab-new -->
+
+        <!-- TAB: History -->
+        <div id="brtab-history" style="display:none">
+          <!-- KPIs -->
+          <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+            <div class="kpi-card" style="--kpi-color:var(--accent)">
+              <div class="kpi-label" data-i18n="break_hist_kpi_count">TOTAL BREAKS</div>
+              <div class="kpi-val" id="brk-hist-count">0</div>
+              <div class="kpi-sub" data-i18n="break_hist_kpi_count_sub">Session ทั้งหมด</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--yellow)">
+              <div class="kpi-label" data-i18n="break_hist_kpi_rev">TOTAL REVENUE</div>
+              <div class="kpi-val" id="brk-hist-rev">฿0</div>
+              <div class="kpi-sub" data-i18n="break_hist_kpi_rev_sub">รายได้จากเบรค</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--green)">
+              <div class="kpi-label" data-i18n="break_hist_kpi_fill">AVG FILL RATE</div>
+              <div class="kpi-val" id="brk-hist-fill">0%</div>
+              <div class="kpi-sub" data-i18n="break_hist_kpi_fill_sub">เฉลี่ย Spot ที่ขายได้</div>
+            </div>
+          </div>
+          <!-- History Table -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="break_hist_title">ประวัติการเบรค</span>
+              <span id="brk-hist-table-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)">0 session</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="break_hist_col_session">SESSION</th>
+                    <th data-i18n="pf_col_card">การ์ด</th>
+                    <th style="text-align:center" data-i18n="break_hist_col_spots">Spots</th>
+                    <th style="text-align:center" data-i18n="break_hist_col_paid">จ่ายแล้ว</th>
+                    <th style="text-align:center" data-i18n="break_fill_rate">Fill Rate</th>
+                    <th style="text-align:right" data-i18n="break_hist_col_price">ราคา/Spot</th>
+                    <th style="text-align:right" data-i18n="break_hist_col_rev">รายได้รวม</th>
+                    <th data-i18n="break_hist_col_participants">ผู้เข้าร่วม</th>
+                    <th data-i18n="break_hist_col_date">วันที่</th>
+                  </tr>
+                </thead>
+                <tbody id="brk-history-table">
+                  <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-size:12px" data-i18n="break_hist_no_data">ยังไม่มีประวัติการเบรค</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end brtab-history -->
+
+        <!-- TAB: Analytics -->
+        <div id="brtab-analytics" style="display:none">
+          <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px">
+            <div class="kpi-card" style="--kpi-color:var(--accent2)">
+              <div class="kpi-label" data-i18n="break_ana_best">BEST SESSION</div>
+              <div class="kpi-val" id="brk-best-session" style="font-size:16px">—</div>
+              <div class="kpi-sub" id="brk-best-session-val" data-i18n="break_ana_best_sub">session ที่ทำรายได้สูงสุด</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--orange)">
+              <div class="kpi-label" data-i18n="break_ana_avg">AVG REVENUE / BREAK</div>
+              <div class="kpi-val" id="brk-avg-rev">฿0</div>
+              <div class="kpi-sub" data-i18n="break_ana_avg_sub">เฉลี่ยต่อ session</div>
+            </div>
+          </div>
+          <!-- Top cards broken -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head"><span class="panel-title" data-i18n="break_ana_top_cards">🃏 การ์ดที่เบรคบ่อยที่สุด</span></div>
+            <div id="brk-top-cards" style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+              <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="break_ana_no_data">ยังไม่มีข้อมูล</div>
+            </div>
+          </div>
+          <!-- Monthly break revenue bar chart -->
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title" data-i18n="break_ana_monthly">📅 รายได้เบรคแต่ละเดือน</span></div>
+            <div id="brk-monthly-bars" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+              <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="break_ana_no_data">ยังไม่มีข้อมูล</div>
+            </div>
+          </div>
+        </div><!-- end brtab-analytics -->
+
       </div>
     </div>
 
@@ -2719,6 +2921,7 @@ let topCards = []
 // ── Break Data ─────────────────────────────────────────────────────────────────
 let breakCardIdx = -1   // index ของการ์ดที่เลือก
 let breakSpots  = []    // [{name:'', paid:false}]
+let pendingBreaks = []  // [{id, cardIdx, cardName, cardBrand, cardMeta, spots, spotPrice, sessionName, savedAt}]
 
 // ── Purchase Data ─────────────────────────────────────────────────────────────
 let purchases = []
@@ -2866,6 +3069,7 @@ function buildSnapshot() {
   })
   return {
     cards: cleanCards, orders, purchases,
+    pendingBreaks,
     setupData: {
       brands:    setupData.brands,
       rarity:    setupData.rarity,
@@ -2883,9 +3087,10 @@ function buildSnapshot() {
 
 function applySnapshot(data) {
   if (!data) return
-  if (data.cards)     { cards.length=0;     cards.push(...data.cards) }
-  if (data.orders)    { orders.length=0;    orders.push(...data.orders) }
-  if (data.purchases) { purchases.length=0; purchases.push(...data.purchases) }
+  if (data.cards)         { cards.length=0;         cards.push(...data.cards) }
+  if (data.orders)        { orders.length=0;        orders.push(...data.orders) }
+  if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
+  if (data.pendingBreaks) { pendingBreaks.length=0; pendingBreaks.push(...data.pendingBreaks) }
   if (data.setupData) {
     if (data.setupData.brands)    setupData.brands    = data.setupData.brands
     if (data.setupData.rarity)    setupData.rarity    = data.setupData.rarity
@@ -4265,6 +4470,34 @@ const LANG = {
     break_sum_spots:'Spots ทั้งหมด', break_sum_paid:'จ่ายแล้ว', break_sum_remain:'ค้างจ่าย',
     break_btn_end:'🎯 End Break — บันทึกออเดอร์',
     break_warn_unpaid:'ยังมี {n} Spot ที่ยังไม่จ่ายเงิน — กรุณาติ๊กจ่ายแล้วให้ครบก่อน',
+    break_tab_new:'🎯 เบรคใหม่', break_tab_history:'📋 ประวัติ', break_tab_analytics:'📊 Analytics',
+    break_pending_label:'⏸ PENDING BREAKS',
+    break_pending_btn:'⏸ Pending Break', break_pending_btn_title:'พักการเบรคนี้ไว้ก่อน สามารถกลับมาแก้ไขได้',
+    break_pending_load:'📂 โหลด', break_pending_delete_confirm:'ลบ Pending Break "{name}"?',
+    break_pending_ready:'✅ พร้อม End Break', break_pending_waiting:'⏳ ค้างจ่าย {n} spot',
+    break_toast_end:'🎯 Break "{name}" — บันทึก {n} spots ฿{amount}',
+    break_toast_pending:'⏸ พัก "{name}" ไว้แล้ว — เลือกจากด้านซ้ายเพื่อกลับมาแก้ไข',
+    break_toast_load:'📂 โหลด "{name}" แล้ว — แก้ไขและกด End Break ได้เลย',
+    break_toast_delete:'🗑 ลบ Pending Break แล้ว',
+    break_hint_all_paid:'✅ จ่ายครบแล้ว — กด 🎯 End Break เพื่อสร้าง Order ได้เลย!',
+    break_hint_unpaid:'⚠️ ยังค้างจ่าย {n} Spot — กด ⏸ Pending เพื่อพักไว้ก่อน หรือติ๊กให้ครบก่อน End Break',
+    break_btn_title_unpaid:'ยังค้างจ่ายอยู่ {n} Spot — ใช้ ⏸ Pending Break เพื่อพักไว้ก่อน',
+    break_hist_title:'ประวัติการเบรค', break_hist_no_data:'ยังไม่มีประวัติการเบรค — กดแท็บ "เบรคใหม่" เพื่อเริ่ม',
+    break_hist_kpi_count:'TOTAL BREAKS', break_hist_kpi_count_sub:'Session ทั้งหมด',
+    break_hist_kpi_rev:'TOTAL REVENUE', break_hist_kpi_rev_sub:'รายได้จากเบรค',
+    break_hist_kpi_fill:'AVG FILL RATE', break_hist_kpi_fill_sub:'เฉลี่ย Spot ที่ขายได้',
+    break_hist_col_session:'SESSION', break_hist_col_spots:'Spots', break_hist_col_paid:'จ่ายแล้ว',
+    break_hist_col_fill:'Fill Rate', break_hist_col_price:'ราคา/Spot', break_hist_col_rev:'รายได้รวม',
+    break_hist_col_participants:'ผู้เข้าร่วม', break_hist_col_date:'วันที่',
+    break_hist_count:'{n} session',
+    break_ana_best:'BEST SESSION', break_ana_best_sub:'session ที่ทำรายได้สูงสุด',
+    break_ana_avg:'AVG REVENUE / BREAK', break_ana_avg_sub:'เฉลี่ยต่อ session',
+    break_ana_top_cards:'🃏 การ์ดที่เบรคบ่อยที่สุด', break_ana_monthly:'📅 รายได้เบรคแต่ละเดือน',
+    break_ana_no_data:'ยังไม่มีข้อมูล',
+    break_fill_rate:'Fill Rate',
+    break_locked_badge:'⏸ Pending', break_locked_sub:'(ถูก lock)',
+    break_err_no_card:'กรุณาเลือกการ์ดที่จะเบรคก่อน', break_err_no_spots:'กรุณาใส่จำนวน Spot ก่อน',
+    break_spots_ph:'เช่น 30',
     // Bottom nav
     bnav_home:'หน้าหลัก', bnav_stock:'สต็อก', bnav_orders:'ขายการ์ด',
     bnav_buy:'ซื้อ', bnav_reports:'รายงาน', bnav_settings:'ตั้งค่า', bnav_back:'สลับ',
@@ -4488,8 +4721,36 @@ const LANG = {
     break_spots_title:'Spot List', break_spot_ph:'Buyer name for this spot...',
     break_paid_label:'Paid', break_summary:'SUMMARY',
     break_sum_spots:'Total Spots', break_sum_paid:'Paid', break_sum_remain:'Unpaid',
-    break_btn_end:'🎯 End Break — Save Orders',
+    break_btn_end:'🎯 End Break — Save Order',
     break_warn_unpaid:'{n} spot(s) not paid yet — please mark all as paid first',
+    break_tab_new:'🎯 New Break', break_tab_history:'📋 History', break_tab_analytics:'📊 Analytics',
+    break_pending_label:'⏸ PENDING BREAKS',
+    break_pending_btn:'⏸ Pending Break', break_pending_btn_title:'Pause this break — resume later',
+    break_pending_load:'📂 Load', break_pending_delete_confirm:'Delete Pending Break "{name}"?',
+    break_pending_ready:'✅ Ready to End Break', break_pending_waiting:'⏳ {n} spot(s) unpaid',
+    break_toast_end:'🎯 Break "{name}" — saved {n} spots ฿{amount}',
+    break_toast_pending:'⏸ Paused "{name}" — select from the left panel to resume',
+    break_toast_load:'📂 Loaded "{name}" — update spots and End Break',
+    break_toast_delete:'🗑 Pending Break deleted',
+    break_hint_all_paid:'✅ All spots paid — click 🎯 End Break to create order!',
+    break_hint_unpaid:'⚠️ {n} spot(s) still unpaid — use ⏸ Pending to pause, or mark all paid first',
+    break_btn_title_unpaid:'{n} spot(s) unpaid — use ⏸ Pending Break to pause',
+    break_hist_title:'Break History', break_hist_no_data:'No break history yet — go to "New Break" tab to start',
+    break_hist_kpi_count:'TOTAL BREAKS', break_hist_kpi_count_sub:'Total sessions',
+    break_hist_kpi_rev:'TOTAL REVENUE', break_hist_kpi_rev_sub:'Revenue from breaks',
+    break_hist_kpi_fill:'AVG FILL RATE', break_hist_kpi_fill_sub:'Avg spots sold',
+    break_hist_col_session:'SESSION', break_hist_col_spots:'Spots', break_hist_col_paid:'Paid',
+    break_hist_col_fill:'Fill Rate', break_hist_col_price:'Price/Spot', break_hist_col_rev:'Revenue',
+    break_hist_col_participants:'Participants', break_hist_col_date:'Date',
+    break_hist_count:'{n} session(s)',
+    break_ana_best:'BEST SESSION', break_ana_best_sub:'Top revenue session',
+    break_ana_avg:'AVG REVENUE / BREAK', break_ana_avg_sub:'Per session average',
+    break_ana_top_cards:'🃏 Most Broken Cards', break_ana_monthly:'📅 Monthly Break Revenue',
+    break_ana_no_data:'No data yet',
+    break_fill_rate:'Fill Rate',
+    break_locked_badge:'⏸ Pending', break_locked_sub:'(locked)',
+    break_err_no_card:'Please select a card first', break_err_no_spots:'Please enter number of spots first',
+    break_spots_ph:'e.g. 30',
     bnav_home:'Home', bnav_stock:'Stock', bnav_orders:'Sell Cards',
     bnav_buy:'Buy', bnav_reports:'Reports', bnav_settings:'Settings', bnav_back:'Back',
     title_dashboard:'Dashboard', title_inventory:'Card Inventory', title_orders:'Sell Cards',
@@ -4718,6 +4979,16 @@ function applyLang() {
     if (L[key]) el.placeholder = L[key]
   })
 
+  // ── data-i18n-title (tooltip/title attribute) ─────────────────
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title')
+    if (L[key]) el.title = L[key]
+  })
+
+  // ── Break page dynamic re-render ─────────────────────────────
+  // re-render break spots list ถ้ากำลังแสดงอยู่ (update label ภาษา)
+  // (merged with existing breakPage block below)
+
   // nav items handled by data-i18n
 
   // ── Page titles ──────────────────────────────────────────────
@@ -4772,10 +5043,21 @@ function applyLang() {
   if (agingTab && agingTab.style.display !== 'none') {
     try { renderAgingReport() } catch(e) {}
   }
-  // re-render break spots ถ้า break page กำลังแสดงอยู่ (update จ่ายแล้ว label + placeholder)
+  // re-render break page ถ้ากำลังแสดงอยู่ (update ภาษาทุกส่วน)
   const breakPage = document.getElementById('page-break')
-  if (breakPage && breakPage.classList.contains('active') && breakSpots.length > 0) {
-    try { renderBreakSpots(); updateEndBreakBtn() } catch(e) {}
+  if (breakPage && breakPage.classList.contains('active')) {
+    try {
+      if (typeof renderPendingBreaksSidebar === 'function') renderPendingBreaksSidebar()
+      if (breakSpots && breakSpots.length > 0) {
+        renderBreakSpots()
+        updateEndBreakBtn()
+        updateBreakSummary()
+      }
+      const histTab = document.getElementById('brtab-history')
+      const anaTab  = document.getElementById('brtab-analytics')
+      if (histTab && histTab.style.display !== 'none') renderBreakHistory()
+      if (anaTab  && anaTab.style.display  !== 'none') renderBreakAnalytics()
+    } catch(e) { console.warn('break i18n re-render:', e) }
   }
   const saleModal = document.getElementById('modal-newSale')
   if (saleModal && saleModal.classList.contains('open')) {
@@ -6978,10 +7260,19 @@ function renderTopMargin() {
 
 // ── Break ─────────────────────────────────────────────────────────────────────
 function renderBreakPage() {
-  // reset ถ้ายังไม่มี session
+  renderPendingBreaksSidebar()
 }
 
 function onBreakCardSearch(query) {
+  // ถ้าลบชื่อออกหมด → clear preview และ reset selection
+  if (!query || query.trim() === '') {
+    breakCardIdx = -1
+    const preview = document.getElementById('break-card-preview')
+    if (preview) preview.style.display = 'none'
+    const drop = document.getElementById('break-card-drop')
+    if (drop) drop.style.display = 'none'
+    return
+  }
   showBreakDropdown(query)
 }
 
@@ -6997,16 +7288,33 @@ function showBreakDropdown(query) {
   const drop = document.getElementById('break-card-drop')
   if (!drop) return
   const q = (query || '').toLowerCase().trim()
+
+  // การ์ดที่ถูก pending อยู่ (stock=1 ใบ เดียว → lock ไม่ให้เลือก)
+  const lockedCardNames = new Set(
+    pendingBreaks.map(pb => pb.cardName)
+  )
+
   const list = cards
     .map((c, ci) => ({ c, ci }))
     .filter(({ c }) => (c.stock||0) > 0 && (!q || c.name.toLowerCase().includes(q) || (c.brand||'').toLowerCase().includes(q)))
     .slice(0, 30)
 
   if (list.length === 0) {
-    drop.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--text3);text-align:center">${q ? 'ไม่พบการ์ด "'+q+'"' : 'ไม่มีการ์ดในสต็อก'}</div>`
+    drop.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--text3);text-align:center">${q ? 'ไม่พบการ์ด "'+q+'"' : t('break_err_no_card')||'ไม่มีการ์ดในสต็อก'}</div>`
   } else {
     drop.innerHTML = list.map(({ c, ci }) => {
       const badge = c.psa ? `<span style="font-size:10px;background:rgba(124,109,250,0.15);color:var(--accent2);border-radius:4px;padding:1px 5px;font-family:var(--mono)">G ${c.psaType==='auth'?'Auth':c.psaType==='auto'?'Auto '+c.psaGrade:'Gem '+c.psaGrade}</span>` : ''
+      // lock ถ้า stock=1 และมี pending อยู่แล้ว
+      const isLocked = lockedCardNames.has(c.name) && (c.stock||0) <= 1
+      if (isLocked) {
+        return `<div style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);opacity:0.45;cursor:not-allowed" title="การ์ดนี้ถูก Pending Break ไว้อยู่ (stock เหลือ 1 ใบ)">
+          ${c.photo ? `<img src="${c.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;filter:grayscale(1)">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name} ${badge} <span style="font-size:10px;background:rgba(251,146,60,0.15);color:var(--orange);border-radius:4px;padding:1px 6px;font-family:var(--mono)">${t('break_locked_badge')}</span></div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${c.brand} · stock ${c.stock} (ถูก lock)</div>
+          </div>
+        </div>`
+      }
       return `<div onclick="selectBreakCard(${ci})"
         style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
         onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
@@ -7048,17 +7356,24 @@ function selectBreakCard(ci) {
 }
 
 function updateEndBreakBtn() {
-  const btn = document.querySelector('#break-spots-panel .btn-primary')
+  const btn  = document.getElementById('end-break-btn')
+  const hint = document.getElementById('break-action-hint')
   if (!btn || breakSpots.length === 0) return
-  const unpaid = breakSpots.filter(s => !s.paid).length
+  const unpaid  = breakSpots.filter(s => !s.paid).length
   const allPaid = unpaid === 0
+  // End Break ต้องจ่ายครบทุก Spot — ถ้าค้างอยู่ให้ใช้ Pending Break แทน
   btn.disabled = !allPaid
   btn.style.opacity = allPaid ? '1' : '0.45'
-  btn.style.cursor = allPaid ? 'pointer' : 'not-allowed'
-  if (!allPaid) {
-    btn.title = t('break_warn_unpaid').replace('{n}', unpaid)
-  } else {
-    btn.title = ''
+  btn.style.cursor  = allPaid ? 'pointer' : 'not-allowed'
+  btn.title = allPaid ? '' : t('break_btn_title_unpaid').replace('{n}', unpaid)
+  if (hint) {
+    if (allPaid) {
+      hint.innerHTML = t('break_hint_all_paid')
+      hint.style.color = 'var(--green)'
+    } else {
+      hint.innerHTML = t('break_hint_unpaid').replace('{n}', `<strong style="color:var(--orange)">${unpaid}</strong>`)
+      hint.style.color = 'var(--text3)'
+    }
   }
 }
 
@@ -7085,7 +7400,7 @@ function renderBreakSpots() {
   const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
 
   list.innerHTML = breakSpots.map((spot, i) => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+    <div style="display:flex;align-items:center;gap:8px;background:${spot.paid?'rgba(74,222,128,0.05)':'var(--bg2)'};border:1px solid ${spot.paid?'rgba(74,222,128,0.3)':'var(--border)'};border-radius:8px;padding:8px 12px;transition:all 0.2s">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:28px">${String(i+1).padStart(2,'0')}</span>
       <input type="text" placeholder="${t('break_spot_ph')}"
         value="${escHtml(spot.name)}"
@@ -7095,7 +7410,7 @@ function renderBreakSpots() {
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary();updateEndBreakBtn()"
           style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
-        <span data-paid-label style="font-size:12px;color:${spot.paid?'var(--green)':'var(--text3)'}">${t('break_paid_label')}</span>
+        <span data-paid-label style="font-size:12px;font-weight:${spot.paid?'700':'400'};color:${spot.paid?'var(--green)':'var(--text3)'}">${spot.paid?'✓ '+t('break_paid_label'):t('break_paid_label')}</span>
       </label>
     </div>`).join('')
 }
@@ -7106,14 +7421,27 @@ function updateBreakSummary() {
   const paid  = breakSpots.filter(s => s.paid).length
   const paidAmt = paid * price
   const remainAmt = (total - paid) * price
+  const fillPct = total > 0 ? Math.round(paid/total*100) : 0
 
   const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
   ss('break-paid-count', paid)
   ss('break-total-spots', total)
-  ss('break-revenue-display', '฿' + (total * price).toLocaleString())
+  ss('break-revenue-display', '฿' + (paid * price).toLocaleString())
   ss('brk-sum-spots', total)
   ss('brk-sum-paid', '฿' + paidAmt.toLocaleString())
   ss('brk-sum-remain', '฿' + remainAmt.toLocaleString())
+  ss('break-fill-pct', fillPct + '%')
+
+  // update fill rate bar
+  const fillBar = document.getElementById('break-fill-bar')
+  if (fillBar) {
+    fillBar.style.width = fillPct + '%'
+    fillBar.style.background = fillPct >= 80
+      ? 'linear-gradient(90deg,var(--green),#22c55e)'
+      : fillPct >= 50
+      ? 'linear-gradient(90deg,var(--accent),var(--yellow))'
+      : 'linear-gradient(90deg,var(--red),var(--orange))'
+  }
 
   // อัพเดทสีและราคาแต่ละ spot โดยไม่ re-render DOM
   document.querySelectorAll('#break-spots-list > div').forEach((row, i) => {
@@ -7123,13 +7451,16 @@ function updateBreakSummary() {
     if (priceEl) priceEl.textContent = '฿' + price.toLocaleString()
     const paidLabel = row.querySelector('[data-paid-label]')
     if (paidLabel) paidLabel.style.color = spot.paid ? 'var(--green)' : 'var(--text3)'
+    // color-code the row border
+    row.style.borderColor = spot.paid ? 'rgba(74,222,128,0.3)' : 'var(--border)'
+    row.style.background = spot.paid ? 'rgba(74,222,128,0.05)' : 'var(--bg2)'
   })
   updateEndBreakBtn()
 }
 
 function endBreak() {
-  if (breakCardIdx < 0) { showToast('กรุณาเลือกการ์ดที่จะเบรค', 'var(--orange)'); return }
-  if (breakSpots.length === 0) { showToast('กรุณาใส่จำนวน Spot', 'var(--orange)'); return }
+  if (breakCardIdx < 0) { showToast(t('break_err_no_card'), 'var(--orange)'); return }
+  if (breakSpots.length === 0) { showToast(t('break_err_no_spots'), 'var(--orange)'); return }
 
   const card = cards[breakCardIdx]
   const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
@@ -7177,11 +7508,121 @@ function endBreak() {
   renderDashboard()
   filterCards()
 
-  showToast(`🎯 Break "${sessionName}" — บันทึก ${paidSpots.length} spots ฿${total.toLocaleString()}`, 'var(--green)')
+  showToast(t('break_toast_end').replace('{name}',sessionName).replace('{n}',paidSpots.length).replace('{amount}',total.toLocaleString()), 'var(--green)')
 
-  // reset
+  // reset form
+  resetBreakForm()
+  renderPendingBreaksSidebar()
+
+  // ไปหน้า History
+  switchBreakTab('history', document.getElementById('brtab-btn-history'))
+}
+
+// ── Break Tabs & History ──────────────────────────────────────────────────────
+function switchBreakTab(tab, el) {
+  const breakPage = document.getElementById('page-break')
+  if (!breakPage) return
+  breakPage.querySelectorAll('.setup-tab').forEach(t=>t.classList.remove('active'))
+  if (el) el.classList.add('active')
+  const newEl = document.getElementById('brtab-new')
+  const histEl = document.getElementById('brtab-history')
+  const anaEl  = document.getElementById('brtab-analytics')
+  if (newEl)  newEl.style.display  = tab==='new'       ? 'block' : 'none'
+  if (histEl) histEl.style.display = tab==='history'   ? 'block' : 'none'
+  if (anaEl)  anaEl.style.display  = tab==='analytics' ? 'block' : 'none'
+  if (tab==='history')   renderBreakHistory()
+  if (tab==='analytics') renderBreakAnalytics()
+  if (tab==='new')       renderPendingBreaksSidebar()
+}
+
+// ── Pending Breaks ────────────────────────────────────────────────────────────
+function savePendingBreak() {
+  if (breakCardIdx < 0) { showToast(t('break_err_no_card'), 'var(--orange)'); return }
+  if (breakSpots.length === 0) { showToast(t('break_err_no_spots'), 'var(--orange)'); return }
+
+  const card = cards[breakCardIdx]
+  const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
+  const sessionName = document.getElementById('break-session-name')?.value.trim() || `Break ${card?.name || ''}`
+
+  const pendingId = 'PB-' + Date.now()
+  const pb = {
+    id: pendingId,
+    cardIdx: breakCardIdx,
+    cardName: card?.name || '-',
+    cardBrand: card?.brand || '-',
+    cardMeta: `${card?.brand||''} · stock ${card?.stock||0} · ฿${(card?.cost||0).toLocaleString()}`,
+    cardPhoto: card?.photo || '',
+    spots: breakSpots.map(s => ({...s})),
+    spotPrice: price,
+    sessionName,
+    savedAt: new Date().toLocaleString('th-TH', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+  }
+
+  pendingBreaks.unshift(pb)
+  saveData()
+
+  // reset form
+  resetBreakForm()
+  renderPendingBreaksSidebar()
+  showToast(t('break_toast_pending').replace('{name}',sessionName), 'var(--orange)')
+}
+
+function loadPendingBreak(id) {
+  const pb = pendingBreaks.find(p => p.id === id)
+  if (!pb) return
+
+  // restore state
+  breakCardIdx = pb.cardIdx
+  breakSpots   = pb.spots.map(s => ({...s}))
+
+  // restore card search & preview
+  const inp = document.getElementById('break-card-search')
+  if (inp) inp.value = pb.cardName
+  const preview = document.getElementById('break-card-preview')
+  const img     = document.getElementById('break-card-img')
+  const icon    = document.getElementById('break-card-icon')
+  if (preview) preview.style.display = 'flex'
+  if (pb.cardPhoto) { img.src = pb.cardPhoto; img.style.display = 'block'; icon.style.display = 'none' }
+  else { img.style.display = 'none'; icon.style.display = 'flex' }
+  const nameEl = document.getElementById('break-card-name')
+  const metaEl = document.getElementById('break-card-meta')
+  if (nameEl) nameEl.textContent = pb.cardName
+  if (metaEl) metaEl.textContent = pb.cardMeta
+
+  // restore spots & price & name
+  const spotsInput = document.getElementById('break-spots')
+  const priceInput = document.getElementById('break-spot-price')
+  const nameInput  = document.getElementById('break-session-name')
+  if (spotsInput) spotsInput.value = pb.spots.length
+  if (priceInput) priceInput.value = pb.spotPrice || ''
+  if (nameInput)  nameInput.value  = pb.sessionName || ''
+
+  // remove from pending list
+  pendingBreaks = pendingBreaks.filter(p => p.id !== id)
+  saveData()
+
+  // render spots panel
+  document.getElementById('break-spots-panel').style.display = 'block'
+  renderBreakSpots()
+  updateBreakSummary()
+  updateEndBreakBtn()
+  renderPendingBreaksSidebar()
+  showToast(t('break_toast_load').replace('{name}',pb.sessionName), 'var(--accent)')
+}
+
+function deletePendingBreak(id) {
+  const pb = pendingBreaks.find(p => p.id === id)
+  if (!pb) return
+  if (!confirm(t('break_pending_delete_confirm').replace('{name}',pb.sessionName))) return
+  pendingBreaks = pendingBreaks.filter(p => p.id !== id)
+  saveData()
+  renderPendingBreaksSidebar()
+  showToast(t('break_toast_delete'), 'var(--red)')
+}
+
+function resetBreakForm() {
   breakCardIdx = -1
-  breakSpots = []
+  breakSpots   = []
   const inp = document.getElementById('break-card-search')
   if (inp) inp.value = ''
   const preview = document.getElementById('break-card-preview')
@@ -7190,14 +7631,191 @@ function endBreak() {
   if (spotsEl) spotsEl.value = ''
   const priceEl = document.getElementById('break-spot-price')
   if (priceEl) priceEl.value = ''
-  const nameEl = document.getElementById('break-session-name')
-  if (nameEl) nameEl.value = ''
+  const nameEl  = document.getElementById('break-session-name')
+  if (nameEl)  nameEl.value = ''
   document.getElementById('break-spots-panel').style.display = 'none'
   updateBreakSummary()
+}
 
-  // ไปหน้าออเดอร์
-  showPage('orders', null)
-  showToast(`✅ ดูออเดอร์ Break ได้ที่หน้าขายการ์ด`, 'var(--accent)')
+function renderPendingBreaksSidebar() {
+  const sidebar = document.getElementById('pending-breaks-sidebar')
+  const listEl  = document.getElementById('pending-breaks-list')
+  if (!sidebar || !listEl) return
+
+  if (pendingBreaks.length === 0) {
+    sidebar.style.display = 'none'
+    return
+  }
+
+  // มี pending → sidebar โผล่ absolute ด้านซ้าย ฟอร์มยังกึ่งกลางเสมอ
+  sidebar.style.display = 'block'
+
+  listEl.innerHTML = pendingBreaks.map(pb => {
+    const paid   = pb.spots.filter(s => s.paid).length
+    const total  = pb.spots.length
+    const fill   = total > 0 ? Math.round(paid/total*100) : 0
+    const fillCol = fill >= 80 ? 'var(--green)' : fill >= 40 ? 'var(--yellow)' : 'var(--orange)'
+    const allPaid = paid === total
+    return `<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px;transition:border-color 0.15s"
+      onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border2)'">
+      <!-- Session name -->
+      <div style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px">${pb.sessionName||pb.cardName}</div>
+      <!-- Card name (sub) -->
+      <div style="font-size:10px;color:var(--accent2);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">🃏 ${pb.cardName}</div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">${pb.savedAt}</div>
+      <!-- Fill bar -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="flex:1;height:4px;background:var(--border2);border-radius:2px">
+          <div style="width:${fill}%;height:100%;background:${fillCol};border-radius:2px;transition:width 0.3s"></div>
+        </div>
+        <span style="font-size:10px;font-weight:700;color:${fillCol};font-family:var(--mono)">${paid}/${total}</span>
+      </div>
+      <!-- Revenue -->
+      <div style="font-size:11px;color:var(--yellow);font-family:var(--mono);font-weight:700;margin-bottom:8px">
+        ฿${((pb.spotPrice||0)*paid).toLocaleString()} <span style="color:var(--text3);font-weight:400">/ ฿${((pb.spotPrice||0)*total).toLocaleString()}</span>
+      </div>
+      <!-- Status badge -->
+      ${allPaid ? `<div style="font-size:10px;color:var(--green);font-family:var(--mono);margin-bottom:6px;font-weight:700">${t('break_pending_ready')}</div>` : `<div style="font-size:10px;color:var(--orange);font-family:var(--mono);margin-bottom:6px">${t('break_pending_waiting').replace('{n}',total-paid)}</div>`}
+      <!-- Action buttons -->
+      <div style="display:flex;gap:6px">
+        <button onclick="loadPendingBreak('${pb.id}')"
+          style="flex:1;padding:5px 8px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">
+          📂 โหลด
+        </button>
+        <button onclick="event.stopPropagation();deletePendingBreak('${pb.id}')"
+          style="padding:5px 8px;background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;font-family:var(--font)">
+          🗑
+        </button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function getBreakOrders() {
+  return orders.filter(o => o.isBreak === true)
+}
+
+function renderBreakHistory() {
+  const breakOrders = getBreakOrders()
+
+  // KPIs
+  const totalRev = breakOrders.reduce((s,o)=>s+(o.total||0),0)
+  const fillRates = breakOrders.map(o=>{
+    const spots = o.breakSpots||[]
+    if(!spots.length) return 100
+    return spots.filter(s=>s.paid).length/spots.length*100
+  })
+  const avgFill = fillRates.length ? Math.round(fillRates.reduce((a,b)=>a+b,0)/fillRates.length) : 0
+
+  const ss=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v}
+  ss('brk-hist-count', breakOrders.length)
+  ss('brk-hist-rev',   '฿'+totalRev.toLocaleString())
+  ss('brk-hist-fill',  avgFill+'%')
+  ss('brk-hist-table-count', t('break_hist_count').replace('{n}',breakOrders.length))
+
+  const tbody = document.getElementById('brk-history-table')
+  if (!tbody) return
+
+  if (breakOrders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-size:12px">'+t('break_hist_no_data')+'</td></tr>'
+    return
+  }
+
+  tbody.innerHTML = [...breakOrders].reverse().map(o=>{
+    const spots  = o.breakSpots||[]
+    const total  = spots.length
+    const paid   = spots.filter(s=>s.paid).length
+    const fill   = total>0?Math.round(paid/total*100):100
+    const fillCol = fill>=80?'var(--green)':fill>=50?'var(--yellow)':'var(--red)'
+    const pricePerSpot = paid>0 ? Math.round((o.total||0)/paid) : 0
+    const cardName = o.orderItems?.[0]?.name || o.breakSession || '—'
+    const participants = spots.filter(s=>s.paid&&s.name).map(s=>s.name).join(', ') || '—'
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${o.breakSession||o.id}</td>
+      <td style="font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cardName}</td>
+      <td style="text-align:center;font-family:var(--mono)">${total}</td>
+      <td style="text-align:center;font-family:var(--mono);color:var(--green)">${paid}</td>
+      <td style="text-align:center">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:5px;background:var(--border2);border-radius:3px;min-width:40px">
+            <div style="width:${fill}%;height:100%;background:${fillCol};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${fillCol};font-family:var(--mono);flex-shrink:0">${fill}%</span>
+        </div>
+      </td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--text2)">฿${pricePerSpot.toLocaleString()}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--yellow)">฿${(o.total||0).toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${participants}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${o.date||'—'}</td>
+    </tr>`
+  }).join('')
+}
+
+function renderBreakAnalytics() {
+  const breakOrders = getBreakOrders()
+
+  if (breakOrders.length === 0) {
+    const ss=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v}
+    ss('brk-best-session','—'); ss('brk-best-session-val',t('break_ana_no_data')); ss('brk-avg-rev','฿0')
+    const topEl=document.getElementById('brk-top-cards')
+    if(topEl) topEl.innerHTML='<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">'+(typeof t==='function'?t('break_ana_no_data'):'ยังไม่มีข้อมูล')+'</div>'
+    const mEl=document.getElementById('brk-monthly-bars')
+    if(mEl) mEl.innerHTML='<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">'+t('break_ana_no_data')+'</div>'
+    return
+  }
+
+  // Best session
+  const best = breakOrders.reduce((best,o)=>(o.total||0)>(best.total||0)?o:best, breakOrders[0])
+  const avgRev = Math.round(breakOrders.reduce((s,o)=>s+(o.total||0),0)/breakOrders.length)
+  const ss=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v}
+  ss('brk-best-session', best.breakSession||best.id)
+  ss('brk-best-session-val', '฿'+(best.total||0).toLocaleString()+' ('+( (()=>{const spots=best.breakSpots||[];const p=spots.filter(s=>s.paid).length;const t=spots.length;return t>0?Math.round(p/t*100)+'% fill':'—'})())+')')
+  ss('brk-avg-rev', '฿'+avgRev.toLocaleString())
+
+  // Top cards broken
+  const cardCount = {}
+  breakOrders.forEach(o=>{
+    const name = o.orderItems?.[0]?.name || o.breakSession || 'Unknown'
+    cardCount[name] = (cardCount[name]||0)+1
+  })
+  const topCards = Object.entries(cardCount).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  const maxCnt = Math.max(1, topCards[0]?.[1]||1)
+  const topEl = document.getElementById('brk-top-cards')
+  if (topEl) topEl.innerHTML = topCards.map(([name,cnt])=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${name}</span>
+        <span style="font-family:var(--mono);color:var(--accent2);flex-shrink:0">${cnt} ครั้ง</span>
+      </div>
+      <div style="height:6px;background:var(--border2);border-radius:3px">
+        <div style="width:${Math.round(cnt/maxCnt*100)}%;height:100%;background:var(--accent);border-radius:3px"></div>
+      </div>
+    </div>`).join('')
+
+  // Monthly break revenue
+  const MONTHS_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const mRevMap={}
+  breakOrders.forEach(o=>{
+    const d=parseOrderDate(o.date); if(!d) return
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+    if(!mRevMap[key]) mRevMap[key]={label:MONTHS_TH[d.getMonth()]+' '+d.getFullYear(), rev:0, cnt:0}
+    mRevMap[key].rev += o.total||0
+    mRevMap[key].cnt++
+  })
+  const mEntries = Object.entries(mRevMap).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6)
+  const maxMRev = Math.max(1,...mEntries.map(([,v])=>v.rev))
+  const mEl = document.getElementById('brk-monthly-bars')
+  if (mEl) mEl.innerHTML = mEntries.length ? mEntries.map(([,v])=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text2)">${v.label}</span>
+        <span style="font-family:var(--mono);font-weight:700;color:var(--yellow)">฿${v.rev.toLocaleString()} <span style="color:var(--text3);font-weight:400">(${v.cnt} session${v.cnt>1?'s':''})</span></span>
+      </div>
+      <div style="height:8px;background:var(--border2);border-radius:4px">
+        <div style="width:${Math.round(v.rev/maxMRev*100)}%;height:100%;background:linear-gradient(90deg,var(--accent),var(--yellow));border-radius:4px;transition:width 0.4s ease"></div>
+      </div>
+    </div>`).join('')
+    : '<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">'+t('break_ana_no_data')+'</div>'
 }
 
 // ── Purchase ──────────────────────────────────────────────────────────────────
@@ -7871,8 +8489,288 @@ function switchDashTab(tab, el) {
   document.getElementById('dtab-overview').style.display  = tab==='overview'  ? 'block' : 'none'
   document.getElementById('dtab-portfolio').style.display = tab==='portfolio' ? 'block' : 'none'
   document.getElementById('dtab-aging').style.display     = tab==='aging'     ? 'block' : 'none'
+  const trendsEl = document.getElementById('dtab-trends')
+  if (trendsEl) trendsEl.style.display = tab==='trends' ? 'block' : 'none'
   if (tab==='portfolio') renderPortfolio()
   if (tab==='aging') renderAgingReport()
+  if (tab==='trends') renderTrendsTab()
+}
+
+// ── TRENDS TAB ────────────────────────────────────────────────────────────────
+function renderTrendsTab() {
+  // populate year selector
+  const yearSel = document.getElementById('trend-year-select')
+  if (!yearSel) return
+  const years = [...new Set(orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').map(o=>{
+    const d = parseOrderDate(o.date); return d ? d.getFullYear() : null
+  }).filter(Boolean))].sort((a,b)=>b-a)
+  const curYear = parseInt(yearSel.value) || new Date().getFullYear()
+  yearSel.innerHTML = years.length
+    ? years.map(y=>`<option value="${y}" ${y===curYear?'selected':''}>${y}</option>`).join('')
+    : `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`
+
+  renderTrendChart()
+  renderTrendKPIs()
+  renderTrendBrandBars()
+  renderTrendHeatmap()
+  renderTrendTopCards()
+}
+
+function parseOrderDate(ds) {
+  if (!ds) return null
+  // dd/mm/yyyy or dd/mm/yy
+  const p = ds.split('/')
+  if (p.length >= 3) {
+    const d = parseInt(p[0]), m = parseInt(p[1])-1, y = parseInt(p[2])
+    const yr = y < 100 ? 2000+y : y
+    return new Date(yr, m, d)
+  }
+  return null
+}
+
+function renderTrendChart() {
+  const svg = document.getElementById('trend-line-svg')
+  if (!svg) return
+  const yearSel = document.getElementById('trend-year-select')
+  const selYear = yearSel ? parseInt(yearSel.value) || new Date().getFullYear() : new Date().getFullYear()
+
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const monthlyRev = new Array(12).fill(0)
+  const monthlyProfit = new Array(12).fill(0)
+
+  orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').forEach(o=>{
+    const d = parseOrderDate(o.date)
+    if (!d || d.getFullYear() !== selYear) return
+    const mi = d.getMonth()
+    monthlyRev[mi] += (o.total||0)
+    const cost = (o.orderItems||[]).reduce((s,it)=>{
+      const card = cards.find(c=>c.name===it.name&&c.brand===it.brand)
+      return s + (card?.cost||0)*(it.qty||1)
+    },0)
+    monthlyProfit[mi] += (o.total||0) - cost - (o.hiddenCost||0)
+  })
+
+  const W=760, H=200, PL=52, PR=16, PT=16, PB=36
+  const chartW = W-PL-PR, chartH = H-PT-PB
+  const maxVal = Math.max(1, ...monthlyRev, ...monthlyProfit.map(v=>Math.max(0,v)))
+
+  const xStep = chartW / 11
+  const toX = i => PL + i * xStep
+  const toY = v => PT + chartH - (v/maxVal)*chartH
+
+  const revPts = monthlyRev.map((v,i)=>`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ')
+  const profPts = monthlyProfit.map((v,i)=>`${toX(i).toFixed(1)},${toY(Math.max(0,v)).toFixed(1)}`).join(' ')
+
+  // gridlines
+  const grids = [0,0.25,0.5,0.75,1].map(f=>{
+    const y = PT + chartH - f*chartH
+    const val = maxVal*f
+    const label = val>=10000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0)
+    return `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+<text x="${(PL-6).toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.3)" font-family="monospace">${label}</text>`
+  }).join('')
+
+  // area fill for revenue
+  const revArea = `M ${toX(0).toFixed(1)},${(PT+chartH).toFixed(1)} ` +
+    monthlyRev.map((v,i)=>`L ${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ') +
+    ` L ${toX(11).toFixed(1)},${(PT+chartH).toFixed(1)} Z`
+
+  // x-axis labels
+  const xlabels = MONTHS.map((m,i)=>`<text x="${toX(i).toFixed(1)}" y="${(H-6).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)" font-family="monospace">${m}</text>`).join('')
+
+  // dots
+  const revDots = monthlyRev.map((v,i)=>v>0?`<circle cx="${toX(i).toFixed(1)}" cy="${toY(v).toFixed(1)}" r="3" fill="#7c6dfa" stroke="#0a0a0f" stroke-width="1.5">
+<title>${MONTHS[i]}: ฿${v.toLocaleString()}</title></circle>`:'').join('')
+  const profDots = monthlyProfit.map((v,i)=>v>0?`<circle cx="${toX(i).toFixed(1)}" cy="${toY(Math.max(0,v)).toFixed(1)}" r="3" fill="#4ade80" stroke="#0a0a0f" stroke-width="1.5">
+<title>${MONTHS[i]} Profit: ฿${v.toLocaleString()}</title></circle>`:'').join('')
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7c6dfa" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#7c6dfa" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${grids}
+    <path d="${revArea}" fill="url(#revGrad)"/>
+    <polyline points="${revPts}" fill="none" stroke="#7c6dfa" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${profPts}" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4,3" stroke-linejoin="round" stroke-linecap="round"/>
+    ${revDots}${profDots}
+    ${xlabels}
+    <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <line x1="${PL}" y1="${(PT+chartH).toFixed(1)}" x2="${W-PR}" y2="${(PT+chartH).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  `
+
+  const legend = document.getElementById('trend-line-legend')
+  if (legend) legend.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
+      <div style="width:16px;height:3px;background:#7c6dfa;border-radius:2px"></div> Revenue
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
+      <div style="width:16px;height:2px;background:#4ade80;border-radius:2px;border-top:1px dashed #4ade80"></div> Net Profit
+    </div>
+    <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto">ปี ${selYear}</span>
+  `
+}
+
+function renderTrendKPIs() {
+  const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const validOrders = orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled')
+  const totalAll = validOrders.reduce((s,o)=>s+(o.total||0),0)
+
+  // monthly revenue map
+  const mRevMap = {}
+  validOrders.forEach(o=>{
+    const d = parseOrderDate(o.date); if(!d) return
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+    mRevMap[key] = (mRevMap[key]||0)+(o.total||0)
+  })
+  const mKeys = Object.keys(mRevMap).sort()
+  const mVals = mKeys.map(k=>mRevMap[k])
+  const avgRev = mVals.length ? Math.round(mVals.reduce((a,b)=>a+b,0)/mVals.length) : 0
+
+  // best month
+  let bestKey='', bestVal=0
+  mKeys.forEach(k=>{ if(mRevMap[k]>bestVal){bestVal=mRevMap[k];bestKey=k} })
+  const bestLabel = bestKey ? (()=>{const p=bestKey.split('-');return MONTHS_TH[parseInt(p[1])-1]+' '+p[0]})() : '—'
+
+  // MoM growth
+  const now = new Date()
+  const curKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+  const prevDate = new Date(now.getFullYear(), now.getMonth()-1, 1)
+  const prevKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`
+  const curRev = mRevMap[curKey]||0, prevRev = mRevMap[prevKey]||0
+  const mom = prevRev>0 ? Math.round(((curRev-prevRev)/prevRev)*100) : 0
+
+  const ss=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v}
+  ss('trend-best-month', bestLabel)
+  ss('trend-best-month-val', bestVal>0?'฿'+bestVal.toLocaleString():'—')
+  ss('trend-avg-rev', '฿'+avgRev.toLocaleString())
+  const momEl = document.getElementById('trend-mom')
+  if(momEl){momEl.textContent=(mom>=0?'+':'')+mom+'%'; momEl.style.color=mom>=0?'var(--green)':'var(--red)'}
+  ss('trend-mom-sub', prevRev>0?`vs เดือนที่แล้ว ฿${prevRev.toLocaleString()}`:'ยังไม่มีข้อมูลเดือนก่อน')
+  ss('trend-total-all','฿'+totalAll.toLocaleString())
+}
+
+function renderTrendBrandBars() {
+  const validOrders = orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled')
+  const brandRev={}, brandCost={}, brandQty={}
+
+  validOrders.forEach(o=>{
+    ;(o.orderItems||[]).forEach(it=>{
+      const b = it.brand||'Other'
+      const card = cards.find(c=>c.name===it.name&&c.brand===it.brand)
+      const cost = (card?.cost||0)*(it.qty||1)
+      brandRev[b]  = (brandRev[b]||0)  + (it.price||it.qty*(it.sellPrice||0)||0)
+      brandCost[b] = (brandCost[b]||0) + cost
+      brandQty[b]  = (brandQty[b]||0)  + (it.qty||1)
+    })
+    // fallback: if no orderItems, use o.total and brand from first item
+  })
+
+  // if brandRev is empty, try from orders with brand info
+  if (Object.keys(brandRev).length === 0) {
+    validOrders.forEach(o=>{
+      const brand = (o.orderItems||[])[0]?.brand || 'Other'
+      brandRev[brand] = (brandRev[brand]||0)+(o.total||0)
+    })
+  }
+
+  const sorted = Object.entries(brandRev).sort((a,b)=>b[1]-a[1])
+  const maxRev = Math.max(1, sorted[0]?.[1]||1)
+
+  const bEl = document.getElementById('trend-brand-bars')
+  const mEl = document.getElementById('trend-brand-margin')
+  if(!bEl||!mEl) return
+
+  const brandColors = {'Pokemon':'#f5c842','Yu-Gi-Oh':'#60a5fa','MTG':'#f472b6','One Piece':'#fb923c'}
+
+  bEl.innerHTML = sorted.length ? sorted.map(([b,rev])=>{
+    const pct = Math.round((rev/maxRev)*100)
+    const col = brandColors[b]||'var(--accent)'
+    return `<div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="font-weight:600">${b}</span>
+        <span style="color:${col};font-family:var(--mono);font-weight:700">฿${rev.toLocaleString()}</span>
+      </div>
+      <div style="height:8px;background:var(--border2);border-radius:4px">
+        <div style="width:${pct}%;height:100%;background:${col};border-radius:4px;transition:width 0.5s ease"></div>
+      </div>
+    </div>`
+  }).join('') : '<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>'
+
+  // margin by brand
+  mEl.innerHTML = sorted.length ? sorted.map(([b,rev])=>{
+    const cost = brandCost[b]||0
+    const profit = rev - cost
+    const margin = cost>0 ? Math.round((profit/cost)*100) : 0
+    const col = margin>30?'var(--green)':margin>0?'var(--yellow)':'var(--red)'
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:600">${b}</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">฿${profit.toLocaleString()}</span>
+        <span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${margin>0?'+':''}${margin}%</span>
+      </div>
+    </div>`
+  }).join('') : '<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>'
+}
+
+function renderTrendHeatmap() {
+  const el = document.getElementById('trend-heatmap')
+  if (!el) return
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+  const now = new Date()
+  const yearSel = document.getElementById('trend-year-select')
+  const selYear = yearSel ? parseInt(yearSel.value)||now.getFullYear() : now.getFullYear()
+
+  const mRev = new Array(12).fill(0)
+  orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').forEach(o=>{
+    const d = parseOrderDate(o.date)
+    if(!d||d.getFullYear()!==selYear) return
+    mRev[d.getMonth()] += o.total||0
+  })
+  const maxV = Math.max(1,...mRev)
+
+  el.innerHTML = mRev.map((v,i)=>{
+    const intensity = v/maxV
+    const alpha = 0.08 + intensity*0.82
+    const isHigh = intensity>0.7
+    return `<div style="border-radius:8px;padding:10px 4px;text-align:center;background:rgba(124,109,250,${alpha.toFixed(2)});border:1px solid rgba(124,109,250,${(alpha*0.6).toFixed(2)});cursor:default;transition:transform 0.15s" title="${MONTHS[i]}: ฿${v.toLocaleString()}" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+      <div style="font-size:9px;color:${isHigh?'#fff':'rgba(255,255,255,0.7)'};font-family:var(--mono);margin-bottom:4px">${MONTHS[i]}</div>
+      <div style="font-size:10px;font-weight:700;color:${isHigh?'#fff':'rgba(255,255,255,0.5)'};font-family:var(--mono)">${v>=1000?(v/1000).toFixed(1)+'k':v>0?v:'—'}</div>
+    </div>`
+  }).join('')
+}
+
+function renderTrendTopCards() {
+  const el = document.getElementById('trend-top-cards')
+  if (!el) return
+  const cardSales = {}
+  orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').forEach(o=>{
+    ;(o.orderItems||[]).forEach(it=>{
+      const k = it.name||'?'
+      if(!cardSales[k]) cardSales[k] = {name:it.name,brand:it.brand,qty:0,rev:0}
+      cardSales[k].qty += it.qty||1
+      cardSales[k].rev += it.price||0
+    })
+  })
+  const top = Object.values(cardSales).sort((a,b)=>b.qty-a.qty).slice(0,5)
+  const maxQ = Math.max(1, top[0]?.qty||1)
+  const RANK_COLORS=['#f5c842','#e2e8f0','#fb923c','var(--accent2)','var(--text3)']
+  el.innerHTML = top.length ? top.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:18px;font-weight:800;color:${RANK_COLORS[i]};font-family:var(--mono);width:24px;text-align:center;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
+          <span style="font-family:var(--mono);color:var(--text3);flex-shrink:0;margin-left:8px">${c.qty} ใบ</span>
+        </div>
+        <div style="height:5px;background:var(--border2);border-radius:3px">
+          <div style="width:${Math.round((c.qty/maxQ)*100)}%;height:100%;background:${RANK_COLORS[i]};border-radius:3px"></div>
+        </div>
+      </div>
+    </div>`).join('')
+    : '<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>'
 }
 
 function renderAgingReport() {
