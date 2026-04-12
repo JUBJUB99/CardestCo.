@@ -3067,9 +3067,14 @@ function buildSnapshot() {
     const isUrl = c.photo && (c.photo.startsWith('http://') || c.photo.startsWith('https://'))
     return { ...c, photo: isUrl ? c.photo : '' }
   })
+  // strip base64 cardPhoto จาก pendingBreaks ด้วย
+  const cleanPendingBreaks = pendingBreaks.map(pb => {
+    const isUrl = pb.cardPhoto && (pb.cardPhoto.startsWith('http://') || pb.cardPhoto.startsWith('https://'))
+    return { ...pb, cardPhoto: isUrl ? pb.cardPhoto : '' }
+  })
   return {
     cards: cleanCards, orders, purchases,
-    pendingBreaks,
+    pendingBreaks: cleanPendingBreaks,
     setupData: {
       brands:    setupData.brands,
       rarity:    setupData.rarity,
@@ -3090,7 +3095,9 @@ function applySnapshot(data) {
   if (data.cards)         { cards.length=0;         cards.push(...data.cards) }
   if (data.orders)        { orders.length=0;        orders.push(...data.orders) }
   if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
-  if (data.pendingBreaks) { pendingBreaks.length=0; pendingBreaks.push(...data.pendingBreaks) }
+  // pendingBreaks — reset เสมอ (ถ้า user ใหม่ไม่มีข้อมูลให้เป็น [])
+  pendingBreaks.length = 0
+  if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
   if (data.setupData) {
     if (data.setupData.brands)    setupData.brands    = data.setupData.brands
     if (data.setupData.rarity)    setupData.rarity    = data.setupData.rarity
@@ -4328,8 +4335,31 @@ function doLogin(){
 
 function doLogout(){
   stopPolling()  // หยุด background sync
+
+  // ล้าง localStorage cache ก่อน reset currentUser (ต้องทำก่อน currentUser = null)
+  if (currentUser?.email) {
+    try { localStorage.removeItem('cv_data_' + currentUser.email) } catch(e) {}
+  }
+
   cards.length = 0; orders.length = 0; purchases.length = 0
+  pendingBreaks.length = 0  // ← clear pending breaks ของ user เดิม
   currentUser = null
+
+  // reset break form state
+  breakCardIdx = -1
+  breakSpots   = []
+  try {
+    const inp = document.getElementById('break-card-search')
+    if (inp) inp.value = ''
+    const preview = document.getElementById('break-card-preview')
+    if (preview) preview.style.display = 'none'
+    const spotsPanel = document.getElementById('break-spots-panel')
+    if (spotsPanel) spotsPanel.style.display = 'none'
+    const sidebar = document.getElementById('pending-breaks-sidebar')
+    if (sidebar) sidebar.style.display = 'none'
+    const listEl = document.getElementById('pending-breaks-list')
+    if (listEl) listEl.innerHTML = ''
+  } catch(e) {}
 
   // reset setupData กลับเป็น default
   setupData.brands    = []
@@ -4364,10 +4394,6 @@ function doLogout(){
     if (ov) ov.style.display = 'block'
     if (pt) pt.style.display = 'none' 
   } catch(e) {}
-  // ล้าง localStorage cache ของ user ที่กำลัง logout
-  if (currentUser?.email) {
-    try { localStorage.removeItem('cv_data_' + currentUser.email) } catch(e) {}
-  }
 
   // ปิด sidebar ก่อน logout และซ่อนเมื่อกลับไปหน้า login
   const sidebar = document.querySelector('.sidebar')
