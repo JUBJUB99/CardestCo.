@@ -925,6 +925,9 @@ select option{background:var(--bg3);}
       <div class="nav-item" id="nav-break" onclick="showPageMobile('break',null,t('title_break'));closeSidebar()">
         <span class="nav-icon">◐</span><span data-i18n="nav_break">เบรคการ์ด</span>
       </div>
+      <div class="nav-item" id="nav-consignment" onclick="showPageMobile('consignment',null,t('title_consignment'));closeSidebar()">
+        <span class="nav-icon">◑</span><span data-i18n="nav_consignment">ฝากขาย&เกรด</span>
+      </div>
       <div class="nav-item" id="nav-purchase" onclick="showPageMobile('purchase',null,t('title_purchase'));closeSidebar()">
         <span class="nav-icon">◉</span><span data-i18n="nav_purchase">สั่งซื้อการ์ด</span>
       </div>
@@ -1278,6 +1281,7 @@ select option{background:var(--bg3);}
         <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchInvTab('display',this)" id="inv-tab-display" data-i18n="inv_tab_display">สต็อก</div>
           <div class="setup-tab" onclick="switchInvTab('edit',this)" id="inv-tab-edit" data-i18n="inv_tab_edit">✏️ แก้ไข</div>
+          <div class="setup-tab" onclick="switchInvTab('consignment',this)" id="inv-tab-consignment" data-i18n="inv_tab_consignment">🤝 ฝากขาย&เกรด</div>
           <button class="btn btn-sm" data-i18n="inv_btn_share" onclick="shareScreenshot('invtab-display','สต็อกการ์ด')" style="margin-left:auto;font-size:11px;padding:4px 10px;flex-shrink:0">📤 แชร์</button>
         </div>
 
@@ -1301,6 +1305,33 @@ select option{background:var(--bg3);}
         <!-- TAB: Edit -->
         <div id="invtab-edit" style="display:none">
           <div class="inv-grid" id="invGridEdit"></div>
+        </div>
+
+        <!-- TAB: Consignment -->
+        <div id="invtab-consignment" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:13px;color:var(--text2)" data-i18n="csmt_inv_desc">การ์ดที่ลูกค้าฝากขายหรือฝากเกรด (ต้นทุน ฿0)</div>
+            <button class="btn btn-primary btn-sm" onclick="showPageMobile('consignment',null,t('title_consignment'))" data-i18n="csmt_go_manage">⚙ จัดการรายการ</button>
+          </div>
+          <!-- KPI -->
+          <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+            <div class="kpi-card" style="--kpi-color:var(--blue)">
+              <div class="kpi-label" data-i18n="csmt_kpi_total">CONSIGNMENT ITEMS</div>
+              <div class="kpi-val" id="csmt-inv-total">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_total_sub">รายการทั้งหมด</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--yellow)">
+              <div class="kpi-label" data-i18n="csmt_kpi_sell">FOR SALE</div>
+              <div class="kpi-val" id="csmt-inv-sell">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_sell_sub">ฝากขาย</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--pink)">
+              <div class="kpi-label" data-i18n="csmt_kpi_grade">FOR GRADING</div>
+              <div class="kpi-val" id="csmt-inv-grade">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_grade_sub">ฝากเกรด</div>
+            </div>
+          </div>
+          <div class="inv-grid" id="csmtInvGrid"></div>
         </div>
       </div>
     </div>
@@ -1782,6 +1813,462 @@ select option{background:var(--bg3);}
       </div>
     </div>
 
+
+    <!-- ═══ PAGE: Consignment & Grade ═══ -->
+    <div id="page-consignment" class="page">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+          <span class="page-title" id="title-consignment-page" data-i18n="title_consignment">ฝากขาย&amp;เกรด</span>
+        </div>
+        <div class="topbar-right" style="gap:8px;display:flex">
+          <button class="btn btn-primary btn-sm" onclick="openCsmtModal()" data-i18n="csmt_btn_new">+ รับฝากใหม่</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Tabs -->
+        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+          <div class="setup-tab active" id="csmttab-btn-active" onclick="switchCsmtTab('active',this)" data-i18n="csmt_tab_active">รายการที่รับฝาก</div>
+          <div class="setup-tab" id="csmttab-btn-completed" onclick="switchCsmtTab('completed',this)" data-i18n="csmt_tab_completed">เสร็จสิ้นแล้ว</div>
+          <div class="setup-tab" id="csmttab-btn-dashboard" onclick="switchCsmtTab('dashboard',this)" data-i18n="csmt_tab_dashboard">📊 Dashboard</div>
+        </div>
+
+        <!-- TAB: Dashboard -->
+        <div id="csmttab-dashboard">
+          <!-- KPI Row -->
+          <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+            <div class="kpi-card" style="--kpi-color:var(--blue)">
+              <div class="kpi-label" data-i18n="csmt_dash_active">กำลังฝากอยู่</div>
+              <div class="kpi-val" id="csmt-dash-active">0</div>
+              <div class="kpi-sub" data-i18n="csmt_dash_active_sub">รายการ</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--green)">
+              <div class="kpi-label" data-i18n="csmt_dash_profit">กำไรรวม (ฝากขาย)</div>
+              <div class="kpi-val" id="csmt-dash-profit">฿0</div>
+              <div class="kpi-sub" data-i18n="csmt_dash_profit_sub">จากที่ขายแล้ว</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--pink)">
+              <div class="kpi-label" data-i18n="csmt_dash_graded_done">เกรดแล้ว</div>
+              <div class="kpi-val" id="csmt-dash-graded">0</div>
+              <div class="kpi-sub" data-i18n="csmt_dash_graded_sub">รายการ</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--yellow)">
+              <div class="kpi-label" data-i18n="csmt_dash_orders_done">Orders เสร็จสิ้น</div>
+              <div class="kpi-val" id="csmt-dash-orders-done">0</div>
+              <div class="kpi-sub" data-i18n="csmt_dash_orders_done_sub">ฝากขาย+ฝากเกรด</div>
+            </div>
+          </div>
+
+          <!-- Row 2: Sell KPI + Grade KPI -->
+          <div class="chart-row" style="margin-bottom:20px">
+            <!-- ฝากขาย Summary -->
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">🛒 <span data-i18n="csmt_dash_sell_title">ฝากขาย Summary</span></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_sell_active">กำลังฝากขายอยู่</span>
+                  <span id="csmt-dash-sell-active" style="font-weight:700;font-family:var(--mono)">0 รายการ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_sell_done">ขายแล้ว</span>
+                  <span id="csmt-dash-sell-done" style="font-weight:700;color:var(--green);font-family:var(--mono)">0 รายการ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_sell_value">มูลค่าตั้งรวม (active)</span>
+                  <span id="csmt-dash-sell-value" style="font-weight:700;color:var(--yellow);font-family:var(--mono)">฿0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_sell_profit">กำไรรวมที่ขายได้</span>
+                  <span id="csmt-dash-sell-profit-total" style="font-weight:700;color:var(--green);font-family:var(--mono)">฿0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ฝากเกรด Summary -->
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">🏅 <span data-i18n="csmt_dash_grade_title">ฝากเกรด Summary</span></span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_grade_active">กำลังรอเกรดอยู่</span>
+                  <span id="csmt-dash-grade-active" style="font-weight:700;font-family:var(--mono)">0 รายการ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_grade_done">เกรดแล้ว</span>
+                  <span id="csmt-dash-grade-done" style="font-weight:700;color:var(--pink);font-family:var(--mono)">0 รายการ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_grade_revenue">กำไรจากค่าบริการรวม</span>
+                  <span id="csmt-dash-grade-rev" style="font-weight:700;color:var(--green);font-family:var(--mono)">฿0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0">
+                  <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_grade_orders">Orders เสร็จสิ้น (เกรด)</span>
+                  <span id="csmt-dash-grade-orders" style="font-weight:700;color:var(--accent2);font-family:var(--mono)">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Owners -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="csmt_dash_top_owners">🏆 ผู้ฝากบ่อยที่สุด</span>
+            </div>
+            <div id="csmt-dash-top-owners" style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+              <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="csmt_no_data">ยังไม่มีรายการฝากขาย</div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="csmt_dash_recent">🕐 รายการล่าสุด</span>
+              <span id="csmt-dash-recent-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th data-i18n="csmt_col_id">ID</th>
+                  <th data-i18n="csmt_col_type">ประเภท</th>
+                  <th data-i18n="csmt_col_card">การ์ด</th>
+                  <th data-i18n="csmt_col_owner">ผู้ฝาก</th>
+                  <th style="text-align:right" data-i18n="csmt_col_price">ราคา</th>
+                  <th data-i18n="csmt_col_status">สถานะ</th>
+                  <th data-i18n="csmt_col_date">วันที่</th>
+                </tr></thead>
+                <tbody id="csmt-dash-recent-table">
+                  <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px;font-size:12px" data-i18n="csmt_no_data">ยังไม่มีรายการ</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end csmttab-dashboard -->
+
+        <!-- TAB: Active Consignments -->
+        <div id="csmttab-active" style="display:none">
+          <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+            <div class="kpi-card" style="--kpi-color:var(--blue)">
+              <div class="kpi-label" data-i18n="csmt_kpi_items">รายการทั้งหมด</div>
+              <div class="kpi-val" id="csmt-kpi-total">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_items_sub">ที่รับฝาก</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--yellow)">
+              <div class="kpi-label" data-i18n="csmt_kpi_sell">ฝากขาย</div>
+              <div class="kpi-val" id="csmt-kpi-sell">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_sell_sub">รายการ</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--pink)">
+              <div class="kpi-label" data-i18n="csmt_kpi_grade">ฝากเกรด</div>
+              <div class="kpi-val" id="csmt-kpi-grade">0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_grade_sub">รายการ</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color:var(--green)">
+              <div class="kpi-label" data-i18n="csmt_kpi_value">มูลค่ารวม</div>
+              <div class="kpi-val" id="csmt-kpi-value">฿0</div>
+              <div class="kpi-sub" data-i18n="csmt_kpi_value_sub">ราคาตั้งรวม</div>
+            </div>
+          </div>
+          <!-- Table -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="csmt_list_title">รายการฝากขาย&amp;เกรด</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="csmt-type-filter" onchange="renderConsignment()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
+                  <option value="" data-i18n="csmt_filter_all">ทั้งหมด</option>
+                  <option value="sell" data-i18n="csmt_type_sell">ฝากขาย</option>
+                  <option value="grade" data-i18n="csmt_type_grade">ฝากเกรด</option>
+                </select>
+                <input id="csmt-search" placeholder="ค้นหา..." oninput="renderConsignment()"
+                  style="padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;width:140px">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="csmt_col_id">ID</th>
+                    <th data-i18n="csmt_col_type">ประเภท</th>
+                    <th data-i18n="csmt_col_card">การ์ด</th>
+                    <th data-i18n="csmt_col_brand">แบรนด์</th>
+                    <th data-i18n="csmt_col_rarity">Rarity</th>
+                    <th style="text-align:center" data-i18n="csmt_col_qty">จำนวน</th>
+                    <th data-i18n="csmt_col_graded">Graded</th>
+                    <th data-i18n="csmt_col_owner">เจ้าของ</th>
+                    <th style="text-align:right" data-i18n="csmt_col_price">ราคาขาย</th>
+                    <th data-i18n="csmt_col_date">วันที่รับ</th>
+                    <th data-i18n="csmt_col_status">สถานะ</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="csmt-table-body">
+                  <tr><td colspan="12" style="text-align:center;color:var(--text3);padding:32px;font-size:12px" data-i18n="csmt_no_data">ยังไม่มีรายการฝากขาย</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end csmttab-active -->
+
+        <!-- TAB: Completed -->
+        <div id="csmttab-completed" style="display:none">
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title" data-i18n="csmt_completed_title">รายการที่เสร็จสิ้นแล้ว</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="csmt_col_id">ID</th>
+                    <th data-i18n="csmt_col_type">ประเภท</th>
+                    <th data-i18n="csmt_col_card">การ์ด</th>
+                    <th data-i18n="csmt_col_owner">เจ้าของ</th>
+                    <th style="text-align:right" data-i18n="csmt_col_price">ราคาขาย</th>
+                    <th style="text-align:right" data-i18n="csmt_col_profit">กำไรที่ได้</th>
+                    <th data-i18n="csmt_col_date">วันที่รับ</th>
+                    <th data-i18n="csmt_col_done">วันที่เสร็จ</th>
+                  </tr>
+                </thead>
+                <tbody id="csmt-done-table-body">
+                  <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:32px;font-size:12px" data-i18n="csmt_no_completed">ยังไม่มีรายการที่เสร็จสิ้น</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end csmttab-completed -->
+      </div>
+    </div>
+
+    <!-- MODAL: New Consignment -->
+    <div class="modal-overlay" id="modal-newConsignment">
+      <div class="modal" style="max-width:520px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h3 data-i18n="csmt_modal_title">รับฝากใหม่</h3>
+          <span onclick="closeModal('newConsignment')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
+        </div>
+        <!-- Type selector -->
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <div id="csmt-type-sell" onclick="setCsmtType('sell')"
+            style="flex:1;padding:14px;border-radius:10px;border:2px solid var(--accent);background:rgba(124,109,250,0.1);cursor:pointer;text-align:center;transition:all 0.15s">
+            <div style="font-size:22px;margin-bottom:4px">🛒</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent)" data-i18n="csmt_type_sell">ฝากขาย</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="csmt_sell_desc">ต้นทุน ฿0 กำไร = ราคาขาย</div>
+          </div>
+          <div id="csmt-type-grade" onclick="setCsmtType('grade')"
+            style="flex:1;padding:14px;border-radius:10px;border:2px solid var(--border2);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s">
+            <div style="font-size:22px;margin-bottom:4px">🏅</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text2)" data-i18n="csmt_type_grade">ฝากเกรด</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="csmt_grade_desc">ส่งเกรดแทนลูกค้า</div>
+          </div>
+        </div>
+        <input type="hidden" id="csmt-selected-type" value="sell">
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_card">การ์ด</label>
+            <input type="text" id="csmt-card-name" data-ph-i18n="csmt_ph_card" placeholder="ชื่อการ์ด...">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_brand">แบรนด์</label>
+            <select id="csmt-brand"></select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_rarity">Rarity</label>
+            <select id="csmt-rarity"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_qty">จำนวน</label>
+            <input type="number" id="csmt-qty" min="1" value="1">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_graded">Graded (ถ้ามี)</label>
+            <select id="csmt-graded">
+              <option value="" data-i18n="csmt_no_graded">ไม่มี / Not Graded</option>
+              <option value="PSA">PSA</option>
+              <option value="BGS">BGS</option>
+              <option value="CGC">CGC</option>
+              <option value="SGC">SGC</option>
+              <option value="ACE">ACE</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_grade_score">Grade Score</label>
+            <input type="text" id="csmt-grade-score" placeholder="e.g. 10, 9.5">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_col_owner">ผู้ฝาก</label>
+            <!-- Combo: พิมพ์เองหรือเลือกจาก dropdown -->
+            <div style="position:relative">
+              <input type="text" id="csmt-owner-text"
+                data-ph-i18n="csmt_ph_owner_new" placeholder="พิมพ์หรือเลือกผู้ฝาก..."
+                autocomplete="off"
+                oninput="onCsmtOwnerInput(this.value)"
+                onfocus="showCsmtOwnerDrop()"
+                style="width:100%;padding-right:36px">
+              <button type="button" onclick="toggleCsmtOwnerDrop()"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 4px"
+                onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">▾</button>
+              <div id="csmt-owner-drop"
+                style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:300;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0" id="csmt-price-group">
+            <label data-i18n="csmt_col_price">ราคาขาย (฿)</label>
+            <input type="number" id="csmt-price" min="0" value="0">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_deposit_label">มัดจำ (฿) <span style="font-size:10px;color:var(--text3)" data-i18n="csmt_deposit_optional">(ไม่บังคับ)</span></label>
+            <input type="number" id="csmt-deposit" min="0" value="0">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_note">หมายเหตุ</label>
+            <input type="text" id="csmt-note" data-ph-i18n="csmt_ph_note" placeholder="หมายเหตุเพิ่มเติม...">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" style="flex:1" onclick="closeModal('newConsignment')" data-i18n="btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary" style="flex:2" onclick="saveConsignment()" data-i18n="csmt_btn_save">✓ รับฝากเข้าระบบ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Sell Consignment (profit popup) -->
+    <div class="modal-overlay" id="modal-sellCsmt">
+      <div class="modal" style="max-width:400px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h3 data-i18n="csmt_sell_modal_title">ขายการ์ด Consignment</h3>
+          <span onclick="closeModal('sellCsmt')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
+        </div>
+
+        <!-- Card info summary -->
+        <div id="csmt-sell-info" style="background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:20px">
+          <div id="csmt-sell-card-name" style="font-size:14px;font-weight:700;margin-bottom:4px">—</div>
+          <div id="csmt-sell-card-meta" style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</div>
+          <div style="display:flex;gap:16px;margin-top:10px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_sell_listed">ราคาตั้ง</div>
+              <div id="csmt-sell-listed-price" style="font-size:15px;font-weight:700;color:var(--yellow);font-family:var(--mono)">฿0</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_sell_owner_lbl">ผู้ฝาก</div>
+              <div id="csmt-sell-owner" style="font-size:13px;font-weight:600">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit input -->
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="font-size:13px;font-weight:700;color:var(--text)" data-i18n="csmt_sell_profit_label">กำไรที่ได้รับ (฿) *</label>
+          <div style="position:relative;margin-top:8px">
+            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);font-weight:700">฿</span>
+            <input type="number" id="csmt-sell-profit" min="0" value="0"
+              style="padding-left:28px;font-size:20px;font-weight:700;font-family:var(--mono)"
+              oninput="updateCsmtSellPreview()">
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div id="csmt-sell-preview" style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:12px 14px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text2)" data-i18n="csmt_sell_revenue">ราคาขาย (Revenue)</span>
+            <span id="csmt-sell-preview-rev" style="font-family:var(--mono);font-weight:700;color:var(--yellow)">฿0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text2)" data-i18n="csmt_sell_cost">ต้นทุน</span>
+            <span style="font-family:var(--mono);color:var(--text3)">฿0 (Consignment)</span>
+          </div>
+          <div style="border-top:1px solid rgba(74,222,128,0.2);padding-top:8px;margin-top:4px;display:flex;justify-content:space-between;font-size:14px">
+            <span style="font-weight:700;color:var(--green)" data-i18n="csmt_sell_profit_net">กำไรสุทธิ</span>
+            <span id="csmt-sell-preview-profit" style="font-family:var(--mono);font-weight:800;color:var(--green)">฿0</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+          <button class="btn" style="flex:1" onclick="closeModal('sellCsmt')" data-i18n="btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary" style="flex:2" onclick="confirmSellConsignment()" data-i18n="csmt_sell_confirm_btn">
+            ✓ ยืนยันการขาย
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Complete Grade -->
+    <div class="modal-overlay" id="modal-completeCsmt">
+      <div class="modal" style="max-width:420px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h3 data-i18n="csmt_grade_modal_title">🏅 บันทึกผลเกรด</h3>
+          <span onclick="closeModal('completeCsmt')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
+        </div>
+        <!-- Card info -->
+        <div id="csmt-grade-info-box" style="background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:20px">
+          <div id="csmt-grade-card-name" style="font-size:14px;font-weight:700;margin-bottom:2px">—</div>
+          <div id="csmt-grade-card-meta" style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</div>
+          <div style="margin-top:8px;display:flex;gap:16px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_sell_owner_lbl">ผู้ฝาก</div>
+              <div id="csmt-grade-owner-lbl" style="font-size:13px;font-weight:600">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_deposit_paid">มัดจำที่รับไว้</div>
+              <div id="csmt-grade-deposit-lbl" style="font-size:13px;font-weight:600;color:var(--yellow);font-family:var(--mono)">฿0</div>
+            </div>
+          </div>
+        </div>
+        <!-- Grade result -->
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_grade_result_label">ผลเกรดที่ได้ (บริษัท)</label>
+            <select id="csmt-complete-graded">
+              <option value="PSA">PSA</option>
+              <option value="BGS">BGS</option>
+              <option value="CGC">CGC</option>
+              <option value="SGC">SGC</option>
+              <option value="ACE">ACE</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_grade_score_result">คะแนนที่ได้</label>
+            <input type="text" id="csmt-complete-grade-score" placeholder="e.g. 10, 9.5, 8">
+          </div>
+        </div>
+        <!-- Grade cost -->
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_grade_cost_label">ค่าใช้จ่ายเกรด (฿)</label>
+            <input type="number" id="csmt-complete-grade-cost" min="0" value="0" oninput="updateGradePreview()">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label data-i18n="csmt_grade_fee_label">กำไรจากค่าบริการ (฿)</label>
+            <input type="number" id="csmt-complete-service-fee" min="0" value="0" oninput="updateGradePreview()">
+          </div>
+        </div>
+        <!-- Summary -->
+        <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:12px 14px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text2)" data-i18n="csmt_grade_cost_total">ค่าเกรดรวม</span>
+            <span id="csmt-grade-cost-preview" style="font-family:var(--mono);color:var(--red)">฿0</span>
+          </div>
+          <div style="border-top:1px solid rgba(74,222,128,0.2);padding-top:8px;margin-top:4px;display:flex;justify-content:space-between;font-size:14px">
+            <span style="font-weight:700;color:var(--green)" data-i18n="csmt_grade_profit_label">กำไรจากค่าบริการ</span>
+            <span id="csmt-grade-balance-preview" style="font-family:var(--mono);font-weight:800;color:var(--green)">฿0</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" style="flex:1" onclick="closeModal('completeCsmt')" data-i18n="btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary" style="flex:2;background:linear-gradient(135deg,var(--pink),#db2777)" onclick="confirmCompleteGrade()" data-i18n="csmt_grade_confirm_btn">
+            🏅 บันทึกผลเกรด
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="page-purchase" class="page">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-purchase">สั่งซื้อการ์ด</span></div>
@@ -2055,7 +2542,6 @@ select option{background:var(--bg3);}
           <div class="setup-tab active" data-i18n="setup_brands" onclick="switchTab('brands',this)">แบรนด์การ์ด</div>
           <div class="setup-tab" data-i18n="setup_rarity" onclick="switchTab('rarity',this)">Rarity</div>
           <div class="setup-tab" data-i18n="setup_channels" onclick="switchTab('channels',this)">ช่องทางขาย</div>
-          <div class="setup-tab" data-i18n="setup_suppliers" onclick="switchTab('suppliers',this)">ผู้จัดจำหน่าย</div>
           <div class="setup-tab" data-i18n="setup_tiers" onclick="switchTab('tiers',this)">ระดับลูกค้า</div>
           <div class="setup-tab" onclick="switchTab('params',this)">⚙️ Parameters</div>
           <div class="setup-tab" onclick="switchTab('package',this)">📦 Package</div>
@@ -2085,6 +2571,8 @@ select option{background:var(--bg3);}
           <div class="setup-grid" id="rarity-grid"></div>
         </div>
 
+
+
         <!-- TAB: Channels -->
         <div id="tab-channels" class="tab-content" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -2097,24 +2585,6 @@ select option{background:var(--bg3);}
           <div class="setup-grid" id="channels-grid"></div>
         </div>
 
-        <!-- TAB: Suppliers -->
-        <div id="tab-suppliers" class="tab-content" style="display:none">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div>
-              <div style="font-size:15px;font-weight:700">ผู้จัดจำหน่าย / Supplier</div>
-              <div style="font-size:12px;color:var(--text2);margin-top:2px">แหล่งซื้อการ์ดเข้าร้าน</div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="openCatModal('suppliers')" data-i18n="btn_add_supplier">+ เพิ่ม Supplier</button>
-          </div>
-          <div class="panel">
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th data-i18n="sup_name">ชื่อ</th><th data-i18n="sup_type">ประเภท</th><th data-i18n="sup_contact">ติดต่อ</th><th data-i18n="sup_brand">แบรนด์ที่จำหน่าย</th><th data-i18n="sup_status">สถานะ</th><th></th></tr></thead>
-                <tbody id="suppliers-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
 
         <!-- TAB: Customer Tiers -->
         <div id="tab-tiers" class="tab-content" style="display:none">
@@ -2137,7 +2607,7 @@ select option{background:var(--bg3);}
 
           <div class="panel" style="max-width:600px">
             <!-- Stock negative -->
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border)">
+            <div style="display:none">
               <div style="flex:1;margin-right:24px">
                 <div style="font-size:14px;font-weight:600;margin-bottom:4px">อนุญาตให้ขาย Stock ติดลบ</div>
                 <div style="font-size:12px;color:var(--text2);line-height:1.6">เมื่อเปิด YES ระบบจะยอมให้สร้างออเดอร์แม้สินค้าจะหมดหรือติดลบ<br>เมื่อปิด NO ระบบจะบล็อกออเดอร์เมื่อ Stock = 0</div>
@@ -2150,7 +2620,7 @@ select option{background:var(--bg3);}
             </div>
 
             <!-- Auto reduce stock on sale -->
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border)">
+            <div style="display:none">
               <div style="flex:1;margin-right:24px">
                 <div style="font-size:14px;font-weight:600;margin-bottom:4px">ลด Stock อัตโนมัติเมื่อขาย</div>
                 <div style="font-size:12px;color:var(--text2);line-height:1.6">เมื่อเปิด YES เมื่อสร้างออเดอร์ระบบจะลด Stock การ์ดนั้นอัตโนมัติ</div>
@@ -2163,7 +2633,7 @@ select option{background:var(--bg3);}
             </div>
 
             <!-- Require customer on order -->
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border)">
+            <div style="display:none">
               <div style="flex:1;margin-right:24px">
                 <div style="font-size:14px;font-weight:600;margin-bottom:4px">บังคับระบุลูกค้าตอนขาย</div>
                 <div style="font-size:12px;color:var(--text2);line-height:1.6">เมื่อเปิด YES ต้องเลือกลูกค้าทุกครั้งก่อนสร้างออเดอร์ เมื่อปิด NO ขายแบบไม่ระบุลูกค้าได้</div>
@@ -2533,10 +3003,7 @@ select option{background:var(--bg3);}
             <input type="number" id="po-cost" placeholder="0" oninput="updatePoMargin()" style="border-color:var(--accent)">
           </div>
         </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label data-i18n="po_lbl_source">แหล่งซื้อ</label>
-          <select id="po-source"></select>
-        </div>
+
         <!-- hidden sell field for compat -->
         <input type="hidden" id="po-sell" value="0">
       </div>
@@ -2842,7 +3309,20 @@ select option{background:var(--bg3);}
         <input type="text" id="cat-color-hex" value="#7c6dfa" placeholder="#rrggbb" style="flex:1" oninput="syncColor(this.value)">
       </div>
     </div>
-    <div class="form-group" id="cat-emoji-group"><label>Emoji / ไอคอน</label><input type="text" id="cat-emoji" placeholder="🃏" maxlength="2"></div>
+    <div class="form-group" id="cat-emoji-group">
+      <label>Emoji / ไอคอน</label>
+      <div style="display:flex;gap:8px;align-items:center;position:relative">
+        <input type="text" id="cat-emoji" placeholder="🃏" maxlength="4" style="flex:1;font-size:18px;text-align:center;padding:6px 10px">
+        <button type="button" onclick="toggleEmojiPicker()"
+          style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:16px;white-space:nowrap;color:var(--text)">
+          😀 เลือก
+        </button>
+        <div id="emoji-picker-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;z-index:500;padding:10px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">คลิกเพื่อเลือก Emoji</div>
+          <div id="emoji-picker-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:220px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
     <div class="form-group" id="cat-extra-group" style="display:none"><label id="cat-extra-label">ข้อมูลเพิ่มเติม</label><input type="text" id="cat-extra" placeholder=""></div>
     <!-- Tier range fields (From/To) — แสดงเฉพาะ tiers -->
     <div id="tier-range-group" style="display:none">
@@ -2917,6 +3397,7 @@ let cards = []
 let orders = []
 let customers = []
 let topCards = []
+let consignments = []  // [{id, type:'sell'|'grade', cardName, brand, rarity, qty, graded, gradeScore, owner, price, deposit, note, date, status:'active'|'completed'|'returned'|'graded', completedDate, orderId, soldProfit, gradedResult, gradedScore, gradeCost, serviceFee}]
 
 // ── Break Data ─────────────────────────────────────────────────────────────────
 let breakCardIdx = -1   // index ของการ์ดที่เลือก
@@ -3074,6 +3555,7 @@ function buildSnapshot() {
   })
   return {
     cards: cleanCards, orders, purchases,
+    consignments,
     pendingBreaks: cleanPendingBreaks,
     setupData: {
       brands:    setupData.brands,
@@ -3095,6 +3577,8 @@ function applySnapshot(data) {
   if (data.cards)         { cards.length=0;         cards.push(...data.cards) }
   if (data.orders)        { orders.length=0;        orders.push(...data.orders) }
   if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
+  consignments.length = 0
+  if (data.consignments)  { consignments.push(...data.consignments) }
   // pendingBreaks — reset เสมอ (ถ้า user ใหม่ไม่มีข้อมูลให้เป็น [])
   pendingBreaks.length = 0
   if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
@@ -4342,6 +4826,7 @@ function doLogout(){
   }
 
   cards.length = 0; orders.length = 0; purchases.length = 0
+  consignments.length = 0
   pendingBreaks.length = 0  // ← clear pending breaks ของ user เดิม
   currentUser = null
 
@@ -4486,6 +4971,68 @@ const LANG = {
     // Nav
     nav_dashboard:'Dashboard', nav_inventory:'สต็อกการ์ด', nav_orders:'ขายการ์ด',
     nav_purchase:'สั่งซื้อการ์ด', nav_break:'เบรคการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
+    nav_consignment:'ฝากขาย&เกรด', title_consignment:'ฝากขาย & เกรด',
+    // Consignment
+    csmt_tab_active:'รายการที่รับฝาก', csmt_tab_completed:'เสร็จสิ้นแล้ว',
+    csmt_tab_dashboard:'📊 Dashboard',
+    csmt_dash_active:'กำลังฝากอยู่', csmt_dash_active_sub:'รายการ',
+    csmt_dash_profit:'กำไรรวม (ฝากขาย)', csmt_dash_profit_sub:'จากที่ขายแล้ว',
+    csmt_dash_graded_done:'เกรดแล้ว', csmt_dash_graded_sub:'รายการ',
+    csmt_dash_orders_done:'Orders เสร็จสิ้น', csmt_dash_orders_done_sub:'ฝากขาย+ฝากเกรด',
+    csmt_dash_grade_revenue:'กำไรจากค่าบริการรวม', csmt_dash_grade_orders:'Orders เสร็จสิ้น (เกรด)',
+    csmt_dash_sell_title:'ฝากขาย Summary', csmt_dash_grade_title:'ฝากเกรด Summary',
+    csmt_dash_sell_active:'กำลังฝากขายอยู่', csmt_dash_sell_done:'ขายแล้ว',
+    csmt_dash_sell_value:'มูลค่าตั้งรวม (active)', csmt_dash_sell_profit:'กำไรรวมที่ขายได้',
+    csmt_dash_grade_active:'กำลังรอเกรดอยู่', csmt_dash_grade_done:'เกรดแล้ว',
+    csmt_dash_grade_revenue:'ค่าบริการรวม', csmt_dash_grade_balance:'ยอดค้างเก็บรวม',
+    csmt_dash_top_owners:'🏆 ผู้ฝากบ่อยที่สุด', csmt_dash_recent:'🕐 รายการล่าสุด',
+    csmt_btn_new:'+ รับฝากใหม่', csmt_btn_save:'✓ รับฝากเข้าระบบ',
+    csmt_modal_title:'รับฝากใหม่',
+    csmt_type_sell:'ฝากขาย', csmt_type_grade:'ฝากเกรด',
+    csmt_sell_desc:'ต้นทุน ฿0 กำไร = ราคาขาย', csmt_grade_desc:'ส่งเกรดแทนลูกค้า',
+    csmt_filter_all:'ทั้งหมด',
+    csmt_list_title:'รายการฝากขาย&เกรด', csmt_completed_title:'รายการที่เสร็จสิ้นแล้ว',
+    csmt_no_data:'ยังไม่มีรายการฝากขาย', csmt_no_completed:'ยังไม่มีรายการที่เสร็จสิ้น',
+    csmt_kpi_items:'รายการทั้งหมด', csmt_kpi_items_sub:'ที่รับฝาก',
+    csmt_kpi_sell:'ฝากขาย', csmt_kpi_sell_sub:'รายการ',
+    csmt_kpi_grade:'ฝากเกรด', csmt_kpi_grade_sub:'รายการ',
+    csmt_kpi_value:'มูลค่ารวม', csmt_kpi_value_sub:'ราคาตั้งรวม',
+    csmt_kpi_total:'CONSIGNMENT ITEMS', csmt_kpi_total_sub:'รายการทั้งหมด',
+    csmt_col_id:'ID', csmt_col_type:'ประเภท', csmt_col_card:'การ์ด',
+    csmt_col_brand:'แบรนด์', csmt_col_rarity:'Rarity', csmt_col_qty:'จำนวน',
+    csmt_col_graded:'Graded', csmt_col_owner:'เจ้าของ', csmt_col_price:'ราคาขาย',
+    csmt_col_date:'วันที่รับ', csmt_col_status:'สถานะ', csmt_col_profit:'กำไร', csmt_col_done:'วันที่เสร็จ',
+    csmt_col_note:'หมายเหตุ', csmt_note:'หมายเหตุ',
+    csmt_grade_score:'Grade Score',
+    csmt_no_graded:'ไม่มี / Not Graded',
+    csmt_ph_card:'ชื่อการ์ด...', csmt_ph_note:'หมายเหตุเพิ่มเติม...',
+    csmt_status_active:'กำลังฝากอยู่', csmt_status_sold:'ขายแล้ว', csmt_status_returned:'คืนเจ้าของแล้ว', csmt_status_graded:'เกรดแล้ว',
+    csmt_action_sell:'ขายการ์ดนี้', csmt_action_return:'คืนเจ้าของ', csmt_action_complete:'เสร็จสิ้น',
+    csmt_toast_saved:'✓ รับฝากเข้าระบบแล้ว', csmt_toast_returned:'↩ คืนการ์ดให้เจ้าของแล้ว', csmt_toast_completed:'✓ บันทึกการขาย Consignment แล้ว',
+    csmt_sell_modal_title:'ขายการ์ด Consignment',
+    csmt_sell_listed:'ราคาตั้ง', csmt_sell_owner_lbl:'ผู้ฝาก',
+    csmt_sell_profit_label:'กำไรที่ได้รับ (฿) *',
+    csmt_sell_revenue:'ราคาขาย (Revenue)', csmt_sell_cost:'ต้นทุน',
+    csmt_sell_profit_net:'กำไรสุทธิ', csmt_sell_confirm_btn:'✓ ยืนยันการขาย',
+    csmt_confirm_return:'คืนการ์ดนี้ให้เจ้าของ? (รายการจะถูกลบออกจากระบบ)',
+    csmt_deposit_label:'มัดจำ (฿)', csmt_deposit_optional:'(ไม่บังคับ)',
+    csmt_deposit_paid:'มัดจำที่รับไว้',
+    csmt_grade_modal_title:'🏅 บันทึกผลเกรด',
+    csmt_grade_result_label:'ผลเกรดที่ได้ (บริษัท)',
+    csmt_grade_score_result:'คะแนนที่ได้',
+    csmt_grade_cost_label:'ค่าใช้จ่ายเกรด (฿)',
+    csmt_grade_fee_label:'กำไรจากค่าบริการ (฿)',
+    csmt_grade_cost_total:'ค่าใช้จ่ายเกรด (฿)',
+    csmt_grade_profit_label:'กำไรจากค่าบริการ',
+    csmt_grade_cost_total:'ค่าเกรดรวม',
+    csmt_grade_balance:'ยอดที่ต้องเก็บเพิ่ม',
+    csmt_grade_confirm_btn:'🏅 บันทึกผลเกรด',
+    csmt_inv_desc:'การ์ดที่ลูกค้าฝากขายหรือฝากเกรด (ต้นทุน ฿0)', csmt_go_manage:'⚙ จัดการรายการ',
+    csmt_err_nocard:'กรุณากรอกชื่อการ์ด', csmt_err_noowner:'กรุณาเลือกหรือกรอกชื่อผู้ฝาก',
+    csmt_owner_existing:'📋 ผู้ฝากเดิม', csmt_owner_new:'✏️ ผู้ฝากใหม่',
+    csmt_ph_owner_new:'กรอกชื่อผู้ฝาก...',
+    inv_tab_consignment:'🤝 ฝากขาย&เกรด',
+    csmt_tag_sell:'ฝากขาย', csmt_tag_grade:'ฝากเกรด',
     title_break:'เบรคการ์ด',
     break_setup_title:'ตั้งค่าการเบรค', break_card_label:'การ์ดที่จะเบรค',
     break_card_search_ph:'พิมพ์ชื่อการ์ด...',
@@ -4739,6 +5286,68 @@ const LANG = {
   en: {
     nav_dashboard:'Dashboard', nav_inventory:'Inventory', nav_orders:'Sell Cards',
     nav_purchase:'Purchase', nav_break:'Card Break', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
+    nav_consignment:'Consignment&Grade', title_consignment:'Consignment & Grade',
+    // Consignment
+    csmt_tab_active:'Active Consignments', csmt_tab_completed:'Completed',
+    csmt_tab_dashboard:'📊 Dashboard',
+    csmt_dash_active:'ACTIVE', csmt_dash_active_sub:'Items',
+    csmt_dash_profit:'TOTAL PROFIT (SELL)', csmt_dash_profit_sub:'From sold items',
+    csmt_dash_graded_done:'GRADED', csmt_dash_graded_sub:'Items',
+    csmt_dash_orders_done:'Completed Orders', csmt_dash_orders_done_sub:'Sell + Grade',
+    csmt_dash_grade_revenue:'Total Service Fee Profit', csmt_dash_grade_orders:'Completed (Grade)',
+    csmt_dash_sell_title:'Consignment Sale Summary', csmt_dash_grade_title:'Consignment Grade Summary',
+    csmt_dash_sell_active:'Currently active', csmt_dash_sell_done:'Sold',
+    csmt_dash_sell_value:'Listed value (active)', csmt_dash_sell_profit:'Total profit earned',
+    csmt_dash_grade_active:'Pending grading', csmt_dash_grade_done:'Graded',
+    csmt_dash_grade_revenue:'Total service fees', csmt_dash_grade_balance:'Outstanding balance',
+    csmt_dash_top_owners:'🏆 Top Consignors', csmt_dash_recent:'🕐 Recent Activity',
+    csmt_btn_new:'+ New Consignment', csmt_btn_save:'✓ Accept Consignment',
+    csmt_modal_title:'New Consignment',
+    csmt_type_sell:'Consignment Sale', csmt_type_grade:'Consignment Grade',
+    csmt_sell_desc:'Cost ฿0 — profit = sell price', csmt_grade_desc:'Send for grading on behalf of owner',
+    csmt_filter_all:'All Types',
+    csmt_list_title:'Consignment & Grade List', csmt_completed_title:'Completed Items',
+    csmt_no_data:'No consignments yet', csmt_no_completed:'No completed items yet',
+    csmt_kpi_items:'TOTAL ITEMS', csmt_kpi_items_sub:'On consignment',
+    csmt_kpi_sell:'FOR SALE', csmt_kpi_sell_sub:'Items',
+    csmt_kpi_grade:'FOR GRADING', csmt_kpi_grade_sub:'Items',
+    csmt_kpi_value:'TOTAL VALUE', csmt_kpi_value_sub:'Listed price total',
+    csmt_kpi_total:'CONSIGNMENT ITEMS', csmt_kpi_total_sub:'Total items',
+    csmt_col_id:'ID', csmt_col_type:'Type', csmt_col_card:'Card',
+    csmt_col_brand:'Brand', csmt_col_rarity:'Rarity', csmt_col_qty:'Qty',
+    csmt_col_graded:'Graded', csmt_col_owner:'Owner', csmt_col_price:'Price',
+    csmt_col_date:'Date In', csmt_col_status:'Status', csmt_col_profit:'Profit', csmt_col_done:'Done Date',
+    csmt_col_note:'Note', csmt_note:'Note',
+    csmt_grade_score:'Grade Score',
+    csmt_no_graded:'None / Not Graded',
+    csmt_ph_card:'Card name...', csmt_ph_note:'Additional notes...',
+    csmt_status_active:'Active', csmt_status_sold:'Sold', csmt_status_returned:'Returned', csmt_status_graded:'Graded',
+    csmt_action_sell:'Sell this card', csmt_action_return:'Return to owner', csmt_action_complete:'Complete',
+    csmt_toast_saved:'✓ Consignment accepted', csmt_toast_returned:'↩ Card returned to owner', csmt_toast_completed:'✓ Consignment sale recorded',
+    csmt_sell_modal_title:'Sell Consignment Card',
+    csmt_sell_listed:'Listed Price', csmt_sell_owner_lbl:'Consignor',
+    csmt_sell_profit_label:'Profit Received (฿) *',
+    csmt_sell_revenue:'Sell Price (Revenue)', csmt_sell_cost:'Cost',
+    csmt_sell_profit_net:'Net Profit', csmt_sell_confirm_btn:'✓ Confirm Sale',
+    csmt_confirm_return:'Return this card to owner? (Record will be deleted from system)',
+    csmt_deposit_label:'Deposit (฿)', csmt_deposit_optional:'(optional)',
+    csmt_deposit_paid:'Deposit Received',
+    csmt_grade_modal_title:'🏅 Record Grade Result',
+    csmt_grade_result_label:'Grade Result (Company)',
+    csmt_grade_score_result:'Grade Score',
+    csmt_grade_cost_label:'Grading Cost (฿)',
+    csmt_grade_fee_label:'Profit from Service Fee (฿)',
+    csmt_grade_cost_total:'Grading Cost (฿)',
+    csmt_grade_profit_label:'Service Fee Profit',
+    csmt_grade_cost_total:'Total Grading Cost',
+    csmt_grade_balance:'Balance to Collect',
+    csmt_grade_confirm_btn:'🏅 Record Grade Result',
+    csmt_inv_desc:'Cards on consignment or for grading (Cost ฿0)', csmt_go_manage:'⚙ Manage',
+    csmt_err_nocard:'Please enter card name', csmt_err_noowner:'Please select or enter an owner',
+    csmt_owner_existing:'📋 Existing Consignor', csmt_owner_new:'✏️ New Consignor',
+    csmt_ph_owner_new:'Enter consignor name...',
+    inv_tab_consignment:'🤝 Consignment&Grade',
+    csmt_tag_sell:'Consign Sale', csmt_tag_grade:'Consign Grade',
     title_break:'Card Break',
     break_setup_title:'Break Settings', break_card_label:'Card to Break',
     break_card_search_ph:'Search card name...',
@@ -5022,6 +5631,7 @@ function applyLang() {
     'title-inventory':L.title_inventory, 'title-orders':L.title_orders,
     'title-purchase':L.title_purchase, 'title-customers':L.title_customers,
     'title-reports':L.title_reports, 'title-setup':L.title_setup,
+    'title-consignment-page':L.title_consignment,
   }
   Object.entries(titleMap).forEach(([id,txt]) => { const el=document.getElementById(id); if(el) el.textContent=txt })
 
@@ -5201,11 +5811,23 @@ function showPage(id,el){
   if(id==='setup') renderSetup()
   if(id==='dashboard') renderDashboard()
   if(id==='break') renderBreakPage()
+  if(id==='consignment') {
+    // Switch to dashboard tab by default
+    const activeBtn = document.getElementById('csmttab-btn-active')
+    if (activeBtn) switchCsmtTab('active', activeBtn)
+    else renderConsignment()
+  }
 }
 
 // Modals
 function openModal(id){ document.getElementById('modal-'+id).classList.add('open'); }
-function closeModal(id){ document.getElementById('modal-'+id).classList.remove('open'); }
+function closeModal(id){
+  document.getElementById('modal-'+id).classList.remove('open')
+  if (id === 'catEdit') {
+    const p = document.getElementById('emoji-picker-panel')
+    if (p) p.style.display = 'none'
+  }
+}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   if(m.id === 'modal-cropImage') return  // crop modal จัดการเอง
   m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open') })
@@ -5219,9 +5841,11 @@ function switchInvTab(tab, el) {
   const invPage = document.getElementById('page-inventory')
   invPage.querySelectorAll('.setup-tab').forEach(t=>t.classList.remove('active'))
   if (el) el.classList.add('active')
-  document.getElementById('invtab-display').style.display = tab==='display' ? 'block' : 'none'
-  document.getElementById('invtab-edit').style.display    = tab==='edit'    ? 'block' : 'none'
-  filterCards()
+  document.getElementById('invtab-display').style.display     = tab==='display'     ? 'block' : 'none'
+  document.getElementById('invtab-edit').style.display        = tab==='edit'        ? 'block' : 'none'
+  document.getElementById('invtab-consignment').style.display = tab==='consignment' ? 'block' : 'none'
+  if (tab==='consignment') { try { renderCsmtInventory() } catch(e) { console.warn('renderCsmtInventory error:', e) } }
+  else filterCards()
 }
 
 // ── Image Popup ───────────────────────────────────────────────────────────────
@@ -7287,6 +7911,569 @@ function renderTopMargin() {
 // ── Break ─────────────────────────────────────────────────────────────────────
 function renderBreakPage() {
   renderPendingBreaksSidebar()
+}
+
+// ── Consignment & Grade ───────────────────────────────────────────────────────
+let _csmtType = 'sell'  // 'sell' | 'grade'
+
+function openCsmtModal() {
+  // populate brand, rarity dropdowns
+  const brandSel  = document.getElementById('csmt-brand')
+  const raritySel = document.getElementById('csmt-rarity')
+  if (brandSel) {
+    const active = setupData.brands.filter(b => b.status === 'active')
+    brandSel.innerHTML = active.map(b => `<option value="${b.name}">${b.emoji||''} ${b.name}</option>`).join('')
+    if (!active.length) brandSel.innerHTML = '<option value="">— ไม่มีแบรนด์ —</option>'
+  }
+  if (raritySel) {
+    const active = setupData.rarity.filter(r => r.status === 'active')
+    raritySel.innerHTML = active.map(r => `<option value="${r.name}">${r.emoji||''} ${r.name}</option>`).join('')
+    if (!active.length) raritySel.innerHTML = '<option value="">— ไม่มี Rarity —</option>'
+  }
+  // reset fields
+  ;['csmt-card-name','csmt-note','csmt-owner-text'].forEach(id => { const el=document.getElementById(id); if(el) el.value='' })
+  const drop = document.getElementById('csmt-owner-drop'); if(drop) drop.style.display='none'
+  const qty = document.getElementById('csmt-qty'); if(qty) qty.value=1
+  const price = document.getElementById('csmt-price'); if(price) price.value=0
+  const deposit = document.getElementById('csmt-deposit'); if(deposit) deposit.value=0
+  const gs = document.getElementById('csmt-grade-score'); if(gs) gs.value=''
+  const graded = document.getElementById('csmt-graded'); if(graded) graded.value=''
+  setCsmtType('sell')
+  openModal('newConsignment')
+}
+
+function setCsmtOwnerMode(mode) {
+  // legacy stub — no-op (UI ใหม่ใช้ combo field แทน)
+}
+
+function onCsmtOwnerInput(val) {
+  showCsmtOwnerDrop(val)
+}
+
+function toggleCsmtOwnerDrop() {
+  const drop = document.getElementById('csmt-owner-drop')
+  if (!drop) return
+  if (drop.style.display === 'block') { drop.style.display = 'none'; return }
+  showCsmtOwnerDrop(document.getElementById('csmt-owner-text')?.value || '')
+}
+
+function showCsmtOwnerDrop(query) {
+  const drop = document.getElementById('csmt-owner-drop')
+  if (!drop) return
+  const q = (query || '').toLowerCase().trim()
+
+  // รวมชื่อจาก consignment history + suppliers
+  const pastOwners = [...new Set(consignments.map(c => c.owner).filter(Boolean))]
+  const supplierNames = setupData.suppliers
+    .filter(s => s.status === 'active')
+    .map(s => s.name)
+    .filter(n => !pastOwners.includes(n))
+  const allOwners = [...pastOwners, ...supplierNames]
+
+  // filter ตาม query
+  const filtered = q
+    ? allOwners.filter(n => n.toLowerCase().includes(q))
+    : allOwners
+
+  if (filtered.length === 0) {
+    // ถ้าพิมพ์ชื่อใหม่ที่ไม่มีใน list — ให้เลือกได้เลย
+    drop.innerHTML = q
+      ? `<div onclick="selectCsmtOwner('${q.replace(/'/g,"\\'")}'); " style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--accent);border-radius:6px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+           ✚ ใช้ "<strong>${q}</strong>" เป็นผู้ฝากใหม่
+         </div>`
+      : `<div style="padding:10px 14px;font-size:12px;color:var(--text3)">ยังไม่มีผู้ฝากในระบบ</div>`
+  } else {
+    drop.innerHTML = filtered.map(n => {
+      const isPast = pastOwners.includes(n)
+      return `<div onclick="selectCsmtOwner('${n.replace(/'/g,"\\'")}');event.stopPropagation()"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s"
+        onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:16px">${isPast ? '🔄' : '👤'}</span>
+        <span style="flex:1">${n}</span>
+        ${isPast ? '<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">เคยฝาก</span>' : ''}
+      </div>`
+    }).join('')
+    // ถ้าพิมพ์ชื่อที่ไม่ match ทุก item — เพิ่ม option ใช้ชื่อที่พิมพ์
+    if (q && !allOwners.some(n => n.toLowerCase() === q)) {
+      drop.innerHTML += `<div onclick="selectCsmtOwner('${q.replace(/'/g,"\\'")}');event.stopPropagation()"
+        style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--accent);border-top:1px solid var(--border)"
+        onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        ✚ ใช้ "<strong>${q}</strong>" เป็นผู้ฝากใหม่
+      </div>`
+    }
+  }
+  drop.style.display = 'block'
+
+  // ปิดเมื่อคลิกนอก
+  setTimeout(() => {
+    const handler = e => {
+      const container = document.getElementById('csmt-owner-drop')?.parentElement
+      if (container && !container.contains(e.target)) {
+        drop.style.display = 'none'
+        document.removeEventListener('click', handler)
+      }
+    }
+    document.addEventListener('click', handler)
+  }, 0)
+}
+
+function selectCsmtOwner(name) {
+  const inp = document.getElementById('csmt-owner-text')
+  if (inp) inp.value = name
+  const drop = document.getElementById('csmt-owner-drop')
+  if (drop) drop.style.display = 'none'
+}
+
+function setCsmtType(type) {
+  _csmtType = type
+  document.getElementById('csmt-selected-type').value = type
+  const sellEl  = document.getElementById('csmt-type-sell')
+  const gradeEl = document.getElementById('csmt-type-grade')
+  if (sellEl) {
+    sellEl.style.border  = type==='sell'  ? '2px solid var(--accent)' : '2px solid var(--border2)'
+    sellEl.style.background = type==='sell'  ? 'rgba(124,109,250,0.1)' : 'transparent'
+    sellEl.querySelector('div:nth-child(2)').style.color = type==='sell' ? 'var(--accent)' : 'var(--text2)'
+  }
+  if (gradeEl) {
+    gradeEl.style.border = type==='grade' ? '2px solid var(--pink)' : '2px solid var(--border2)'
+    gradeEl.style.background = type==='grade' ? 'rgba(244,114,182,0.1)' : 'transparent'
+    gradeEl.querySelector('div:nth-child(2)').style.color = type==='grade' ? 'var(--pink)' : 'var(--text2)'
+  }
+  // show/hide price group for grade type
+  const priceGroup = document.getElementById('csmt-price-group')
+  if (priceGroup) priceGroup.style.display = type==='grade' ? 'none' : 'flex'
+}
+
+function saveConsignment() {
+  const cardName = document.getElementById('csmt-card-name')?.value.trim()
+  // อ่าน owner จาก combo text input
+  const owner = document.getElementById('csmt-owner-text')?.value.trim() || ''
+
+  if (!cardName) { showToast(t('csmt_err_nocard'), 'var(--orange)'); return }
+  if (!owner)    { showToast(t('csmt_err_noowner'), 'var(--orange)'); return }
+
+  const type       = document.getElementById('csmt-selected-type')?.value || 'sell'
+  const brand      = document.getElementById('csmt-brand')?.value || ''
+  const rarity     = document.getElementById('csmt-rarity')?.value || ''
+  const qty        = parseInt(document.getElementById('csmt-qty')?.value) || 1
+  const graded     = document.getElementById('csmt-graded')?.value || ''
+  const gradeScore = document.getElementById('csmt-grade-score')?.value.trim() || ''
+  const price      = type==='grade' ? 0 : (parseFloat(document.getElementById('csmt-price')?.value) || 0)
+  const deposit    = parseFloat(document.getElementById('csmt-deposit')?.value) || 0
+  const note       = document.getElementById('csmt-note')?.value.trim() || ''
+  const id         = 'CS-' + String(consignments.length + 1).padStart(4, '0')
+
+  const item = {
+    id, type, cardName, brand, rarity, qty, graded, gradeScore,
+    owner, price, deposit, note, status: 'active',
+    date: formatDate(), completedDate: '', orderId: ''
+  }
+  consignments.unshift(item)
+  saveData()
+  closeModal('newConsignment')
+  // สลับไปหน้า active tab เพื่อให้เห็นรายการที่เพิ่งบันทึก
+  const activeBtn = document.getElementById('csmttab-btn-active')
+  if (activeBtn) switchCsmtTab('active', activeBtn)
+  else renderConsignment()
+  renderCsmtInventory()
+  const depositMsg = deposit > 0 ? ` (มัดจำ ฿${deposit.toLocaleString()})` : ''
+  showToast(t('csmt_toast_saved') + depositMsg, 'var(--green)')
+}
+
+function switchCsmtTab(tab, el) {
+  const page = document.getElementById('page-consignment')
+  if (!page) return
+  page.querySelectorAll('.setup-tab').forEach(t => t.classList.remove('active'))
+  if (el) el.classList.add('active')
+  const dashEl      = document.getElementById('csmttab-dashboard')
+  const activeEl    = document.getElementById('csmttab-active')
+  const completedEl = document.getElementById('csmttab-completed')
+  if (dashEl)      dashEl.style.display      = tab==='dashboard' ? 'block' : 'none'
+  if (activeEl)    activeEl.style.display    = tab==='active'    ? 'block' : 'none'
+  if (completedEl) completedEl.style.display = tab==='completed' ? 'block' : 'none'
+  try {
+    if (tab==='dashboard') renderCsmtDashboard()
+    else renderConsignment()
+  } catch(e) { console.warn('switchCsmtTab render error:', e) }
+}
+
+function renderCsmtDashboard() {
+  const ss = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v }
+
+  const active    = consignments.filter(c => c.status==='active')
+  const completed = consignments.filter(c => c.status!=='active')
+  const sold      = consignments.filter(c => c.status==='completed')
+  const graded    = consignments.filter(c => c.status==='graded')
+  const returned  = consignments.filter(c => c.status==='returned')
+
+  // Top KPIs
+  const totalProfit = sold.reduce((s,c) => s + (c.soldProfit ?? c.price ?? 0), 0)
+  const totalDone   = consignments.filter(c => c.status !== 'active').length
+  ss('csmt-dash-active',      active.length)
+  ss('csmt-dash-profit',      '฿' + totalProfit.toLocaleString())
+  ss('csmt-dash-graded',      graded.length)
+  ss('csmt-dash-orders-done', totalDone)
+
+  // Sell summary
+  const sellActive = active.filter(c => c.type==='sell')
+  const sellDone   = sold
+  const sellValue  = sellActive.reduce((s,c) => s + (c.price||0)*c.qty, 0)
+  ss('csmt-dash-sell-active',       sellActive.length + ' รายการ')
+  ss('csmt-dash-sell-done',         sellDone.length + ' รายการ')
+  ss('csmt-dash-sell-value',        '฿' + sellValue.toLocaleString())
+  ss('csmt-dash-sell-profit-total', '฿' + totalProfit.toLocaleString())
+
+  // Grade summary
+  const gradeActive  = active.filter(c => c.type==='grade')
+  const gradeRev     = graded.reduce((s,c) => s + (c.serviceFee||0), 0)
+  ss('csmt-dash-grade-active',  gradeActive.length + ' รายการ')
+  ss('csmt-dash-grade-done',    graded.length + ' รายการ')
+  ss('csmt-dash-grade-rev',     '฿' + gradeRev.toLocaleString())
+  ss('csmt-dash-grade-orders',  graded.length)
+
+  // Top owners
+  const ownerMap = {}
+  consignments.forEach(c => {
+    if (!c.owner) return
+    if (!ownerMap[c.owner]) ownerMap[c.owner] = { total:0, active:0, profit:0, deposit:0 }
+    ownerMap[c.owner].total++
+    if (c.status==='active') ownerMap[c.owner].active++
+    if (c.status==='completed') ownerMap[c.owner].profit += (c.soldProfit ?? c.price ?? 0)
+    ownerMap[c.owner].deposit += (c.deposit||0)
+  })
+  const topOwners = Object.entries(ownerMap).sort((a,b) => b[1].total - a[1].total).slice(0,5)
+  const maxTotal = Math.max(1, topOwners[0]?.[1].total || 1)
+  const topEl = document.getElementById('csmt-dash-top-owners')
+  if (topEl) {
+    topEl.innerHTML = topOwners.length ? topOwners.map(([name, d], i) => `
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:14px;font-weight:800;color:${['#f5c842','#e2e8f0','#fb923c','var(--accent2)','var(--text3)'][i]||'var(--text3)'};width:20px;text-align:center;flex-shrink:0">${i+1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+            <span style="font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0;margin-left:8px">${d.total} รายการ${d.active>0?' · '+d.active+' active':''}</span>
+          </div>
+          <div style="height:5px;background:var(--border2);border-radius:3px">
+            <div style="width:${Math.round(d.total/maxTotal*100)}%;height:100%;background:var(--accent);border-radius:3px"></div>
+          </div>
+          ${d.profit>0 ? `<div style="font-size:10px;color:var(--green);font-family:var(--mono);margin-top:2px">กำไร ฿${d.profit.toLocaleString()}</div>` : ''}
+        </div>
+      </div>`).join('')
+    : `<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">${t('csmt_no_data')}</div>`
+  }
+
+  // Recent 10
+  const recent = [...consignments].slice(0,10)
+  ss('csmt-dash-recent-count', consignments.length + ' รายการทั้งหมด')
+  const typeColors = { sell:'var(--yellow)', grade:'var(--pink)' }
+  const statusBadge = c => {
+    const map = { active:'s-paid', completed:'s-completed', graded:'s-shipped', returned:'s-cancel' }
+    const label = { active:t('csmt_status_active'), completed:t('csmt_status_sold'), graded:t('csmt_status_graded'), returned:t('csmt_status_returned') }
+    return `<span class="order-status ${map[c.status]||'s-pending'}" style="font-size:10px">${label[c.status]||c.status}</span>`
+  }
+  const tbody = document.getElementById('csmt-dash-recent-table')
+  if (tbody) tbody.innerHTML = recent.length ? recent.map(c => `<tr>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${c.id}</td>
+    <td style="font-size:11px">${c.type==='sell'?'🛒':'🏅'} ${c.type==='sell'?t('csmt_tag_sell'):t('csmt_tag_grade')}</td>
+    <td style="font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.cardName}</td>
+    <td style="font-size:12px;color:var(--text2)">${c.owner||'—'}</td>
+    <td style="text-align:right;font-family:var(--mono);color:${typeColors[c.type]||'var(--text)'}">฿${(c.price||0).toLocaleString()}</td>
+    <td>${statusBadge(c)}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.date||'—'}</td>
+  </tr>`).join('')
+  : `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">${t('csmt_no_data')}</td></tr>`
+}
+
+function renderConsignment() {
+  const typeFilter  = document.getElementById('csmt-type-filter')?.value || ''
+  const searchQuery = (document.getElementById('csmt-search')?.value || '').toLowerCase().trim()
+
+  // KPIs
+  const active = consignments.filter(c => c.status === 'active')
+  const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  ss('csmt-kpi-total', active.length)
+  ss('csmt-kpi-sell',  active.filter(c => c.type==='sell').length)
+  ss('csmt-kpi-grade', active.filter(c => c.type==='grade').length)
+  ss('csmt-kpi-value', '฿' + active.filter(c=>c.type==='sell').reduce((s,c)=>s+(c.price||0)*c.qty,0).toLocaleString())
+
+  // ── Active Table (render เสมอ ไม่ว่า tab จะ active หรือไม่) ──
+  {
+    let list = active
+    if (typeFilter)  list = list.filter(c => c.type === typeFilter)
+    if (searchQuery) list = list.filter(c =>
+      (c.cardName||'').toLowerCase().includes(searchQuery) ||
+      (c.owner||'').toLowerCase().includes(searchQuery) ||
+      (c.brand||'').toLowerCase().includes(searchQuery)
+    )
+    const typeColors = { sell: 'var(--yellow)', grade: 'var(--pink)' }
+    const typeIcons  = { sell: '🛒', grade: '🏅' }
+    const tbody = document.getElementById('csmt-table-body')
+    if (tbody) tbody.innerHTML = list.length ? list.map(c => {
+      const typeLabel   = c.type==='sell' ? t('csmt_tag_sell') : t('csmt_tag_grade')
+      const typeCol     = typeColors[c.type] || 'var(--text2)'
+      const typeIcon    = typeIcons[c.type]  || '📦'
+      const gradedTxt   = c.graded ? `${c.graded}${c.gradeScore ? ' '+c.gradeScore : ''}` : '—'
+      const priceTxt    = c.type==='sell' ? `฿${(c.price||0).toLocaleString()}` : '—'
+      const depositBadge = (c.deposit||0) > 0
+        ? `<span style="font-size:10px;background:rgba(245,200,66,0.12);color:var(--yellow);border-radius:4px;padding:1px 6px;font-family:var(--mono);margin-left:4px">💰 ฿${c.deposit.toLocaleString()}</span>`
+        : ''
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${c.id}</td>
+        <td><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid ${typeCol};color:${typeCol}">${typeIcon} ${typeLabel}</span></td>
+        <td style="font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.cardName}</td>
+        <td>${c.brand||'—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${c.rarity||'—'}</td>
+        <td style="text-align:center;font-family:var(--mono)">${c.qty}</td>
+        <td style="font-size:11px;font-family:var(--mono)">${gradedTxt}</td>
+        <td style="font-size:12px;color:var(--text2)">${c.owner||'—'}${depositBadge}</td>
+        <td style="text-align:right;font-family:var(--mono);color:var(--yellow);font-weight:700">${priceTxt}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.date||'—'}</td>
+        <td><span class="order-status s-paid" style="font-size:10px">${t('csmt_status_active')}</span></td>
+        <td style="white-space:nowrap">
+          ${c.type==='sell' ? `<button class="btn btn-sm btn-primary" onclick="sellConsignment('${c.id}')" style="font-size:10px;padding:3px 8px;margin-right:4px">${t('csmt_action_sell')}</button>` : `<button class="btn btn-sm" onclick="completeGrade('${c.id}')" style="font-size:10px;padding:3px 8px;margin-right:4px;border-color:var(--pink);color:var(--pink)">${t('csmt_action_complete')}</button>`}
+          <button class="btn btn-sm" onclick="returnConsignment('${c.id}')" style="font-size:10px;padding:3px 8px;color:var(--orange);border-color:var(--orange)">${t('csmt_action_return')}</button>
+        </td>
+      </tr>`
+    }).join('') : `<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">${t('csmt_no_data')}</td></tr>`
+  }
+
+  // ── Completed Table (render เสมอ) ──
+  {
+    const done = consignments.filter(c => c.status !== 'active')
+    const tbody2 = document.getElementById('csmt-done-table-body')
+    if (tbody2) tbody2.innerHTML = done.length ? done.map(c => {
+      const typeIcon = c.type==='sell' ? '🛒' : '🏅'
+      const statusMap = { completed: t('csmt_status_sold'), returned: t('csmt_status_returned'), graded: t('csmt_status_graded') }
+      const gradeResultTxt = c.type==='grade' && c.gradedResult
+        ? `<div style="font-size:11px;color:var(--pink);font-family:var(--mono);margin-top:2px">🏅 ${c.gradedResult}${c.gradedScore?' '+c.gradedScore:''}</div>`
+        : ''
+      const profit = c.type==='sell'
+        ? `<span style="color:var(--green);font-weight:700">+฿${((c.soldProfit ?? (c.price||0))).toLocaleString()}</span>`
+        : c.type==='grade'
+          ? `<span style="color:var(--green);font-weight:700">+฿${(c.soldProfit||c.serviceFee||0).toLocaleString()}</span>`
+          : '—'
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.id}</td>
+        <td style="font-size:12px">${typeIcon} ${c.type==='sell'?t('csmt_tag_sell'):t('csmt_tag_grade')}</td>
+        <td style="font-weight:600">${c.cardName}${gradeResultTxt}</td>
+        <td style="font-size:12px;color:var(--text2)">${c.owner||'—'}</td>
+        <td style="text-align:right;font-family:var(--mono)">฿${(c.price||0).toLocaleString()}</td>
+        <td style="text-align:right">${profit}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.date||'—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.completedDate||'—'}</td>
+      </tr>`
+    }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">${t('csmt_no_completed')}</td></tr>`
+  }
+}
+
+let _csmtSellId = null  // id ของ consignment ที่กำลัง sell
+
+function sellConsignment(id) {
+  const item = consignments.find(c => c.id === id)
+  if (!item) return
+  _csmtSellId = id
+
+  // populate modal info
+  const ss = (elId, v) => { const el = document.getElementById(elId); if (el) el.textContent = v }
+  ss('csmt-sell-card-name', item.cardName)
+  ss('csmt-sell-card-meta', `${item.brand||''}${item.rarity?' · '+item.rarity:''}${item.graded?' · '+item.graded+(item.gradeScore?' '+item.gradeScore:''):''}`)
+  ss('csmt-sell-listed-price', '฿' + (item.price||0).toLocaleString())
+  ss('csmt-sell-owner', item.owner||'—')
+
+  // default กำไรเป็น ราคาที่ตั้งไว้
+  const profitEl = document.getElementById('csmt-sell-profit')
+  if (profitEl) profitEl.value = ''
+
+  updateCsmtSellPreview()
+  openModal('sellCsmt')
+}
+
+function updateCsmtSellPreview() {
+  const profit = parseFloat(document.getElementById('csmt-sell-profit')?.value) || 0
+  const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  ss('csmt-sell-preview-rev', '฿' + profit.toLocaleString())
+  ss('csmt-sell-preview-profit', '฿' + profit.toLocaleString())
+}
+
+function confirmSellConsignment() {
+  const item = consignments.find(c => c.id === _csmtSellId)
+  if (!item) return
+  const profitInput = document.getElementById('csmt-sell-profit')
+  if (!profitInput?.value && profitInput?.value !== '0') {
+    showToast('กรุณากรอกกำไรที่ได้รับ', 'var(--orange)')
+    profitInput?.focus()
+    return
+  }
+  const profit = parseFloat(profitInput.value) || 0
+  if (profit < 0) { showToast('กำไรต้องไม่ติดลบ', 'var(--orange)'); return }
+
+  // สร้าง order — ราคาขาย = กำไร, ต้นทุน = 0
+  const newOrder = {
+    id: 'ORD-' + String(orders.length + 1).padStart(4,'0'),
+    customer: item.owner,
+    items: `[Consignment] ${item.cardName}`,
+    qty: item.qty,
+    total: profit,
+    hiddenCost: 0,
+    channel: t('nav_consignment') || 'Consignment',
+    note: `Consignment: ${item.id} | Owner: ${item.owner} | Listed: ฿${(item.price||0).toLocaleString()}`,
+    status: 'completed',
+    date: formatDate(),
+    orderItems: [{
+      name: item.cardName, brand: item.brand||'', rarity: item.rarity||'',
+      qty: item.qty, price: profit, cost: 0
+    }],
+    isConsignment: true, consignmentId: item.id
+  }
+  orders.unshift(newOrder)
+  // บันทึกกำไรจริงที่ได้ลงใน item
+  item.status       = 'completed'
+  item.completedDate = formatDate()
+  item.orderId      = newOrder.id
+  item.soldProfit   = profit  // เก็บกำไรจริงที่ขายได้
+
+  saveData()
+  closeModal('sellCsmt')
+  renderConsignment()
+  renderCsmtInventory()
+  renderDashboard()
+  try { if(document.getElementById('csmttab-dashboard')?.style.display!=='none') renderCsmtDashboard() } catch(e) { console.warn('renderCsmtDashboard:', e) }
+  showToast(t('csmt_toast_completed') + ` — ฿${profit.toLocaleString()}`, 'var(--green)')
+}
+
+let _csmtGradeId = null
+
+function completeGrade(id) {
+  const item = consignments.find(c => c.id === id)
+  if (!item) return
+  _csmtGradeId = id
+
+  // populate modal
+  const ss = (elId, v) => { const el = document.getElementById(elId); if (el) el.textContent = v }
+  ss('csmt-grade-card-name', item.cardName)
+  ss('csmt-grade-card-meta', `${item.brand||''}${item.rarity?' · '+item.rarity:''}`)
+  ss('csmt-grade-owner-lbl', item.owner||'—')
+  ss('csmt-grade-deposit-lbl', '฿' + (item.deposit||0).toLocaleString())
+
+  // pre-fill graded fields from original if exists
+  const gradedEl = document.getElementById('csmt-complete-graded')
+  const scoreEl  = document.getElementById('csmt-complete-grade-score')
+  const costEl   = document.getElementById('csmt-complete-grade-cost')
+  const feeEl    = document.getElementById('csmt-complete-service-fee')
+  if (gradedEl && item.graded) gradedEl.value = item.graded
+  if (scoreEl)  scoreEl.value  = item.gradeScore || ''
+  if (costEl)   costEl.value   = 0
+  if (feeEl)    feeEl.value    = 0
+
+  updateGradePreview()
+  openModal('completeCsmt')
+}
+
+function updateGradePreview() {
+  const gradeCost  = parseFloat(document.getElementById('csmt-complete-grade-cost')?.value)  || 0
+  const serviceFee = parseFloat(document.getElementById('csmt-complete-service-fee')?.value) || 0
+
+  const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  ss('csmt-grade-cost-preview',    '฿' + gradeCost.toLocaleString())
+  ss('csmt-grade-balance-preview', '฿' + serviceFee.toLocaleString())
+  // preview สีเขียวเสมอ (กำไร)
+  const profitEl = document.getElementById('csmt-grade-balance-preview')
+  if (profitEl) profitEl.style.color = 'var(--green)'
+}
+
+function confirmCompleteGrade() {
+  const item = consignments.find(c => c.id === _csmtGradeId)
+  if (!item) return
+
+  const gradedResult = document.getElementById('csmt-complete-graded')?.value || ''
+  const gradedScore  = document.getElementById('csmt-complete-grade-score')?.value.trim() || ''
+  const gradeCost    = parseFloat(document.getElementById('csmt-complete-grade-cost')?.value)  || 0
+  const serviceFee   = parseFloat(document.getElementById('csmt-complete-service-fee')?.value) || 0
+
+  // กำไร = serviceFee, สร้าง Order รายได้
+  const newOrder = {
+    id: 'ORD-' + String(orders.length + 1).padStart(4,'0'),
+    customer: item.owner,
+    items: `[Consign Grade] ${item.cardName}${gradedResult ? ' · '+gradedResult+(gradedScore?' '+gradedScore:'') : ''}`,
+    qty: item.qty,
+    total: serviceFee,       // รายได้ = ค่าบริการของเรา
+    hiddenCost: 0,           // ต้นทุน 0 — กำไรสุทธิ = ค่าบริการเต็มจำนวน
+    channel: t('nav_consignment') || 'Consignment',
+    note: `Grade: ${item.id} | ${gradedResult}${gradedScore?' '+gradedScore:''} | Owner: ${item.owner}`,
+    status: 'completed',
+    date: formatDate(),
+    orderItems: [{
+      name: item.cardName, brand: item.brand||'', rarity: item.rarity||'',
+      qty: item.qty, price: serviceFee, cost: 0
+    }],
+    isConsignment: true, consignmentId: item.id
+  }
+  orders.unshift(newOrder)
+
+  // อัพเดท consignment item
+  item.status        = 'graded'
+  item.completedDate = formatDate()
+  item.orderId       = newOrder.id
+  item.gradedResult  = gradedResult
+  item.gradedScore   = gradedScore
+  item.gradeCost     = gradeCost
+  item.serviceFee    = serviceFee
+  item.soldProfit    = serviceFee
+
+  saveData()
+  closeModal('completeCsmt')
+  renderConsignment()
+  renderCsmtInventory()
+  renderDashboard()
+  try { if(document.getElementById('csmttab-dashboard')?.style.display!=='none') renderCsmtDashboard() } catch(e) {}
+  const gradeLabel = gradedResult && gradedScore ? ` — ${gradedResult} ${gradedScore}` : ''
+  showToast(`🏅 บันทึกผลเกรดแล้ว${gradeLabel} | กำไร ฿${serviceFee.toLocaleString()}`, 'var(--pink)')
+}
+
+function returnConsignment(id) {
+  if (!confirm(t('csmt_confirm_return'))) return
+  const idx = consignments.findIndex(c => c.id === id)
+  if (idx === -1) return
+  consignments.splice(idx, 1)  // ลบออกจากระบบเลย ไม่สร้างรายการเสร็จสิ้น
+  saveData()
+  renderConsignment()
+  renderCsmtInventory()
+  try { if(document.getElementById('csmttab-dashboard')?.style.display!=='none') renderCsmtDashboard() } catch(e) {}
+  showToast(t('csmt_toast_returned'), 'var(--orange)')
+}
+
+function renderCsmtInventory() {
+  // Update Consignment tab in Inventory page
+  const active = consignments.filter(c => c.status === 'active')
+  const ss = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  ss('csmt-inv-total', active.length)
+  ss('csmt-inv-sell',  active.filter(c => c.type==='sell').length)
+  ss('csmt-inv-grade', active.filter(c => c.type==='grade').length)
+  const grid = document.getElementById('csmtInvGrid')
+  if (!grid) return
+  if (!active.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:32px;font-family:var(--mono);font-size:12px">${t('csmt_no_data')}</div>`
+    return
+  }
+  const typeColors = { sell: 'var(--yellow)', grade: 'var(--pink)' }
+  const typeIcons  = { sell: '🛒', grade: '🏅' }
+  grid.innerHTML = active.map(c => {
+    const col  = typeColors[c.type]||'var(--accent)'
+    const icon = typeIcons[c.type]||'📦'
+    const gradedTxt = c.graded ? `${c.graded}${c.gradeScore?' '+c.gradeScore:''}` : ''
+    return `<div class="card-item" style="border-top:2px solid ${col};position:relative">
+      <div style="position:absolute;top:8px;right:8px;font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,0.07);color:${col};font-family:var(--mono)">${icon} ${c.type==='sell'?t('csmt_tag_sell'):t('csmt_tag_grade')}</div>
+      <div style="font-size:28px;margin-bottom:8px;text-align:center">${c.graded ? '🏅' : '🃏'}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.cardName}</div>
+      <div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-bottom:2px">${c.brand||''} ${c.rarity?'· '+c.rarity:''}</div>
+      ${gradedTxt ? `<div style="font-size:11px;color:var(--pink);font-family:var(--mono);margin-bottom:2px">🏅 ${gradedTxt}</div>` : ''}
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">${t('csmt_col_owner')}: ${c.owner||'—'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;font-weight:700;color:${col};font-family:var(--mono)">${c.type==='sell'?'฿'+(c.price||0).toLocaleString():'—'}</span>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">×${c.qty}</span>
+      </div>
+    </div>`
+  }).join('')
 }
 
 function onBreakCardSearch(query) {
@@ -9917,7 +11104,7 @@ let setupData = {
 }
 
 // ── Setup Render ──────────────────────────────────────────────────────────────
-function renderSetup(){ renderBrands(); renderRarity(); renderChannels(); renderSuppliers(); renderTiers(); renderParams(); }
+function renderSetup(){ renderBrands(); renderRarity(); renderChannels(); renderTiers(); renderParams(); }
 
 // ── System Parameters ─────────────────────────────────────────────────────────
 const defaultParams = {
@@ -10174,8 +11361,9 @@ function catCard(item, type, idx){
 
 function renderBrands(){ document.getElementById('brands-grid').innerHTML = setupData.brands.map((b,i)=>catCard(b,'brands',i)).join('') }
 function renderRarity(){ document.getElementById('rarity-grid').innerHTML = setupData.rarity.map((r,i)=>catCard(r,'rarity',i)).join('') }
-function renderChannels(){ document.getElementById('channels-grid').innerHTML = setupData.channels.map((c,i)=>catCard(c,'channels',i)).join('') }
 function renderTiers(){ document.getElementById('tiers-grid').innerHTML = setupData.tiers.map((t,i)=>catCard(t,'tiers',i)).join('') }
+
+function renderChannels(){ document.getElementById('channels-grid').innerHTML = setupData.channels.map((c,i)=>catCard(c,'channels',i)).join('') }
 
 function renderSuppliers(){
   document.getElementById('suppliers-table').innerHTML = setupData.suppliers.map((s,i) => `
@@ -10195,6 +11383,64 @@ function renderSuppliers(){
 // ── Category CRUD ─────────────────────────────────────────────────────────────
 const catTitles = {brands:'แบรนด์การ์ด',rarity:'Rarity',channels:'ช่องทางขาย',suppliers:'Supplier',tiers:'ระดับลูกค้า'}
 const catExtras = {rarity:'Price Multiplier (เช่น 3x)',tiers:'เงื่อนไข (เช่น ยอดซื้อ > ฿20,000)'}
+
+// ── Emoji Picker ──────────────────────────────────────────────────────────────
+const EMOJI_LIST = [
+  // Faces & People
+  '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘',
+  '😎','🤓','🧐','😤','😠','😡','🤬','😈','👿','💀','☠️','💩','🤡','👻','👾',
+  // Sports & Games
+  '⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','🏆','🥇','🎮','🎲',
+  // Nature
+  '🌟','⭐','💫','✨','🔥','💧','🌊','🌈','❄️','⚡','🌙','☀️','🌸','🌺','🌻','🍀',
+  // Animals
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐙','🦋',
+  // Food
+  '🍎','🍊','🍋','🍇','🍓','🍒','🍑','🥝','🍕','🍔','🍟','🌮','🍜','🍣','🎂','🍦',
+  // Objects
+  '💎','👑','🎩','🎪','🎭','🎨','🎬','🎤','🎵','🎶','🎸','🎹','🎺','🎻','🥁','🎷',
+  // Cards & Trading
+  '🃏','🎴','🀄','🎰','🎯','🎳','🏅','🥈','🥉','🏵','🎖','🎗','📦','📋','📊','💰',
+  // Symbols
+  '❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','💯','✅','❌','⚠️','🔑','🔒','🛡',
+  '⚔️','🗡','🔮','🧲','💡','🔔','📣','🚀','💎','🌟','⚡','🔥','💥','🎊','🎉','🎁',
+]
+
+function toggleEmojiPicker() {
+  const panel = document.getElementById('emoji-picker-panel')
+  if (!panel) return
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return }
+
+  // Build grid on first open
+  const grid = document.getElementById('emoji-picker-grid')
+  if (grid && !grid.dataset.built) {
+    grid.innerHTML = EMOJI_LIST.map(e =>
+      `<button type="button" onclick="pickEmoji('${e}')"
+        style="font-size:22px;padding:4px;background:transparent;border:none;cursor:pointer;border-radius:6px;line-height:1.3;transition:background .1s"
+        onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">${e}</button>`
+    ).join('')
+    grid.dataset.built = '1'
+  }
+  panel.style.display = 'block'
+
+  // Close on outside click
+  setTimeout(() => {
+    const handler = e => {
+      if (!panel.parentElement?.contains(e.target)) {
+        panel.style.display = 'none'
+        document.removeEventListener('click', handler)
+      }
+    }
+    document.addEventListener('click', handler)
+  }, 0)
+}
+
+function pickEmoji(emoji) {
+  const inp = document.getElementById('cat-emoji')
+  if (inp) inp.value = emoji
+  const panel = document.getElementById('emoji-picker-panel')
+  if (panel) panel.style.display = 'none'
+}
 
 function openCatModal(type, item=null, idx=-1){
   document.getElementById('cat-type').value     = type
@@ -10270,8 +11516,8 @@ function saveCat(){
 function reRender(type){
   if(type==='brands')    renderBrands()
   if(type==='rarity')    renderRarity()
+
   if(type==='channels')  renderChannels()
-  if(type==='suppliers') renderSuppliers()
   if(type==='tiers')     renderTiers()
   syncMasterToAllPages()
 }
@@ -10304,17 +11550,13 @@ function syncMasterToAllPages(){
     t('all_rarity')
   )
 
-  // ── หน้าสั่งซื้อ: po-brand, po-rarity, po-source ──────────────────────────
+  // ── หน้าสั่งซื้อ: po-brand, po-rarity ──────────────────────────
   setOpts('po-brand',
     active.map(b=>`<option value="${b.name}">${b.emoji||''} ${b.name}</option>`).join('')
   )
   setOpts('po-rarity',
     activeRarity.map(r=>`<option value="${r.name}">${r.emoji||''} ${r.name}</option>`).join('')
   )
-  setOpts('po-source',
-    activeSuppliers.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')
-  )
-
   // ── หน้าเพิ่มการ์ด (modal add-card ถ้ามี) ─────────────────────────────────
   setOpts('add-card-brand',
     active.map(b=>`<option value="${b.name}">${b.emoji||''} ${b.name}</option>`).join('')
