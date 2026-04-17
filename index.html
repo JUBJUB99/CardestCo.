@@ -11026,36 +11026,76 @@ async function aiParsePurchase() {
   const btn = document.getElementById('ai-pur-parse-btn')
   if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังอ่าน...' }
 
-  const brandNames  = setupData.brands.filter(b => b.status==='active').map(b => b.name).join(', ')
-  const rarityNames = setupData.rarity.filter(r => r.status==='active').map(r => r.name).join(', ')
+  // Brand list + aliases สำหรับ AI matching
+  const brandList  = setupData.brands.filter(b => b.status==='active').map(b => b.name)
+  const rarityList = setupData.rarity.filter(r => r.status==='active').map(r => r.name)
+  const brandNames  = brandList.join(', ') || 'TOPPS, PANINI, POKEMON, ONE PIECE, LORCANA'
+  const rarityNames = rarityList.join(', ') || 'Common, Uncommon, Rare, Ultra Rare, Secret Rare'
+
+  // Brand aliases map (ส่งให้ AI รู้จัก abbreviation)
+  const brandAliases = `TOPPS=TOPPS, PKM/Pokemon/โปเกมอน=POKEMON, OP/One Piece/วันพีซ=ONE PIECE, Poke/POKE=POKEMON, Lorcana/LOR=LORCANA, Panini/PAN=PANINI`
+
+  const systemPrompt = `You are an expert Thai trading card shop purchase parser. You parse Thai/English mixed text about card purchases into structured JSON. You understand Thai pricing language and trading card grading systems (PSA, BGS, CGC, SGC, ACE). Always return valid JSON only, no explanation.`
+
+  const userPrompt = `Parse each line as a separate card purchase. Extract all fields accurately.
+
+BRANDS available: [${brandNames}]
+Brand aliases (map to exact brand name): ${brandAliases}
+
+RARITY available: [${rarityNames}]
+
+GRADING companies: PSA, BGS, CGC, SGC, ACE
+- "PSA 10" → graded:"PSA", gradeScore:10
+- "BGS 9.5" → graded:"BGS", gradeScore:9.5  
+- "ไม่เกรด" / "no grade" / no mention → graded:null, gradeScore:null
+- gradeScore must be 1–10 only, with .5 increments allowed
+
+PRICE RULES (critical):
+- "ใบละ X" / "X/ใบ" / "X ต่อใบ" / "X each" → costPerCard = X
+- "X บาท Y ใบ" (no "ต่อ"/"ละ") → costPerCard = X ÷ Y (divide)
+- Single number at end of line → costPerCard (price per card)
+- Comma in number = thousands separator: "5,000" = 5000
+- costPerCard must always be per-card price, never total
+
+CONDITION:
+- "DF" / "Defect" / "มีรอย" / "มีตำหนิ" / "defect" → hasDefect:true
+
+FIELDS:
+- cardName: card name only, exclude brand/grade/price/qty info
+- brand: match from brand list using aliases, use "OTHER" if truly unknown
+- rarity: match from rarity list or null
+- graded: company name or null
+- gradeScore: number 1-10 or null
+- qty: integer (default 1)
+- costPerCard: number in THB per card (required, never 0 unless explicitly free)
+- hasDefect: boolean
+- sellerName: seller name if mentioned, else null
+- note: extra notes else null
+
+EXAMPLES:
+Input: "PSA 10 Charizard Base Set TOPPS 2 ใบ ใบละ 5000"
+Output: [{"cardName":"Charizard Base Set","brand":"TOPPS","rarity":null,"graded":"PSA","gradeScore":10,"qty":2,"costPerCard":5000,"hasDefect":false,"sellerName":null,"note":null}]
+
+Input: "BGS 9.5 Pikachu Alt Art Panini 1 ใบ 12000 บาท"
+Output: [{"cardName":"Pikachu Alt Art","brand":"PANINI","rarity":null,"graded":"BGS","gradeScore":9.5,"qty":1,"costPerCard":12000,"hasDefect":false,"sellerName":null,"note":null}]
+
+Input: "Luffy OP-01 Secret Rare ONE PIECE 3 ใบ 45000 บาท รวม"
+Output: [{"cardName":"Luffy OP-01","brand":"ONE PIECE","rarity":"Secret Rare","graded":null,"gradeScore":null,"qty":3,"costPerCard":15000,"hasDefect":false,"sellerName":null,"note":null}]
+
+Input: "Mew Full Art ไม่เกรด POKEMON 2 ใบ ใบละ 800 DF"
+Output: [{"cardName":"Mew Full Art","brand":"POKEMON","rarity":null,"graded":null,"gradeScore":null,"qty":2,"costPerCard":800,"hasDefect":true,"sellerName":null,"note":null}]
+
+Input: "PSA 9 Charizard VMAX Ultra Rare โปเกมอน steven 2500"
+Output: [{"cardName":"Charizard VMAX","brand":"POKEMON","rarity":"Ultra Rare","graded":"PSA","gradeScore":9,"qty":1,"costPerCard":2500,"hasDefect":false,"sellerName":"steven","note":null}]
+
+Now parse this input. Return ONLY a valid JSON array, no markdown, no explanation:
+${input}`
 
   try {
     const res = await fetch('https://gqrjpkinevobpzlgwkhc.supabase.co/functions/v1/bright-responder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
-      body: JSON.stringify({ prompt: `Parse the following card purchase list into a JSON array.
-
-Extract these fields per item:
-- cardName: string
-- brand: match from [${brandNames||'TOPPS,PANINI,POKEMON,ONE PIECE'}], use "OTHER" if unknown
-- rarity: match from [${rarityNames||'Common,Uncommon,Rare,Ultra Rare'}], null if unknown
-- graded: grading company (PSA/BGS/CGC/SGC/ACE) or null
-- gradeScore: number (e.g. 10, 9.5) or null
-- qty: integer, default 1
-- costPerCard: number in THB (required)
-- hasDefect: boolean, true if "Defect/DF/มีรอย/มีตำหนิ" mentioned, default false
-- sellerName: seller name if mentioned, else null
-- note: any extra notes, else null
-
-Rules:
-- Return ONLY a valid JSON array, no markdown, no explanation
-- costPerCard must be a number
-
-Input:
-${input}
-
-Return format:
-[{"cardName":"","brand":"","rarity":null,"graded":null,"gradeScore":null,"qty":1,"costPerCard":0,"hasDefect":false,"sellerName":null,"note":null}]` })
+      body: JSON.stringify({ system: systemPrompt, prompt: userPrompt })
     })
     const data = await res.json()
     const text = data.content?.[0]?.text || '[]'
@@ -11068,19 +11108,59 @@ Return format:
       return
     }
 
-    _aiPurItems = parsed.map((item, i) => ({
-      id: i,
-      cardName:    item.cardName    || '',
-      brand:       item.brand       || '',
-      rarity:      item.rarity      || '',
-      graded:      item.graded      || null,
-      gradeScore:  item.gradeScore  || null,
-      qty:         parseInt(item.qty) || 1,
-      costPerCard: parseFloat(item.costPerCard) || 0,
-      hasDefect:   item.hasDefect   || false,
-      sellerName:  item.sellerName  || '',
-      note:        item.note        || '',
-    }))
+    // ── JS Validation Layer ────────────────────────────────────────────────
+    const validGradeScores = [1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+    const validGraders = ['PSA','BGS','CGC','SGC','ACE']
+
+    _aiPurItems = parsed.map((item, i) => {
+      const qty         = Math.max(1, parseInt(item.qty) || 1)
+      let   costPerCard = parseFloat(String(item.costPerCard).replace(/,/g,'')) || 0
+      let   gradeScore  = item.gradeScore ? parseFloat(item.gradeScore) : null
+      let   graded      = item.graded || null
+
+      // Validate grade score — ต้องอยู่ใน 1-10 step 0.5
+      if (gradeScore !== null) {
+        if (gradeScore < 1 || gradeScore > 10 || !validGradeScores.includes(gradeScore)) {
+          gradeScore = null  // ค่าผิดปกติ → reset
+        }
+      }
+      // Validate grader company
+      if (graded && !validGraders.includes(graded)) graded = null
+
+      // Validate price — ถ้าดูเหมือน total (สูงมากเมื่อ qty > 1) → hint warning
+      const _priceWarn = costPerCard > 5_000_000
+
+      // Brand fuzzy match — ถ้า AI ส่งชื่อแปลกให้ match กับ brandList
+      let brand = item.brand || ''
+      if (brand && brand !== 'OTHER' && brandList.length > 0) {
+        const exact = brandList.find(b => b.toLowerCase() === brand.toLowerCase())
+        if (!exact) {
+          // ลอง partial match
+          const partial = brandList.find(b =>
+            b.toLowerCase().includes(brand.toLowerCase()) ||
+            brand.toLowerCase().includes(b.toLowerCase())
+          )
+          if (partial) brand = partial
+        } else {
+          brand = exact
+        }
+      }
+
+      return {
+        id: i,
+        cardName:    (item.cardName || '').trim(),
+        brand,
+        rarity:      item.rarity      || '',
+        graded,
+        gradeScore,
+        qty,
+        costPerCard,
+        hasDefect:   item.hasDefect   || false,
+        sellerName:  item.sellerName  || '',
+        note:        item.note        || '',
+        _priceWarn,  // flag ราคาผิดปกติให้ UI แสดง warning
+      }
+    })
 
     renderAIPurPreview()
     document.getElementById('ai-pur-step1').style.display = 'none'
@@ -11177,7 +11257,8 @@ function renderAIPurPreview() {
         <div class="form-group" style="margin-bottom:0">
           <label style="font-size:10px;font-family:var(--mono);color:var(--red)">ราคา/ใบ (฿)*</label>
           <input type="number" value="${it.costPerCard}" min="0" oninput="_aiPurItems[${i}].costPerCard=parseFloat(this.value)||0;aiUpdateTotal()"
-            style="width:100%;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:6px 10px;color:var(--red);font-size:13px;font-weight:700;font-family:var(--mono)">
+            style="width:100%;background:var(--bg3);border:1px solid ${it._priceWarn?'var(--red)':'var(--accent)'};border-radius:6px;padding:6px 10px;color:${it._priceWarn?'var(--red)':'var(--red)'};font-size:13px;font-weight:700;font-family:var(--mono)">
+          ${it._priceWarn ? `<div style="font-size:9px;color:var(--red);margin-top:2px;font-family:var(--mono)">⚠️ ราคาผิดปกติ กรุณาตรวจสอบ</div>` : ''}
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label style="font-size:10px;font-family:var(--mono);color:var(--text3)">รวม</label>
