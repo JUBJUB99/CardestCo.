@@ -2910,7 +2910,8 @@ select option{background:var(--bg3);}
         <h3 style="margin:0;font-size:16px">AI ซื้อการ์ด</h3>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">พิมพ์รายการซื้อ → AI แปลงให้ → Preview → กดบันทึก</div>
       </div>
-      <span onclick="closeModal('aiPurchase')" style="cursor:pointer;font-size:20px;color:var(--text3);margin-left:auto">✕</span>
+      <span id="ai-pur-usage-badge" style="display:none;margin-left:auto;font-size:10px;font-family:var(--mono);background:rgba(251,146,60,0.12);color:var(--orange);padding:3px 10px;border-radius:20px;font-weight:700"></span>
+      <span onclick="aiPurchaseClose()" style="cursor:pointer;font-size:20px;color:var(--text3);margin-left:auto">✕</span>
     </div>
 
     <!-- Step 1: Input -->
@@ -2948,7 +2949,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         <span id="ai-pur-total" style="font-size:18px;font-weight:800;color:var(--red);font-family:var(--mono)">฿0</span>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn btn-sm" onclick="closeModal('aiPurchase')">ยกเลิก</button>
+        <button class="btn btn-sm" onclick="aiPurchaseClose()">ยกเลิก</button>
         <button class="btn btn-primary btn-sm" id="ai-pur-save-btn" onclick="aiSavePurchases()">✅ บันทึกทั้งหมด (<span id="ai-pur-count">0</span> รายการ)</button>
       </div>
     </div>
@@ -4134,7 +4135,8 @@ const PLANS = {
     staffLimit:  1,
     cardLimit:   100,
     photoLimit:  20,
-    aiPurchase:  false,
+    aiPurchase:  true,   // ใช้ได้แต่จำกัดครั้ง
+    aiLimit:     5,      // จำกัด 5 ครั้ง
   },
   basic: {
     name:        'Basic',
@@ -4143,7 +4145,8 @@ const PLANS = {
     staffLimit:  1,
     cardLimit:   null,
     photoLimit:  null,
-    aiPurchase:  false,
+    aiPurchase:  true,   // ใช้ได้แต่จำกัดครั้ง
+    aiLimit:     10,     // จำกัด 10 ครั้ง
   },
   proai: {
     name:        'Pro AI',
@@ -4153,6 +4156,7 @@ const PLANS = {
     cardLimit:   null,
     photoLimit:  null,
     aiPurchase:  true,
+    aiLimit:     null,   // ไม่จำกัด
   },
 }
 
@@ -4194,8 +4198,24 @@ function getCurrentPlan() {
   if (!isSubscribed(data)) return 'trial'
   return data.status === 'proai' ? 'proai' : 'basic'
 }
+// ── AI Purchase Usage Counter ──────────────────────────────────────────────
+function _aiUsageKey() {
+  return 'cv_ai_usage_' + (currentUser?.email || '')
+}
+function getAIUsageCount() {
+  try { return parseInt(localStorage.getItem(_aiUsageKey()) || '0') } catch(e) { return 0 }
+}
+function incrementAIUsage() {
+  try { localStorage.setItem(_aiUsageKey(), String(getAIUsageCount() + 1)) } catch(e) {}
+}
+
 function canUseAIPurchase() {
-  return getPlan().aiPurchase === true
+  const plan = getPlan()
+  if (!plan.aiPurchase) return { ok: false, reason: 'no_plan' }
+  if (plan.aiLimit === null) return { ok: true }  // ไม่จำกัด (Pro AI)
+  const used = getAIUsageCount()
+  if (used >= plan.aiLimit) return { ok: false, reason: 'limit', used, limit: plan.aiLimit }
+  return { ok: true, used, limit: plan.aiLimit }
 }
 
 function getStaffLimit() {
@@ -10957,10 +10977,44 @@ function checkLimitThenOpenPO() {
 // ── AI Purchase ───────────────────────────────────────────────────────────────
 let _aiPurItems = []  // parsed items จาก AI
 
+function aiPurchaseClose() {
+  // ลบ draft และรีเซ็ต modal
+  _aiPurItems = []
+  const inp = document.getElementById('ai-pur-input'); if (inp) inp.value = ''
+  document.getElementById('ai-pur-step1').style.display = 'block'
+  document.getElementById('ai-pur-step2').style.display = 'none'
+  closeModal('aiPurchase')
+  // อัปเดต badge ให้แสดงครั้งที่เหลือล่าสุด
+  const plan = getPlan()
+  const badge = document.getElementById('ai-pur-usage-badge')
+  if (badge && plan.aiLimit !== null) {
+    const remaining = Math.max(0, plan.aiLimit - getAIUsageCount())
+    badge.textContent = `เหลือ ${remaining}/${plan.aiLimit} ครั้ง`
+  }
+}
+
 function openAIPurchaseGated() {
-  if (!canUseAIPurchase()) {
-    showToast('✨ AI ซื้อการ์ด ต้องการ Package Pro AI (฿349) — กด Subscribe เพื่ออัปเกรด', 'var(--orange)')
+  const check = canUseAIPurchase()
+  if (!check.ok) {
+    if (check.reason === 'limit') {
+      showToast(`✨ AI ซื้อการ์ด ใช้ครบ ${check.limit} ครั้งแล้ว — Upgrade เป็น Pro AI (฿349) เพื่อไม่จำกัด`, 'var(--orange)')
+    } else {
+      showToast('✨ AI ซื้อการ์ด ต้องการ Package Trial ขึ้นไป', 'var(--orange)')
+    }
     return
+  }
+  // แสดงจำนวนครั้งที่เหลือ (เฉพาะ plan ที่มีลิมิต)
+  const plan = getPlan()
+  if (plan.aiLimit !== null) {
+    const remaining = plan.aiLimit - (check.used || 0)
+    const badge = document.getElementById('ai-pur-usage-badge')
+    if (badge) {
+      badge.textContent = `เหลือ ${remaining}/${plan.aiLimit} ครั้ง`
+      badge.style.display = 'inline-block'
+    }
+  } else {
+    const badge = document.getElementById('ai-pur-usage-badge')
+    if (badge) badge.style.display = 'none'
   }
   openModal('aiPurchase')
 }
@@ -11031,6 +11085,17 @@ Return format:
     renderAIPurPreview()
     document.getElementById('ai-pur-step1').style.display = 'none'
     document.getElementById('ai-pur-step2').style.display = 'block'
+
+    // นับ 1 ครั้งทันทีที่ AI วิเคราะห์สำเร็จ
+    incrementAIUsage()
+    // อัปเดต badge
+    const plan = getPlan()
+    const badge = document.getElementById('ai-pur-usage-badge')
+    if (badge && plan.aiLimit !== null) {
+      const remaining = Math.max(0, plan.aiLimit - getAIUsageCount())
+      badge.textContent = `เหลือ ${remaining}/${plan.aiLimit} ครั้ง`
+      badge.style.display = 'inline-block'
+    }
 
   } catch(e) {
     showToast('เชื่อมต่อ AI ไม่ได้ — ' + e.message, 'var(--red)')
