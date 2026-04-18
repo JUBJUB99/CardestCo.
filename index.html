@@ -138,7 +138,7 @@ html.has-session #loginScreen { visibility: hidden; opacity: 0; pointer-events: 
 [data-theme="light"] .modal textarea { color:#111111; background:#f4f4f8; }
 
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;min-height:100svh;overflow:hidden;}
 
 /* ── SCREENS ── */
 #loginScreen,#appScreen{position:fixed;inset:0;transition:opacity 0.4s ease,transform 0.4s ease;}
@@ -178,7 +178,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;
   padding:12px 44px 12px 14px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
 .l-inp-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,109,250,0.12);}
 .l-inp-wrap input::placeholder{color:var(--text3);}
-.l-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;cursor:pointer;color:var(--text3);}
+.l-eye{position:absolute;right:14px;top:0;bottom:0;margin-top:auto;margin-bottom:auto;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;font-size:16px;cursor:pointer;color:var(--text3);}
 .l-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
 .l-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;}
 .l-btn{width:100%;padding:13px;border-radius:10px;border:none;
@@ -235,7 +235,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;
 .nav-item.active{background:rgba(124,109,250,0.18);color:#a594fc;border-color:rgba(124,109,250,0.3);}
 .nav-icon{font-size:15px;width:18px;text-align:center;}
 .s-footer{padding:16px;border-top:1px solid var(--border);flex-shrink:0;}
-.sidebar nav{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;}
+.sidebar nav{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overflow-x:hidden;padding-bottom:8px;}
 .sidebar nav::-webkit-scrollbar{width:3px;}
 .sidebar nav::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .user-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
@@ -266,7 +266,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
 .btn-primary:hover{background:var(--accent2);border-color:var(--accent2);color:#fff;}
 .btn-sm{padding:5px 12px;font-size:11px;}
-.content{flex:1;overflow-y:auto;padding:24px 28px;min-height:0;}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 28px;min-height:0;}
 .page{display:none;}
 .page.active{display:flex;flex-direction:column;height:100vh;}
 
@@ -335,17 +335,23 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
-  padding:28px;width:480px;max-height:90vh;overflow-y:auto;}
+  padding:28px;width:480px;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .modal h3{font-size:16px;font-weight:700;margin-bottom:20px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;-webkit-column-gap:12px;column-gap:12px;row-gap:12px;margin-bottom:12px;}
+.form-group{display:flex;flex-direction:column;gap:6px;-webkit-row-gap:6px;row-gap:6px;margin-bottom:12px;}
 label{font-size:11px;color:var(--text2);letter-spacing:1px;font-family:var(--mono);}
 input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
   color:var(--text);font-family:var(--font);font-size:13px;padding:9px 12px;
-  outline:none;transition:border-color 0.15s;width:100%;}
+  outline:none;transition:border-color 0.15s;width:100%;
+  -webkit-appearance:none;appearance:none;box-sizing:border-box;}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 select option{background:var(--bg3);}
-.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+/* Safari: fix number input spinner overlap */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button{opacity:1;}
+/* Safari: fix select arrow */
+select{background-image:none;}
+.form-actions{display:flex;gap:10px;-webkit-column-gap:10px;column-gap:10px;justify-content:flex-end;margin-top:20px;}
 
 /* Filters */
 .filter-row{display:flex;gap:10px;margin-bottom:20px;align-items:center;}
@@ -491,7 +497,7 @@ select option{background:var(--bg3);}
     background:var(--bg2);
     box-shadow:4px 0 32px rgba(0,0,0,0.4);
   }
-  .sidebar nav{ max-height:calc(100vh - 220px); overflow-y:auto; }
+  .sidebar nav{ max-height:calc(100vh - 220px); overflow-y:auto;-webkit-overflow-scrolling:touch; }
   .s-footer{ padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
   .sidebar.open{transform:translateX(0);}
   .sidebar .nav-item{color:var(--text2);font-size:14px;}
@@ -515,7 +521,7 @@ select option{background:var(--bg3);}
   /* Content */
   .content{
     padding:16px 14px 80px;
-    overflow-y:auto;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
     -webkit-overflow-scrolling:touch;
     height:calc(100vh - 56px - 60px);
     flex:1;
@@ -549,7 +555,7 @@ select option{background:var(--bg3);}
   .modal{
     width:100%!important;max-width:100%!important;
     border-radius:20px 20px 0 0;
-    max-height:90vh;overflow-y:auto;
+    max-height:90vh;max-height:90svh;overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:20px 16px;
   }
   .form-row{grid-template-columns:1fr;}
@@ -601,6 +607,97 @@ select option{background:var(--bg3);}
   .bottom-nav{grid-template-columns:repeat(6,1fr);}
   #navToggleBtn{display:none;}
 }
+
+/* ── Safari Compatibility (old) ──────────────────────────────────────────── */
+.kpi-row{-webkit-column-gap:14px;column-gap:14px;row-gap:14px;}
+.topbar-right{-webkit-column-gap:10px;column-gap:10px;}
+.bar-chart{-webkit-column-gap:8px;column-gap:8px;}
+.legend-row{-webkit-column-gap:12px;column-gap:12px;}
+/* Safari iOS: prevent auto-zoom on input focus */
+@media screen and (-webkit-min-device-pixel-ratio:0) and (max-width:768px) {
+  input,select,textarea{font-size:max(16px,13px)!important;}
+}
+/* Safari: modal height fallback */
+@supports (-webkit-touch-callout:none) {
+  .modal{max-height:85svh;}
+  #modal-newSale .modal{max-height:88svh;}
+}
+
+/* ══ Safari / WebKit Compatibility ══════════════════════════════════════
+   Fixes for: gap, vh, transforms, overflow, appearance, box-sizing
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Box model fix */
+*,*::before,*::after{box-sizing:border-box;}
+
+/* Flex gap fallback (Safari < 14) */
+.s-footer>*+*{margin-top:0;}
+.topbar-right>*+*{-webkit-margin-start:0;}
+.form-actions>*+*{margin-left:10px;}
+
+/* Input/Select normalize */
+input,select,textarea{
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+  box-sizing:border-box;
+}
+/* Prevent iOS Safari auto-zoom (font < 16px triggers zoom) */
+@media (max-width:768px){
+  input,select,textarea{font-size:16px!important;}
+}
+
+/* Number input spinner */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{
+  opacity:1;
+  -webkit-appearance:inner-spin-button;
+}
+
+/* Safari smooth scroll */
+.modal,.page,.sidebar nav,.s-footer{
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Safari: vh fix — use svh/dvh with fallback */
+#loginScreen,#appScreen,#trialScreen,#subScreen{
+  min-height:100vh;
+  min-height:100svh;
+}
+#appScreen .main{
+  height:100vh;
+  height:100svh;
+}
+.sidebar{
+  height:100vh;
+  height:100svh;
+}
+
+/* Modal max-height Safari fix */
+.modal{
+  max-height:90vh;max-height:90svh;
+  max-height:90svh;
+  max-height:min(90vh,90svh);
+}
+
+/* Keyframe animation prefix */
+@-webkit-keyframes spin{to{-webkit-transform:rotate(360deg)}}
+@-webkit-keyframes slideDown{
+  from{opacity:0;-webkit-transform:translateY(-8px)}
+  to{opacity:1;-webkit-transform:translateY(0)}
+}
+
+/* Safari: prevent tap highlight */
+button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
+
+/* Safari: fix position:absolute centering (use margin:auto instead of transform) */
+.l-eye{
+  top:0!important;bottom:0!important;
+  margin-top:auto!important;margin-bottom:auto!important;
+  transform:none!important;
+  display:flex!important;align-items:center!important;
+}
+
 </style>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
@@ -616,7 +713,7 @@ select option{background:var(--bg3);}
       <div class="l-logo-mark">CardestCo</div>
       <div class="l-logo-sub">CARD MANAGEMENT</div>
       <div style="display:flex;justify-content:center;margin-top:12px">
-        <div style="display:flex;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:3px;gap:2px">
+        <div style="display:flex;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:3px;gap:2px;row-gap:2px;column-gap:2px">
           <div id="login-lang-th" onclick="setLang('th')" style="padding:4px 12px;border-radius:16px;font-size:11px;font-family:var(--mono);cursor:pointer;background:var(--accent);color:#fff;transition:all 0.2s">ไทย</div>
           <div id="login-lang-en" onclick="setLang('en')" style="padding:4px 12px;border-radius:16px;font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text3);transition:all 0.2s">EN</div>
         </div>
@@ -624,7 +721,7 @@ select option{background:var(--bg3);}
     </div>
 
     <!-- Tab switcher -->
-    <div style="display:flex;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:4px;margin-bottom:20px;gap:4px">
+    <div style="display:flex;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:4px;margin-bottom:20px;gap:4px;row-gap:4px;column-gap:4px">
       <button id="tabLogin" onclick="switchAuthTab('login')" style="flex:1;padding:9px;border-radius:8px;border:none;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff" data-i18n="tab_login">เข้าสู่ระบบ</button>
       <button id="tabRegister" onclick="switchAuthTab('register')" style="flex:1;padding:9px;border-radius:8px;border:none;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--text2)" data-i18n="tab_register">สมัครสมาชิก</button>
     </div>
@@ -696,7 +793,7 @@ select option{background:var(--bg3);}
           <input type="password" id="reg-password" data-ph-i18n="reg_pwd_ph" placeholder="อย่างน้อย 8 ตัวอักษร" oninput="validatePasswordLive(this)">
           <span class="l-eye" id="toggleRegPwd" onclick="toggleRegPwd()" style="cursor:pointer">👁</span>
         </div>
-        <div style="display:flex;gap:3px;margin-top:6px">
+        <div style="display:flex;gap:3px;row-gap:3px;column-gap:3px;margin-top:6px">
           <div style="height:3px;flex:1;border-radius:2px;background:var(--border2)" id="sb1"></div>
           <div style="height:3px;flex:1;border-radius:2px;background:var(--border2)" id="sb2"></div>
           <div style="height:3px;flex:1;border-radius:2px;background:var(--border2)" id="sb3"></div>
@@ -733,7 +830,7 @@ select option{background:var(--bg3);}
           Admin จะ reset รหัสผ่านให้ภายใน 24 ชั่วโมง
         </div>
       </div>
-      <button class="l-btn" onclick="window.open('https://line.me/ti/p/@546bfopg','_blank')" style="background:linear-gradient(135deg,#06c755,#00a843);display:flex;align-items:center;justify-content:center;gap:8px">
+      <button class="l-btn" onclick="window.open('https://line.me/ti/p/@546bfopg','_blank')" style="background:linear-gradient(135deg,#06c755,#00a843);display:flex;align-items:center;justify-content:center;gap:8px;row-gap:8px;column-gap:8px">
         <span style="font-size:18px">💬</span> ติดต่อผ่าน Line OA
       </button>
       <div id="forgotAlertBox" style="margin-top:10px"></div>
@@ -794,7 +891,7 @@ select option{background:var(--bg3);}
         <div class="feature-row" style="color:var(--orange)"><span style="color:var(--orange);font-size:15px;flex-shrink:0">⚠</span><span>จำกัดการ์ด 100 ใบ / รูป 20 ใบ</span></div>
       </div>
 
-      <div style="display:flex;gap:10px">
+      <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
         <button class="sub-main-btn" style="background:linear-gradient(135deg,var(--yellow),var(--orange));flex:1.5" onclick="goSubscribe()">
           Subscribe ฿199/เดือน →
         </button>
@@ -825,11 +922,11 @@ select option{background:var(--bg3);}
       <div style="background:var(--bg3);border:1px solid rgba(124,109,250,0.2);border-radius:12px;padding:18px;margin-bottom:16px">
         <!-- Promo price -->
         <div style="margin-bottom:8px">
-          <div style="display:flex;align-items:baseline;gap:8px">
+          <div style="display:flex;align-items:baseline;gap:8px;row-gap:8px;column-gap:8px">
             <div class="sub-price-big">฿199</div>
             <div style="font-size:14px;color:var(--text2)">/เดือน</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;margin-top:4px">
             <span style="font-size:16px;color:var(--text3);text-decoration:line-through;font-family:var(--mono)">฿499</span>
             <span style="background:rgba(248,113,113,0.15);color:var(--red);font-size:11px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:20px">PROMO</span>
           </div>
@@ -843,7 +940,7 @@ select option{background:var(--bg3);}
         <div class="feature-row"><span class="feat-check">✓</span><span>Support ผ่าน Line OA @546bfopg</span></div>
       </div>
       <!-- Plan selector -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="plan-selector">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:16px" id="plan-selector">
         <div id="plan-card-basic" onclick="selectSubPlan('basic')"
           style="border:2px solid var(--accent);border-radius:12px;padding:14px;cursor:pointer;background:rgba(124,109,250,0.06);transition:all 0.15s">
           <div style="font-size:10px;font-family:var(--mono);color:var(--accent2);font-weight:700;margin-bottom:6px">BASIC</div>
@@ -861,7 +958,7 @@ select option{background:var(--bg3);}
         </div>
       </div>
       <button class="sub-main-btn" onclick="startPayment()" data-i18n="sub_pay_btn">ชำระเงินผ่าน PromptPay →</button>
-      <div style="text-align:center;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px">
+      <div style="text-align:center;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:16px;row-gap:16px;column-gap:16px">
         <span style="font-size:12px;color:var(--text2);cursor:pointer" onclick="backToLogin()" id="sub-back-btn">← ย้อนกลับ</span>
         <span style="color:var(--border2)">|</span>
         <span style="font-size:12px;color:var(--accent2);cursor:pointer" onclick="contactSupport()" data-i18n="sub_contact">ติดต่อ Support</span>
@@ -870,7 +967,7 @@ select option{background:var(--bg3);}
 
     <!-- STEP 2: QR + Upload Slip -->
     <div id="subStep2" class="trial-card" style="display:none">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:16px">
         <button onclick="document.getElementById('subStep1').style.display='block';document.getElementById('subStep2').style.display='none'" style="background:transparent;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer">← กลับ</button>
         <div style="font-size:15px;font-weight:700" data-i18n="sub_qr_title">สแกน QR ชำระเงิน</div>
       </div>
@@ -979,7 +1076,7 @@ select option{background:var(--bg3);}
     <div class="s-footer" style="padding:10px 12px;">
       <!-- User row + logout -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;min-width:0">
           <div class="u-avatar" id="sideAvatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0">A</div>
           <div style="min-width:0">
             <div class="u-name" id="sideName" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">Admin</div>
@@ -990,18 +1087,18 @@ select option{background:var(--bg3);}
       </div>
       <!-- Theme + Language in one row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div id="themeToggle" onclick="toggleTheme()" style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:2px;gap:1px;cursor:pointer">
+        <div id="themeToggle" onclick="toggleTheme()" style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:2px;gap:1px;row-gap:1px;column-gap:1px;cursor:pointer">
           <div id="themeDark" style="padding:2px 7px;border-radius:12px;font-size:10px;transition:all 0.2s;background:var(--accent);color:#fff">🌙</div>
           <div id="themeLight" style="padding:2px 7px;border-radius:12px;font-size:10px;transition:all 0.2s;color:var(--text3)">☀️</div>
         </div>
-        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:2px;gap:1px">
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:2px;gap:1px;row-gap:1px;column-gap:1px">
           <div id="lang-th" onclick="setLang('th')" style="padding:2px 7px;border-radius:12px;font-size:10px;font-family:var(--mono);transition:all 0.2s;cursor:pointer;background:var(--accent);color:#fff">ไทย</div>
           <div id="lang-en" onclick="setLang('en')" style="padding:2px 7px;border-radius:12px;font-size:10px;font-family:var(--mono);transition:all 0.2s;cursor:pointer;color:var(--text3)">EN</div>
         </div>
       </div>
       <!-- Tier status card -->
       <div id="sidebarTierCard" style="border-radius:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2)">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:4px">
           <span id="sidebarTierIcon" style="font-size:14px">⏳</span>
           <span id="subStatusBadge" style="font-size:12px;font-weight:700;font-family:var(--mono);flex:1">Trial</span>
         </div>
@@ -1022,15 +1119,15 @@ select option{background:var(--bg3);}
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="pageTitle">Dashboard</span></div>
-        <div class="topbar-right" style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="pageTitle">Dashboard</span></div>
+        <div class="topbar-right" style="display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px">
           <span id="dash-month-label" style="font-size:11px;color:var(--text3);font-family:var(--mono);display:none">มีนาคม 2026</span>
           <button onclick="refreshDashboard()" id="btn-refresh-dashboard" title="Refresh" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">↻</button>
         </div>
       </div>
       <div class="content">
         <!-- Dashboard Tabs -->
-        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchDashTab('overview',this)">Overview</div>
           <div class="setup-tab" onclick="switchDashTab('portfolio',this)">📦 Portfolio</div>
           <div class="setup-tab" onclick="switchDashTab('aging',this)" data-i18n="dash_aging_tab">📊 สินค้าไม่เคลื่อนไหว</div>
@@ -1071,7 +1168,7 @@ select option{background:var(--bg3);}
         <div class="panel" style="margin-bottom:20px">
           <div class="panel-head">
             <span class="panel-title" data-i18n="dash_sales_chart">ยอดขาย</span>
-            <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;gap:6px;row-gap:6px;column-gap:6px;align-items:center">
               <select id="chart-mode" onchange="renderSalesChart()"
                 style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
                 <option value="month" data-i18n="chart_monthly">รายเดือน</option>
@@ -1088,7 +1185,7 @@ select option{background:var(--bg3);}
           </div>
           <div style="position:relative;margin-top:12px" id="sales-chart-wrap">
             <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px" id="sales-chart-scroll">
-              <div id="sales-chart-bars" style="display:flex;align-items:flex-end;gap:3px;height:140px;padding:0 4px;min-width:100%"></div>
+              <div id="sales-chart-bars" style="display:flex;align-items:flex-end;gap:3px;row-gap:3px;column-gap:3px;height:140px;padding:0 4px;min-width:100%"></div>
             </div>
             <div id="sales-chart-empty" style="display:none;height:140px;align-items:center;justify-content:center;color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="chart_no_data">ยังไม่มีข้อมูลยอดขาย</div>
           </div>
@@ -1172,7 +1269,7 @@ select option{background:var(--bg3);}
           <!-- Brand breakdown -->
           <div class="panel" style="margin-top:16px">
             <div class="panel-head"><span class="panel-title" data-i18n="pf_brand">มูลค่าตาม Brand</span></div>
-            <div id="pf-brand-breakdown" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+            <div id="pf-brand-breakdown" style="display:flex;flex-direction:column;gap:14px;row-gap:14px;column-gap:14px;margin-top:8px"></div>
           </div>
 
         </div><!-- end dtab-portfolio -->
@@ -1204,7 +1301,7 @@ select option{background:var(--bg3);}
           </div>
 
           <!-- Period Buckets -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="aging-buckets">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;row-gap:12px;column-gap:12px;margin-bottom:20px" id="aging-buckets">
             <!-- filled by JS -->
           </div>
 
@@ -1212,7 +1309,7 @@ select option{background:var(--bg3);}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-title" data-i18n="aging_table_title">รายการสินค้าค้างสต็อก</span>
-              <div style="display:flex;gap:8px;align-items:center">
+              <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center">
                 <select id="aging-period-filter" onchange="renderAgingReport()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
                   <option value="all" data-i18n="aging_all">ทั้งหมด</option>
                   <option value="1-7" data-i18n="aging_p1">1–7 วัน</option>
@@ -1276,16 +1373,16 @@ select option{background:var(--bg3);}
             <div style="overflow-x:auto">
               <svg id="trend-line-svg" viewBox="0 0 760 200" style="width:100%;min-width:340px;height:200px;display:block"></svg>
             </div>
-            <div id="trend-line-legend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding:0 8px"></div>
+            <div id="trend-line-legend" style="display:flex;gap:16px;row-gap:16px;column-gap:16px;flex-wrap:wrap;margin-top:10px;padding:0 8px"></div>
           </div>
           <div class="chart-row" style="margin-bottom:16px">
             <div class="panel">
               <div class="panel-head"><span class="panel-title">🏆 Brand Revenue Ranking</span></div>
-              <div id="trend-brand-bars" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+              <div id="trend-brand-bars" style="display:flex;flex-direction:column;gap:14px;row-gap:14px;column-gap:14px;margin-top:8px"></div>
             </div>
             <div class="panel">
               <div class="panel-head"><span class="panel-title">💹 Profit Margin by Brand</span></div>
-              <div id="trend-brand-margin" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+              <div id="trend-brand-margin" style="display:flex;flex-direction:column;gap:14px;row-gap:14px;column-gap:14px;margin-top:8px"></div>
             </div>
           </div>
           <div class="panel" style="margin-bottom:16px">
@@ -1293,11 +1390,11 @@ select option{background:var(--bg3);}
               <span class="panel-title">🗓 Revenue Heatmap รายเดือน</span>
               <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">สีเข้ม = ขายดีกว่า</span>
             </div>
-            <div id="trend-heatmap" style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:8px"></div>
+            <div id="trend-heatmap" style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px;row-gap:6px;column-gap:6px;margin-top:8px"></div>
           </div>
           <div class="panel">
             <div class="panel-head"><span class="panel-title">🃏 Top 5 การ์ดขายดีตลอดกาล</span></div>
-            <div id="trend-top-cards" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
+            <div id="trend-top-cards" style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:8px"></div>
           </div>
         </div><!-- end dtab-trends -->
 
@@ -1307,15 +1404,15 @@ select option{background:var(--bg3);}
     <!-- INVENTORY -->
     <div id="page-inventory" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-inventory">สต็อกการ์ด</span></div>
-        <div class="topbar-right" style="display:flex;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-inventory">สต็อกการ์ด</span></div>
+        <div class="topbar-right" style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
           <button class="btn btn-sm" disabled title="Coming Soon" style="font-size:11px;padding:4px 10px;opacity:0.5;cursor:not-allowed">📥 Import <span style="font-size:9px;color:var(--orange)">Soon</span></button>
           <!-- Add card button disabled per spec -->
         </div>
       </div>
       <div class="content">
         <!-- Inventory Tabs -->
-        <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchInvTab('display',this)" id="inv-tab-display" data-i18n="inv_tab_display">สต็อก</div>
           <div class="setup-tab" onclick="switchInvTab('edit',this)" id="inv-tab-edit" data-i18n="inv_tab_edit">✏️ แก้ไข</div>
           <div class="setup-tab" onclick="switchInvTab('consignment',this)" id="inv-tab-consignment" data-i18n="inv_tab_consignment">🤝 ฝากขาย&เกรด</div>
@@ -1376,15 +1473,15 @@ select option{background:var(--bg3);}
     <!-- ORDERS -->
     <div id="page-orders" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-orders">ออเดอร์</span></div>
-        <div class="topbar-right" style="gap:8px;display:flex">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-orders">ออเดอร์</span></div>
+        <div class="topbar-right" style="gap:8px;row-gap:8px;column-gap:8px;display:flex">
           <button class="btn btn-sm" onclick="exportExcel('orders')" id="btn-export-orders" title="Export to Excel (Basic only)" style="font-size:11px;padding:4px 10px">↓ Excel</button>
           <button class="btn btn-primary btn-sm" onclick="openNewSaleModal()" id="btn-new-order" data-i18n="ord_btn_new">+ ขายการ์ด</button>
         </div>
       </div>
       <div class="content">
         <!-- Tab bar -->
-        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchOrderTab('list',this)" id="ord-tab-list" data-i18n="ord_tab_list">รายการออเดอร์</div>
           <div class="setup-tab" onclick="switchOrderTab('cancel',this)" id="ord-tab-cancel" data-i18n="ord_tab_cancel">🗑 ยกเลิก / ลบ</div>
         </div>
@@ -1412,7 +1509,7 @@ select option{background:var(--bg3);}
         <!-- TAB: ยกเลิก / ลบ -->
         <div id="otab-cancel" style="display:none">
           <!-- Admin banner -->
-          <div id="order-admin-banner" style="display:none;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:10px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:10px">
+          <div id="order-admin-banner" style="display:none;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:10px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
             <span style="font-size:20px">⛔</span>
             <div>
               <div style="font-weight:700;color:var(--red);font-size:13px">Admin Only</div>
@@ -1422,7 +1519,7 @@ select option{background:var(--bg3);}
 
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="ord_mgmt_title">เลือก Order ที่ต้องการจัดการ</span></div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+            <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:12px">
               <div>
                 <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px" data-i18n="pur_filter_month">กรองเดือน</div>
                 <select id="del-order-month" onchange="populateDelOrderDropdown()"
@@ -1439,14 +1536,14 @@ select option{background:var(--bg3);}
               </div>
               <div id="del-order-detail" style="display:none">
                 <div class="panel" style="border:1px solid var(--red)">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;row-gap:8px;column-gap:8px">
                     <div>
                       <div id="dod-id" style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--accent2)"></div>
                       <div id="dod-customer" style="font-size:13px;margin-top:2px"></div>
                     </div>
                     <span id="dod-status" class="order-status"></span>
                   </div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:12px">
                     <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
                       <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">รายการ</div>
                       <div id="dod-items" style="font-size:11px;font-weight:600"></div>
@@ -1465,7 +1562,7 @@ select option{background:var(--bg3);}
                   <div id="dod-warn" style="background:rgba(251,146,60,0.1);border:1px solid var(--orange);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--orange);font-family:var(--mono);margin-bottom:12px">
                     ✕ ยกเลิก = เปลี่ยนสถานะเป็น "ยกเลิก" + คืน Stock กลับ
                   </div>
-                  <div style="display:flex;gap:8px">
+                  <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
                     <button class="btn btn-sm" onclick="cancelOrder()"
                       style="flex:1;padding:12px;color:var(--orange);border-color:var(--orange);font-size:13px;font-weight:700">
                       ✕ ยกเลิก Order
@@ -1498,7 +1595,7 @@ select option{background:var(--bg3);}
     <!-- CUSTOMERS -->
     <div id="page-customers" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-customers">ลูกค้า</span></div>
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-customers">ลูกค้า</span></div>
         <div class="topbar-right"><button class="btn btn-sm" onclick="openModal('addCustomer')">+ เพิ่มลูกค้า</button></div>
       </div>
       <div class="content">
@@ -1522,7 +1619,7 @@ select option{background:var(--bg3);}
     <!-- REPORTS -->
     <div id="page-reports" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-reports">รายงาน & Analytics</span></div>
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-reports">รายงาน & Analytics</span></div>
         <div class="topbar-right" style="position:relative">
           <button class="btn btn-sm" onclick="toggleExportMenu()" id="exportBtn">↓ Export CSV</button>
           <div id="exportMenu" style="display:none;position:absolute;right:0;top:110%;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:6px;z-index:100;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
@@ -1534,7 +1631,7 @@ select option{background:var(--bg3);}
       </div>
       <div class="content">
         <!-- Year/Month filter -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">
+        <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:16px;align-items:center">
           <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">📅</span>
           <select id="rpt-year-filter" onchange="renderReports()"
             style="flex:1;padding:6px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--mono)">
@@ -1544,7 +1641,7 @@ select option{background:var(--bg3);}
           </select>
         </div>
         <!-- KPI row — 2x3 grid -->
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;row-gap:10px;column-gap:10px;margin-bottom:20px">
           <div class="kpi-card" style="--kpi-color:var(--yellow);padding:14px 12px">
             <div class="kpi-label" data-i18n="rpt_revenue" style="font-size:10px;margin-bottom:6px">รายได้รวม</div>
             <div class="kpi-val" id="rpt-revenue" style="font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">฿0</div>
@@ -1581,12 +1678,12 @@ select option{background:var(--bg3);}
           <!-- Top cards -->
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="rpt_top_cards">Top 10 การ์ดขายดี</span></div>
-            <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px" id="topCardsReport"></div>
+            <div style="display:flex;flex-direction:column;gap:12px;row-gap:12px;column-gap:12px;margin-top:4px" id="topCardsReport"></div>
           </div>
           <!-- Channel breakdown -->
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="rpt_channels">ช่องทางขาย</span></div>
-            <div id="rpt-channels" style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+            <div id="rpt-channels" style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:4px">
               <div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>
             </div>
           </div>
@@ -1597,12 +1694,12 @@ select option{background:var(--bg3);}
           <!-- Top 10 Best Margin -->
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="rpt_top_margin">Top 10 Margin ดีสุด</span></div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px" id="topMarginReport"></div>
+            <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:8px" id="topMarginReport"></div>
           </div>
           <!-- Brand margin -->
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="rpt_brand_margin">Margin ตาม Brand</span></div>
-            <div id="rpt-brand-margin" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+            <div id="rpt-brand-margin" style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:8px">
               <div style="color:var(--text3);font-size:12px;font-family:var(--mono)">ยังไม่มีข้อมูล</div>
             </div>
           </div>
@@ -1626,12 +1723,12 @@ select option{background:var(--bg3);}
     <!-- ═══ PAGE: เบรคการ์ด ═══ -->
     <div id="page-break" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" data-i18n="title_break">เบรคการ์ด</span></div>
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" data-i18n="title_break">เบรคการ์ด</span></div>
         <div class="topbar-right"></div>
       </div>
       <div class="content">
         <!-- Break Tabs -->
-        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" id="brtab-btn-new" onclick="switchBreakTab('new',this)" data-i18n="break_tab_new">🎯 เบรคใหม่</div>
           <div class="setup-tab" id="brtab-btn-history" onclick="switchBreakTab('history',this)" data-i18n="break_tab_history">📋 ประวัติ</div>
           <div class="setup-tab" id="brtab-btn-analytics" onclick="switchBreakTab('analytics',this)" data-i18n="break_tab_analytics">📊 Analytics</div>
@@ -1646,7 +1743,7 @@ select option{background:var(--bg3);}
           <div id="pending-breaks-sidebar" style="position:absolute;left:0;top:0;width:220px;display:none;z-index:2">
             <div class="panel" style="padding:14px">
               <div style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:12px"data-i18n="break_pending_label">⏸ PENDING BREAKS</div>
-              <div id="pending-breaks-list" style="display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 220px);overflow-y:auto"></div>
+              <div id="pending-breaks-list" style="display:flex;flex-direction:column;gap:8px;row-gap:8px;column-gap:8px;max-height:calc(100vh - 220px);overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
             </div>
           </div>
 
@@ -1671,12 +1768,12 @@ select option{background:var(--bg3);}
                   onfocus="if(this.value.length>0)showBreakDropdown()"
                   style="width:100%;padding-right:36px">
                 <button type="button" onclick="toggleBreakAllCards()"
-                  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px"
+                  style="position:absolute;right:8px;top:0;bottom:0;margin-top:auto;margin-bottom:auto;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px"
                   onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">🔍</button>
-                <div id="break-card-drop" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
+                <div id="break-card-drop" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,0.12)"></div>
               </div>
               <!-- selected card preview -->
-              <div id="break-card-preview" style="display:none;margin-top:10px;background:var(--bg3);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+              <div id="break-card-preview" style="display:none;margin-top:10px;background:var(--bg3);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
                 <img id="break-card-img" src="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;display:none">
                 <div id="break-card-icon" style="width:44px;height:44px;border-radius:6px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🃏</div>
                 <div>
@@ -1711,7 +1808,7 @@ select option{background:var(--bg3);}
               <div class="panel-head">
                 <span class="panel-title" data-i18n="break_spots_title">รายการ Spot</span>
                 <!-- Summary -->
-                <div style="display:flex;gap:16px;align-items:center">
+                <div style="display:flex;gap:16px;row-gap:16px;column-gap:16px;align-items:center">
                   <span style="font-size:12px;color:var(--text3)">จ่ายแล้ว <span id="break-paid-count" style="color:var(--green);font-weight:700">0</span>/<span id="break-total-spots">0</span></span>
                   <span style="font-size:14px;font-weight:700;color:var(--yellow)" id="break-revenue-display">฿0</span>
                 </div>
@@ -1728,12 +1825,12 @@ select option{background:var(--bg3);}
                 </div>
               </div>
 
-              <div id="break-spots-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
+              <div id="break-spots-list" style="display:flex;flex-direction:column;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:16px"></div>
 
               <!-- Summary bar -->
               <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;margin-bottom:16px">
                 <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;letter-spacing:1px" data-i18n="break_summary">SUMMARY</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;row-gap:12px;column-gap:12px">
                   <div>
                     <div style="font-size:10px;color:var(--text3);margin-bottom:3px" data-i18n="break_sum_spots">Spots ทั้งหมด</div>
                     <div style="font-size:18px;font-weight:700;color:var(--text);font-family:var(--mono)" id="brk-sum-spots">0</div>
@@ -1750,7 +1847,7 @@ select option{background:var(--bg3);}
               </div>
 
               <!-- Action Buttons -->
-              <div style="display:flex;gap:10px">
+              <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
                 <button onclick="savePendingBreak()" class="btn" style="flex:1;padding:14px;font-size:14px;font-weight:700;border-color:var(--orange);color:var(--orange)" data-i18n-title="break_pending_btn_title" title="พักการเบรคนี้ไว้ก่อน สามารถกลับมาแก้ไขได้">
                   <span data-i18n="break_pending_btn">⏸ Pending Break</span>
                 </button>
@@ -1834,14 +1931,14 @@ select option{background:var(--bg3);}
           <!-- Top cards broken -->
           <div class="panel" style="margin-bottom:16px">
             <div class="panel-head"><span class="panel-title" data-i18n="break_ana_top_cards">🃏 การ์ดที่เบรคบ่อยที่สุด</span></div>
-            <div id="brk-top-cards" style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+            <div id="brk-top-cards" style="display:flex;flex-direction:column;gap:12px;row-gap:12px;column-gap:12px;margin-top:8px">
               <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="break_ana_no_data">ยังไม่มีข้อมูล</div>
             </div>
           </div>
           <!-- Monthly break revenue bar chart -->
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="break_ana_monthly">📅 รายได้เบรคแต่ละเดือน</span></div>
-            <div id="brk-monthly-bars" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+            <div id="brk-monthly-bars" style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:8px">
               <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="break_ana_no_data">ยังไม่มีข้อมูล</div>
             </div>
           </div>
@@ -1854,17 +1951,17 @@ select option{background:var(--bg3);}
     <!-- ═══ PAGE: Consignment & Grade ═══ -->
     <div id="page-consignment" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
           <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
           <span class="page-title" id="title-consignment-page" data-i18n="title_consignment">ฝากขาย&amp;เกรด</span>
         </div>
-        <div class="topbar-right" style="gap:8px;display:flex">
+        <div class="topbar-right" style="gap:8px;row-gap:8px;column-gap:8px;display:flex">
           <button class="btn btn-primary btn-sm" onclick="openCsmtModal()" data-i18n="csmt_btn_new">+ รับฝากใหม่</button>
         </div>
       </div>
       <div class="content">
         <!-- Tabs -->
-        <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" id="csmttab-btn-active" onclick="switchCsmtTab('active',this)" data-i18n="csmt_tab_active">รายการที่รับฝาก</div>
           <div class="setup-tab" id="csmttab-btn-completed" onclick="switchCsmtTab('completed',this)" data-i18n="csmt_tab_completed">เสร็จสิ้นแล้ว</div>
           <div class="setup-tab" id="csmttab-btn-dashboard" onclick="switchCsmtTab('dashboard',this)" data-i18n="csmt_tab_dashboard">📊 Dashboard</div>
@@ -1903,7 +2000,7 @@ select option{background:var(--bg3);}
               <div class="panel-head">
                 <span class="panel-title">🛒 <span data-i18n="csmt_dash_sell_title">ฝากขาย Summary</span></span>
               </div>
-              <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+              <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:4px">
                 <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
                   <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_sell_active">กำลังฝากขายอยู่</span>
                   <span id="csmt-dash-sell-active" style="font-weight:700;font-family:var(--mono)">0 รายการ</span>
@@ -1928,7 +2025,7 @@ select option{background:var(--bg3);}
               <div class="panel-head">
                 <span class="panel-title">🏅 <span data-i18n="csmt_dash_grade_title">ฝากเกรด Summary</span></span>
               </div>
-              <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+              <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:4px">
                 <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
                   <span style="color:var(--text2);font-size:13px" data-i18n="csmt_dash_grade_active">กำลังรอเกรดอยู่</span>
                   <span id="csmt-dash-grade-active" style="font-weight:700;font-family:var(--mono)">0 รายการ</span>
@@ -1954,7 +2051,7 @@ select option{background:var(--bg3);}
             <div class="panel-head">
               <span class="panel-title" data-i18n="csmt_dash_top_owners">🏆 ผู้ฝากบ่อยที่สุด</span>
             </div>
-            <div id="csmt-dash-top-owners" style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+            <div id="csmt-dash-top-owners" style="display:flex;flex-direction:column;gap:12px;row-gap:12px;column-gap:12px;margin-top:8px">
               <div style="color:var(--text3);font-size:12px;font-family:var(--mono)" data-i18n="csmt_no_data">ยังไม่มีรายการฝากขาย</div>
             </div>
           </div>
@@ -2012,7 +2109,7 @@ select option{background:var(--bg3);}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-title" data-i18n="csmt_list_title">รายการฝากขาย&amp;เกรด</span>
-              <div style="display:flex;gap:8px;align-items:center">
+              <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center">
                 <select id="csmt-type-filter" onchange="renderConsignment()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
                   <option value="" data-i18n="csmt_filter_all">ทั้งหมด</option>
                   <option value="sell" data-i18n="csmt_type_sell">ฝากขาย</option>
@@ -2084,7 +2181,7 @@ select option{background:var(--bg3);}
           <span onclick="closeModal('newConsignment')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
         </div>
         <!-- Type selector -->
-        <div style="display:flex;gap:10px;margin-bottom:20px">
+        <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:20px">
           <div id="csmt-type-sell" onclick="setCsmtType('sell')"
             style="flex:1;padding:14px;border-radius:10px;border:2px solid var(--accent);background:rgba(124,109,250,0.1);cursor:pointer;text-align:center;transition:all 0.15s">
             <div style="font-size:22px;margin-bottom:4px">🛒</div>
@@ -2148,10 +2245,10 @@ select option{background:var(--bg3);}
                 onfocus="showCsmtOwnerDrop()"
                 style="width:100%;padding-right:36px">
               <button type="button" onclick="toggleCsmtOwnerDrop()"
-                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 4px"
+                style="position:absolute;right:8px;top:0;bottom:0;margin-top:auto;margin-bottom:auto;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 4px"
                 onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">▾</button>
               <div id="csmt-owner-drop"
-                style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:300;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
+                style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:300;max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
             </div>
           </div>
           <div class="form-group" style="margin-bottom:0" id="csmt-price-group">
@@ -2169,7 +2266,7 @@ select option{background:var(--bg3);}
             <input type="text" id="csmt-note" data-ph-i18n="csmt_ph_note" placeholder="หมายเหตุเพิ่มเติม...">
           </div>
         </div>
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
           <button class="btn" style="flex:1" onclick="closeModal('newConsignment')" data-i18n="btn_cancel">ยกเลิก</button>
           <button class="btn btn-primary" style="flex:2" onclick="saveConsignment()" data-i18n="csmt_btn_save">✓ รับฝากเข้าระบบ</button>
         </div>
@@ -2188,7 +2285,7 @@ select option{background:var(--bg3);}
         <div id="csmt-sell-info" style="background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:20px">
           <div id="csmt-sell-card-name" style="font-size:14px;font-weight:700;margin-bottom:4px">—</div>
           <div id="csmt-sell-card-meta" style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</div>
-          <div style="display:flex;gap:16px;margin-top:10px">
+          <div style="display:flex;gap:16px;row-gap:16px;column-gap:16px;margin-top:10px">
             <div>
               <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_sell_listed">ราคาตั้ง</div>
               <div id="csmt-sell-listed-price" style="font-size:15px;font-weight:700;color:var(--yellow);font-family:var(--mono)">฿0</div>
@@ -2204,7 +2301,7 @@ select option{background:var(--bg3);}
         <div class="form-group" style="margin-bottom:8px">
           <label style="font-size:13px;font-weight:700;color:var(--text)" data-i18n="csmt_sell_profit_label">กำไรที่ได้รับ (฿) *</label>
           <div style="position:relative;margin-top:8px">
-            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);font-weight:700">฿</span>
+            <span style="position:absolute;left:14px;top:0;bottom:0;margin-top:auto;margin-bottom:auto;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;font-size:15px;color:var(--text3);font-weight:700">฿</span>
             <input type="number" id="csmt-sell-profit" min="0" value="0"
               style="padding-left:28px;font-size:20px;font-weight:700;font-family:var(--mono)"
               oninput="updateCsmtSellPreview()">
@@ -2227,7 +2324,7 @@ select option{background:var(--bg3);}
           </div>
         </div>
 
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
           <button class="btn" style="flex:1" onclick="closeModal('sellCsmt')" data-i18n="btn_cancel">ยกเลิก</button>
           <button class="btn btn-primary" style="flex:2" onclick="confirmSellConsignment()" data-i18n="csmt_sell_confirm_btn">
             ✓ ยืนยันการขาย
@@ -2247,7 +2344,7 @@ select option{background:var(--bg3);}
         <div id="csmt-grade-info-box" style="background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:20px">
           <div id="csmt-grade-card-name" style="font-size:14px;font-weight:700;margin-bottom:2px">—</div>
           <div id="csmt-grade-card-meta" style="font-size:11px;color:var(--text3);font-family:var(--mono)">—</div>
-          <div style="margin-top:8px;display:flex;gap:16px">
+          <div style="margin-top:8px;display:flex;gap:16px;row-gap:16px;column-gap:16px">
             <div>
               <div style="font-size:10px;color:var(--text3);font-family:var(--mono)" data-i18n="csmt_sell_owner_lbl">ผู้ฝาก</div>
               <div id="csmt-grade-owner-lbl" style="font-size:13px;font-weight:600">—</div>
@@ -2297,7 +2394,7 @@ select option{background:var(--bg3);}
             <span id="csmt-grade-balance-preview" style="font-family:var(--mono);font-weight:800;color:var(--green)">฿0</span>
           </div>
         </div>
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
           <button class="btn" style="flex:1" onclick="closeModal('completeCsmt')" data-i18n="btn_cancel">ยกเลิก</button>
           <button class="btn btn-primary" style="flex:2;background:linear-gradient(135deg,var(--pink),#db2777)" onclick="confirmCompleteGrade()" data-i18n="csmt_grade_confirm_btn">
             🏅 บันทึกผลเกรด
@@ -2308,8 +2405,8 @@ select option{background:var(--bg3);}
 
     <div id="page-purchase" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-purchase">สั่งซื้อการ์ด</span></div>
-        <div class="topbar-right" style="gap:8px;display:flex">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-purchase">สั่งซื้อการ์ด</span></div>
+        <div class="topbar-right" style="gap:8px;row-gap:8px;column-gap:8px;display:flex">
           <button class="btn btn-sm" onclick="exportExcel('purchases')" id="btn-export-purchases" title="Export to Excel (Basic only)" style="font-size:11px;padding:4px 10px">↓ Excel</button>
           <button class="btn btn-sm" id="btnAIPO" style="display:none;border-color:var(--accent);color:var(--accent);font-size:11px;padding:4px 10px" onclick="openAIPurchaseGated()">✨ AI ซื้อการ์ด</button>
           <button class="btn btn-primary btn-sm" id="btnNewPO" style="display:none" onclick="openModal('newPurchase')" data-i18n="pur_btn_new">+ สั่งซื้อการ์ด</button>
@@ -2318,7 +2415,7 @@ select option{background:var(--bg3);}
       <div class="content">
 
         <!-- Tab bar -->
-        <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0">
           <div class="setup-tab active" onclick="switchPurchaseTab('overview',this)" id="pur-tab-overview" data-i18n="pur_tab_overview">Overview</div>
           <div class="setup-tab" onclick="switchPurchaseTab('orders',this)" id="pur-tab-orders" data-i18n="pur_tab_orders">สั่งซื้อการ์ด</div>
           <div class="setup-tab" onclick="switchPurchaseTab('cancel',this)" id="pur-tab-cancel" data-i18n="pur_tab_cancel">🗑 ยกเลิกซื้อ</div>
@@ -2327,7 +2424,7 @@ select option{background:var(--bg3);}
         <!-- TAB: Overview -->
         <div id="ptab-overview">
         <!-- KPI — 2x2 grid -->
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;row-gap:10px;column-gap:10px;margin-bottom:20px">
           <div class="kpi-card" style="--kpi-color:var(--blue);padding:14px 12px">
             <div class="kpi-label" data-i18n="pur_kpi_month" style="font-size:10px;margin-bottom:6px">ซื้อเข้าเดือนนี้</div>
             <div class="kpi-val" id="po-kpi-total" style="font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">฿0</div>
@@ -2354,12 +2451,12 @@ select option{background:var(--bg3);}
         <div class="chart-row" style="grid-template-columns:1fr 1fr;margin-bottom:20px">
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="pur_brand_cost">ต้นทุนสะสมตามแบรนด์</span></div>
-            <div id="brand-cost-list" style="display:flex;flex-direction:column;gap:14px;margin-top:4px">
+            <div id="brand-cost-list" style="display:flex;flex-direction:column;gap:14px;row-gap:14px;column-gap:14px;margin-top:4px">
             </div>
           </div>
           <div class="panel">
             <div class="panel-head"><span class="panel-title" data-i18n="pur_summary">สรุปต้นทุน vs ราคาขาย</span></div>
-            <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;font-size:13px">
               <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
                 <span style="color:var(--text2)">ต้นทุนรวมทั้งหมด</span>
                 <span id="bc-sum-cost" style="font-weight:700;color:var(--red)">฿0</span>
@@ -2388,7 +2485,7 @@ select option{background:var(--bg3);}
         <div class="panel">
           <div class="panel-head">
             <span class="panel-title" data-i18n="pur_history">ประวัติการสั่งซื้อ</span>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
               <select class="select-sm" style="font-size:11px" id="pur-status-filter" onchange="renderPurchase()">
                 <option value="" data-i18n="all_status">ทุกสถานะ</option>
                 <option value="pending" data-i18n="pur_status_wait">รอสินค้า</option>
@@ -2400,7 +2497,7 @@ select option{background:var(--bg3);}
               </select>
             </div>
           </div>
-          <div class="table-wrap" style="max-height:360px;overflow-y:auto">
+          <div class="table-wrap" style="max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch">
             <table>
               <thead>
                 <tr>
@@ -2423,7 +2520,7 @@ select option{background:var(--bg3);}
               <div style="font-size:15px;font-weight:700" data-i18n="pur_section_title">สั่งซื้อการ์ด</div>
               <div style="font-size:12px;color:var(--text2);margin-top:2px" data-i18n="pur_section_desc">สร้างและติดตามใบสั่งซื้อการ์ดเข้าสต็อก</div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
               <button class="btn btn-sm" onclick="openAIPurchaseGated()" style="border-color:var(--accent);color:var(--accent)">✨ AI ซื้อการ์ด</button>
               <button class="btn btn-primary btn-sm" onclick="checkLimitThenOpenPO()" data-i18n="pur_btn_new">+ สั่งซื้อการ์ด</button>
             </div>
@@ -2452,7 +2549,7 @@ select option{background:var(--bg3);}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-title" data-i18n="pur_all_po">ใบสั่งซื้อทั้งหมด</span>
-              <div style="display:flex;gap:8px">
+              <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
                 <input class="search-input" id="po-search-input" style="width:180px;font-size:12px" placeholder="ค้นหา PO..." data-ph-i18n="pur_search_po" oninput="renderPurchase()">
                 <select class="select-sm" style="font-size:11px">
                   <option value="" data-i18n="all_status">ทุกสถานะ</option>
@@ -2481,7 +2578,7 @@ select option{background:var(--bg3);}
         <!-- TAB: Cancel PO -->
         <div id="ptab-cancel" style="display:none">
           <!-- Admin guard banner -->
-          <div id="cancel-admin-banner" style="display:none;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:10px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:10px">
+          <div id="cancel-admin-banner" style="display:none;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:10px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
             <span style="font-size:20px">⛔</span>
             <div>
               <div style="font-weight:700;color:var(--red);font-size:13px">Admin Only</div>
@@ -2492,7 +2589,7 @@ select option{background:var(--bg3);}
           <!-- Step 1: Dropdown เลือก PO -->
           <div class="panel" style="margin-bottom:16px">
             <div class="panel-head"><span class="panel-title" data-i18n="pur_cancel_select">เลือก PO ที่ต้องการยกเลิก</span></div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+            <div style="display:flex;flex-direction:column;gap:10px;row-gap:10px;column-gap:10px;margin-top:12px">
               <div>
                 <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px" data-i18n="pur_filter_month">กรองเดือน</div>
                 <select id="cancel-month-filter" onchange="renderCancelTab()"
@@ -2513,10 +2610,10 @@ select option{background:var(--bg3);}
           <!-- Step 2: Card รายละเอียด (เด้งหลังเลือก) -->
           <div id="cancel-po-detail" style="display:none;margin-bottom:16px">
             <div class="panel" style="border:1px solid var(--red)">
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:12px;row-gap:12px;column-gap:12px;margin-bottom:14px">
                 <div id="cpd-photo" style="width:56px;height:56px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden"></div>
                 <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+                  <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:4px;flex-wrap:wrap">
                     <span id="cpd-brand" class="tag"></span>
                     <span id="cpd-po" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
                     <span id="cpd-status" class="order-status"></span>
@@ -2524,7 +2621,7 @@ select option{background:var(--bg3);}
                   <div id="cpd-name" style="font-weight:700;font-size:15px"></div>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:14px">
                 <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
                   <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">${t('sale_qty')}</div>
                   <div id="cpd-qty" style="font-size:16px;font-weight:700"></div>
@@ -2571,7 +2668,7 @@ select option{background:var(--bg3);}
     <!-- SETUP -->
     <div id="page-setup" class="page">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-setup">ตั้งค่า / Setup</span></div>
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="title-setup">ตั้งค่า / Setup</span></div>
         <div class="topbar-right">
           <span style="font-size:11px;color:var(--text3);font-family:var(--mono)"><span data-i18n="setup_topbar_sub">จัดการ Categories & ข้อมูลพื้นฐาน</span></span>
         </div>
@@ -2579,7 +2676,7 @@ select option{background:var(--bg3);}
       <div class="content">
 
         <!-- Tab bar -->
-        <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap">
           <div class="setup-tab active" data-i18n="setup_brands" onclick="switchTab('brands',this)">แบรนด์การ์ด</div>
           <div class="setup-tab" data-i18n="setup_rarity" onclick="switchTab('rarity',this)">Rarity</div>
           <div class="setup-tab" data-i18n="setup_channels" onclick="switchTab('channels',this)">ช่องทางขาย</div>
@@ -2768,7 +2865,7 @@ select option{background:var(--bg3);}
 
 <!-- Modals -->
 <div class="modal-overlay" id="modal-newSale">
-  <div class="modal" style="width:min(520px,96vw);max-height:90vh;overflow-y:auto">
+  <div class="modal" style="width:min(520px,96vw);max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h3 style="margin:0" data-i18n="sale_modal_title">สร้างออเดอร์ใหม่</h3>
       <button onclick="closeModal('newSale')" style="background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer">✕</button>
@@ -2777,16 +2874,16 @@ select option{background:var(--bg3);}
     <!-- ลูกค้า -->
     <div class="form-group" style="margin-bottom:14px">
       <label style="display:block;margin-bottom:10px" data-i18n="sale_cust_label">ลูกค้า</label>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
-        <label id="sale-lbl-anon" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--accent);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
+      <div style="display:flex;flex-direction:column;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:10px">
+        <label id="sale-lbl-anon" style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:11px 14px;border:1px solid var(--accent);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
           <input type="radio" name="sale-cust-type" value="anon" id="sale-cust-anon" onchange="toggleSaleCust()" checked style="width:18px;height:18px;flex-shrink:0">
           <span data-i18n="sale_cust_anon">🕶️ ไม่ระบุตัวตน</span>
         </label>
-        <label id="sale-lbl-new" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
+        <label id="sale-lbl-new" style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
           <input type="radio" name="sale-cust-type" value="new" id="sale-cust-new" onchange="toggleSaleCust()" style="width:18px;height:18px;flex-shrink:0">
           <span data-i18n="sale_cust_new">✏️ ลูกค้าใหม่</span>
         </label>
-        <label id="sale-lbl-existing" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
+        <label id="sale-lbl-existing" style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500">
           <input type="radio" name="sale-cust-type" value="existing" id="sale-cust-existing" onchange="toggleSaleCust()" style="width:18px;height:18px;flex-shrink:0">
           <span data-i18n="sale_cust_existing">👤 ลูกค้าเดิม</span>
         </label>
@@ -2809,11 +2906,11 @@ select option{background:var(--bg3);}
         <label style="margin:0" data-i18n="sale_items_label">รายการการ์ด</label>
         <button type="button" class="btn btn-sm" onclick="addSaleItem()" style="font-size:11px;padding:4px 12px" data-i18n="sale_add_item">+ เพิ่มรายการ</button>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="sale-brand-pills">
+      <div style="display:flex;gap:6px;row-gap:6px;column-gap:6px;flex-wrap:wrap;margin-bottom:10px" id="sale-brand-pills">
         <button type="button" class="sale-brand-pill active" data-brand="" onclick="setSaleBrand(this,'')"
           style="padding:5px 12px;border-radius:20px;font-size:12px;font-family:var(--mono);border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-weight:600" data-i18n="sale_all_brands">ทั้งหมด</button>
       </div>
-      <div id="sale-items" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="sale-items" style="display:flex;flex-direction:column;gap:8px;row-gap:8px;row-gap:8px;column-gap:8px"></div>
       <div id="sale-total-row" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;color:var(--text2)" data-i18n="sale_total">ยอดรวม</span>
         <span id="sale-total" style="font-size:18px;font-weight:800;color:var(--yellow)">฿0</span>
@@ -2823,12 +2920,12 @@ select option{background:var(--bg3);}
     <!-- ค่าใช้จ่ายแฝง (Header level — กรอกครั้งเดียวสำหรับทั้งออเดอร์) -->
     <div class="form-group">
       <label data-i18n="sale_hidden_cost_label">ค่าใช้จ่ายแฝง</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-no">
+      <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:8px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;padding:10px 12px;border:1px solid var(--accent);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-no">
           <input type="radio" name="sale-hc" value="no" id="sale-hc-no" onchange="toggleHiddenCost()" checked style="width:15px;height:15px;flex-shrink:0">
           <span data-i18n="sale_hc_none">ไม่มี</span>
         </label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-yes">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="sale-hc-lbl-yes">
           <input type="radio" name="sale-hc" value="yes" id="sale-hc-yes" onchange="toggleHiddenCost()" style="width:15px;height:15px;flex-shrink:0">
           <span data-i18n="sale_hc_has">มี</span>
         </label>
@@ -2904,7 +3001,7 @@ select option{background:var(--bg3);}
 <!-- MODAL: AI Purchase -->
 <div class="modal-overlay" id="modal-aiPurchase">
   <div class="modal" style="max-width:720px;width:96vw">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:18px">
       <span style="font-size:22px">✨</span>
       <div>
         <h3 style="margin:0;font-size:16px">AI ซื้อการ์ด</h3>
@@ -2930,7 +3027,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-size:11px;color:var(--text3)">AI จะอ่านชื่อการ์ด, Brand, Graded, จำนวน, ราคา</div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
           <button class="btn btn-sm" onclick="closeModal('aiPurchase')">ยกเลิก</button>
           <button class="btn btn-primary btn-sm" id="ai-pur-parse-btn" onclick="aiParsePurchase()">✨ ให้ AI อ่าน →</button>
         </div>
@@ -2943,12 +3040,12 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         <div style="font-size:13px;font-weight:600">ตรวจสอบก่อนบันทึก</div>
         <button onclick="aiPurBackToStep1()" style="background:transparent;border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer">← แก้ไข input</button>
       </div>
-      <div id="ai-pur-preview-table" style="overflow-y:auto;max-height:55vh;margin-bottom:16px;padding-right:4px"></div>
+      <div id="ai-pur-preview-table" style="overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:55vh;max-height:55svh;margin-bottom:16px;padding-right:4px"></div>
       <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;color:var(--text2)">ต้นทุนรวมทั้งหมด</span>
         <span id="ai-pur-total" style="font-size:18px;font-weight:800;color:var(--red);font-family:var(--mono)">฿0</span>
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
+      <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;justify-content:flex-end">
         <button class="btn btn-sm" onclick="aiPurchaseClose()">ยกเลิก</button>
         <button class="btn btn-primary btn-sm" id="ai-pur-save-btn" onclick="aiSavePurchases()">✅ บันทึกทั้งหมด (<span id="ai-pur-count">0</span> รายการ)</button>
       </div>
@@ -2962,7 +3059,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
 
     <!-- ── STEP 1: ถ่าย/เลือกรูป ── -->
     <div id="po-step1">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:18px">
         <div style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</div>
         <h3 style="margin:0;font-size:16px" data-i18n="po_step1_title">ถ่ายรูปการ์ด</h3>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto" data-i18n="po_step1_sub">AI จะอ่านข้อมูลให้อัตโนมัติ</span>
@@ -2987,18 +3084,18 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <!-- Camera -->
       <div id="po-camera-wrap" style="display:none;position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:12px">
         <video id="po-video" autoplay playsinline style="width:100%;max-height:220px;display:block;object-fit:cover"></video>
-        <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:10px">
+        <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:10px;row-gap:10px;column-gap:10px">
           <button type="button" onclick="capturePhoto()" style="background:var(--accent);border:none;border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer">📸</button>
           <button type="button" onclick="stopCamera()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:50%;width:52px;height:52px;font-size:18px;cursor:pointer;color:#fff">✕</button>
         </div>
       </div>
       <canvas id="po-canvas" style="display:none"></canvas>
 
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button type="button" class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px" onclick="startCamera()">
+      <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:16px">
+        <button type="button" class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;row-gap:6px;column-gap:6px" onclick="startCamera()">
           <span style="font-size:14px">📷</span> <span data-i18n="po_btn_camera">ถ่ายรูป</span>
         </button>
-        <button type="button" class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px" onclick="document.getElementById('po-file-input').click()">
+        <button type="button" class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;row-gap:6px;column-gap:6px" onclick="document.getElementById('po-file-input').click()">
           <span style="font-size:14px">🖼️</span> <span data-i18n="po_btn_album">เลือกจากอัลบั้ม</span>
         </button>
       </div>
@@ -3023,19 +3120,19 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
 
     <!-- ── STEP 2: ตรวจสอบข้อมูล + ใส่ราคา ── -->
     <div id="po-step2" style="display:none">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;margin-bottom:18px">
         <div style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</div>
         <h3 style="margin:0;font-size:16px" data-i18n="po_step2_title">ตรวจสอบและกรอกราคา</h3>
         <button onclick="backToStep1()" style="margin-left:auto;background:transparent;border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer" data-i18n="po_step2_back">← ย้อนกลับ</button>
       </div>
 
       <!-- AI result badge -->
-      <div id="po-ai-result-badge" style="display:none;background:rgba(124,109,250,0.08);border:1px solid rgba(124,109,250,0.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--accent2);display:flex;align-items:center;gap:6px">
+      <div id="po-ai-result-badge" style="display:none;background:rgba(124,109,250,0.08);border:1px solid rgba(124,109,250,0.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--accent2);display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
         <span>✨</span><span id="po-ai-result-text" data-i18n="po_ai_result">AI อ่านข้อมูลให้แล้ว กรุณาตรวจสอบความถูกต้อง</span>
       </div>
 
       <!-- Card image thumbnail -->
-      <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+      <div style="display:flex;gap:14px;row-gap:14px;column-gap:14px;margin-bottom:16px;align-items:flex-start">
         <img id="po-thumb" style="width:80px;height:80px;object-fit:contain;border-radius:10px;background:var(--bg3);border:1px solid var(--border);flex-shrink:0">
         <div style="flex:1">
           <div class="form-group" style="margin-bottom:8px">
@@ -3128,12 +3225,12 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <!-- Defect -->
       <div class="form-group">
         <label data-i18n="po_lbl_defect">สภาพการ์ด (Condition)</label>
-        <div style="display:flex;gap:8px">
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-no">
+        <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-no">
             <input type="radio" name="po-defect" value="no" id="po-defect-no" onchange="toggleDefect()" checked style="width:15px;height:15px;flex-shrink:0">
             <span data-i18n="po_no_defect">✅ No Defect</span>
           </label>
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-yes">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-defect-lbl-yes">
             <input type="radio" name="po-defect" value="yes" id="po-defect-yes" onchange="toggleDefect()" style="width:15px;height:15px;flex-shrink:0">
             <span data-i18n="po_has_defect">⚠️ Defect</span>
           </label>
@@ -3143,16 +3240,16 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <!-- Seller Type -->
       <div class="form-group">
         <label data-i18n="po_lbl_seller_type">ประเภทผู้ขาย</label>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-anon">
+        <div style="display:flex;flex-direction:column;gap:6px;row-gap:6px;column-gap:6px">
+          <label style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-anon">
             <input type="radio" name="po-seller-type" value="anonymous" id="po-seller-anon" onchange="toggleSellerType()" checked style="width:15px;height:15px;flex-shrink:0">
             <span>👤 <span data-i18n="po_seller_anon">ผู้ขายไม่ระบุตัวตน</span></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-existing">
+          <label style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-existing">
             <input type="radio" name="po-seller-type" value="existing" id="po-seller-existing" onchange="toggleSellerType()" style="width:15px;height:15px;flex-shrink:0">
             <span>🔄 <span data-i18n="po_seller_existing">ผู้ขายเดิม</span></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-new">
+          <label style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;font-weight:500" id="po-seller-lbl-new">
             <input type="radio" name="po-seller-type" value="new" id="po-seller-new" onchange="toggleSellerType()" style="width:15px;height:15px;flex-shrink:0">
             <span>🆕 <span data-i18n="po_seller_new">ผู้ขายใหม่</span></span>
           </label>
@@ -3189,7 +3286,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <!-- รายการที่เพิ่มแล้ว -->
       <div id="po-added-list" style="display:none;margin-bottom:12px">
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px" data-i18n="po_added_list">✅ รายการที่เพิ่มแล้ว</div>
-        <div id="po-added-items" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div id="po-added-items" style="display:flex;flex-direction:column;gap:6px;row-gap:6px;column-gap:6px"></div>
       </div>
 
       <div class="form-actions">
@@ -3211,11 +3308,11 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <p style="font-size:12px;color:var(--text3);font-family:var(--mono);margin:0 0 12px">ลากเพื่อปรับขอบเขต crop แล้วกด "Crop & บันทึก"</p>
 
     <!-- Canvas container -->
-    <div style="position:relative;width:100%;border-radius:10px;overflow:hidden;background:#111;user-select:none;touch-action:none;max-height:55vh" id="crop-container" onclick="event.stopPropagation()">
-      <canvas id="crop-canvas" style="display:block;width:100%;cursor:crosshair;max-height:55vh;object-fit:contain"></canvas>
+    <div style="position:relative;width:100%;border-radius:10px;overflow:hidden;background:#111;user-select:none;touch-action:none;max-height:55vh;max-height:55svh" id="crop-container" onclick="event.stopPropagation()">
+      <canvas id="crop-canvas" style="display:block;width:100%;cursor:crosshair;max-height:55vh;max-height:55svh;object-fit:contain"></canvas>
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:16px">
+    <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px;margin-top:16px">
       <button class="btn btn-sm" onclick="cancelCrop()" style="flex:1">ยกเลิก</button>
       <button class="btn btn-sm" onclick="resetCropBox()" style="flex:1;color:var(--text2)">↺ รีเซ็ต</button>
       <button class="btn btn-primary btn-sm" onclick="confirmCrop()" style="flex:2">✂️ Crop & บันทึก</button>
@@ -3243,7 +3340,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <label>Password <span style="color:var(--red)">*</span></label>
       <div style="position:relative">
         <input type="password" id="staff-password" placeholder="อย่างน้อย 6 ตัวอักษร" style="padding-right:44px">
-        <span onclick="toggleStaffPwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);font-size:16px">👁</span>
+        <span onclick="toggleStaffPwd()" style="position:absolute;right:12px;top:0;bottom:0;margin-top:auto;margin-bottom:auto;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;cursor:pointer;color:var(--text3);font-size:16px">👁</span>
       </div>
     </div>
     <div class="form-group">
@@ -3254,7 +3351,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       </select>
     </div>
     <div id="staff-alert" style="display:none;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:12px"></div>
-    <div style="display:flex;gap:10px;margin-top:4px">
+    <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px;margin-top:4px">
       <button class="btn btn-sm" onclick="closeModal('addStaff')" style="flex:1">ยกเลิก</button>
       <button class="btn btn-primary btn-sm" onclick="saveStaff()" style="flex:2">บันทึก</button>
     </div>
@@ -3267,7 +3364,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div style="font-size:32px;margin-bottom:12px" id="confirm-icon">⚠️</div>
     <div style="font-size:15px;font-weight:700;margin-bottom:8px" id="confirm-title"></div>
     <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px" id="confirm-body"></div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
       <button class="btn btn-sm" onclick="confirmResolve(false)" style="flex:1">ยกเลิก</button>
       <button class="btn btn-sm" id="confirm-ok-btn" onclick="confirmResolve(true)" style="flex:1.5;color:var(--red);border-color:var(--red);font-weight:700"></button>
     </div>
@@ -3276,7 +3373,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
 
 <!-- Import Cards Modal -->
 <div class="modal-overlay" id="modal-importCards">
-  <div class="modal" style="width:min(520px,96vw);max-height:90vh;overflow-y:auto">
+  <div class="modal" style="width:min(520px,96vw);max-height:90vh;max-height:90svh;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h3 style="margin:0;font-size:16px">📥 Import การ์ด (Opening Balance)</h3>
       <button onclick="closeModal('importCards')" style="background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer">✕</button>
@@ -3309,7 +3406,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div id="import-preview" style="display:none;margin-bottom:16px">
       <div style="font-size:13px;font-weight:600;margin-bottom:8px">Step 3 — ตรวจสอบข้อมูล</div>
       <div id="import-summary" style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:8px"></div>
-      <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+      <div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:8px">
         <table style="width:100%;font-size:11px;border-collapse:collapse">
           <thead style="background:var(--bg3);position:sticky;top:0">
             <tr>
@@ -3342,14 +3439,14 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         <h3 style="margin:0;font-size:16px" id="od-id">ORDER</h3>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px" id="od-date"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px">
         <span id="od-status" class="order-status"></span>
         <button onclick="closeModal('orderDetail')" style="background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer">✕</button>
       </div>
     </div>
 
     <!-- Customer + Channel -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:14px">
       <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
         <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">ลูกค้า</div>
         <div style="font-size:13px;font-weight:600" id="od-customer"></div>
@@ -3362,7 +3459,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
 
     <!-- Items list -->
     <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">รายการสินค้า</div>
-    <div id="od-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <div id="od-items-list" style="display:flex;flex-direction:column;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:14px"></div>
 
     <!-- Summary -->
     <div style="border-top:1px solid var(--border);padding-top:12px">
@@ -3406,7 +3503,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div style="border-radius:12px;overflow-x:auto;overflow-y:hidden;margin-bottom:16px;background:var(--bg3);-webkit-overflow-scrolling:touch">
       <img id="share-preview-img" style="width:100%;min-width:100%;display:block;border-radius:12px;-webkit-touch-callout:default;touch-action:pan-x" alt="กดค้างเพื่อบันทึก">
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
       <button class="btn btn-sm" onclick="closeModal('sharePreview')" style="flex:1">ปิด</button>
     </div>
   </div>
@@ -3421,14 +3518,14 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div class="form-group"><label>ชื่อ</label><input type="text" id="cat-name" placeholder="ชื่อ..."></div>
     <div class="form-group"><label>คำอธิบาย</label><input type="text" id="cat-desc" placeholder="คำอธิบายสั้นๆ..."></div>
     <div class="form-group" id="cat-color-group"><label>สี (Hex)</label>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center">
         <input type="color" id="cat-color" value="#7c6dfa" style="width:44px;height:36px;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3)">
         <input type="text" id="cat-color-hex" value="#7c6dfa" placeholder="#rrggbb" style="flex:1" oninput="syncColor(this.value)">
       </div>
     </div>
     <div class="form-group" id="cat-emoji-group">
       <label>Emoji / ไอคอน</label>
-      <div style="display:flex;gap:8px;align-items:center;position:relative">
+      <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center;position:relative">
         <input type="text" id="cat-emoji" placeholder="🃏" maxlength="4" style="flex:1;font-size:18px;text-align:center;padding:6px 10px">
         <button type="button" onclick="toggleEmojiPicker()"
           style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:16px;white-space:nowrap;color:var(--text)">
@@ -3436,7 +3533,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         </button>
         <div id="emoji-picker-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;z-index:500;padding:10px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">คลิกเพื่อเลือก Emoji</div>
-          <div id="emoji-picker-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:220px;overflow-y:auto"></div>
+          <div id="emoji-picker-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;row-gap:4px;column-gap:4px;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
         </div>
       </div>
     </div>
@@ -6087,7 +6184,7 @@ function openImagePopup(src, name) {
   }
   overlay.innerHTML = `
     <div style="max-width:min(420px,92vw);width:100%;text-align:center" onclick="event.stopPropagation()">
-      <img src="${src}" style="width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
+      <img src="${src}" style="width:100%;max-height:70vh;max-height:70svh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
       <div style="margin-top:12px;font-size:13px;font-weight:600;color:#fff">${name}</div>
       <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.5);font-family:var(--mono)">แตะนอกกรอบเพื่อปิด</div>
     </div>`
@@ -6102,13 +6199,13 @@ function getGradeBadgeHtml(card) {
   const companies = { PSA:'#e31837', BGS:'#1e3a8a', CGC:'#7c3aed', SGC:'#b45309', ACE:'#065f46' }
   const isNew = companies[t]  // new format: company name
   if (isNew) {
-    return `<div style="display:inline-flex;align-items:center;gap:5px;background:${isNew};border-radius:8px;padding:4px 10px;font-size:12px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${t}${grade?' '+grade:''}</div>`
+    return `<div style="display:inline-flex;align-items:center;gap:5px;row-gap:5px;column-gap:5px;background:${isNew};border-radius:8px;padding:4px 10px;font-size:12px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${t}${grade?' '+grade:''}</div>`
   }
   // legacy format: gem/auto/auth
   const label = t === 'auth' ? 'G Auth'
               : t === 'auto' ? ('G Auto' + (grade ? ' '+grade : ''))
               :                ('G Gem'  + (grade ? ' '+grade : ''))
-  return `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${label}</div>`
+  return `<div style="display:inline-flex;align-items:center;gap:5px;row-gap:5px;column-gap:5px;background:linear-gradient(135deg,#1a237e,#283593);border:1px solid #5c6bc0;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${label}</div>`
 }
 
 function renderCardsDisplay(data) {
@@ -6137,13 +6234,13 @@ function renderCardsDisplay(data) {
       </div>
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
+      <div style="display:flex;flex-wrap:wrap;gap:5px;row-gap:5px;column-gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
       ${(()=>{
         return getGradeBadgeHtml(c)
       })()}
       ${c.hasDefect ? '<div style="display:inline-flex;align-items:center;background:#7f1d1d;border:1px solid #dc2626;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</div>' : ''}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
           <div style="font-size:13px;font-weight:700;color:var(--text2);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
@@ -6192,14 +6289,14 @@ function renderCardsEdit(data) {
       <input type="file" id="card-upload-${cardIdx}" accept="image/*" style="display:none" onchange="handleCardPhoto(event,${cardIdx})">
       <div class="card-name" style="margin-bottom:4px">${c.name}</div>
       <div class="card-meta" style="margin-bottom:6px">${c.set||'-'}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
+      <div style="display:flex;flex-wrap:wrap;gap:5px;row-gap:5px;column-gap:5px;margin-bottom:${(c.psa||c.hasDefect)?'8px':'0'}">
       ${(()=>{
         return getGradeBadgeHtml(c)
       })()}
       ${c.hasDefect ? '<div style="display:inline-flex;align-items:center;background:#7f1d1d;border:1px solid #dc2626;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:1px">DF</div>' : ''}
       </div>
       <!-- Brand + Rarity editable -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:8px">
         <div style="background:var(--bg3);border-radius:8px;padding:6px 8px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:3px;font-family:var(--mono)">Brand</div>
           <select onchange="cards[${cardIdx}].brand=this.value;saveData();filterCards()"
@@ -6261,9 +6358,9 @@ function renderCards(data){
         <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.55);border-radius:6px;padding:3px 7px;font-size:10px;color:#fff;backdrop-filter:blur(4px)">
           ${hasPhoto ? '🖼 เปลี่ยน' : '📷 อัพ'}
         </div>
-        ${hasPhoto ? `<div id="card-crop-loading-${cardIdx}" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;font-size:11px;color:#fff">
+        ${hasPhoto ? `<div id="card-crop-loading-${cardIdx}" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;row-gap:6px;column-gap:6px;font-size:11px;color:#fff">
           <div style="width:24px;height:24px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div>กำลัง crop...
-        </div>` : `<div id="card-crop-loading-${cardIdx}" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;flex-direction:column;gap:6px;font-size:11px;color:#fff">
+        </div>` : `<div id="card-crop-loading-${cardIdx}" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;flex-direction:column;gap:6px;row-gap:6px;column-gap:6px;font-size:11px;color:#fff">
           <div style="width:24px;height:24px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div>กำลัง crop...
         </div>`}
       </div>
@@ -6272,7 +6369,7 @@ function renderCards(data){
 
       <div class="card-name">${c.name}</div>
       <div class="card-meta" style="margin-bottom:10px">${c.set||'-'}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:10px">
         <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
           <div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${t('inv_cost')}</div>
           <div style="font-size:13px;font-weight:700;color:var(--text2);${getParam('hide_cost')==='yes'?'filter:blur(6px);user-select:none':''}">฿${(c.cost||0).toLocaleString()}</div>
@@ -6837,17 +6934,17 @@ function renderSaleItems() {
             onfocus="if(this.value.length>0)showSaleDropdown(${i})"
             style="width:100%;padding:8px 36px 8px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px">
           ${selectedCard
-            ? `<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--green);font-size:14px;pointer-events:none">✓</span>`
-            : `<button type="button" onclick="toggleSaleAllCards(${i})" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">🔍</button>`
+            ? `<span style="position:absolute;right:10px;top:0;bottom:0;margin:auto;height:14px;color:var(--green);font-size:14px;pointer-events:none;display:flex;align-items:center">✓</span>`
+            : `<button type="button" onclick="toggleSaleAllCards(${i})" style="position:absolute;right:8px;top:0;bottom:0;margin:auto;height:22px;background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px;transition:color .15s;display:flex;align-items:center" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">🔍</button>`
           }
         </div>
         <!-- dropdown results -->
-        <div id="sale-drop-${i}" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)">
+        <div id="sale-drop-${i}" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;z-index:200;max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 8px 24px rgba(0,0,0,0.12)">
         </div>
       </div>
 
       ${selectedCard ? `
-      <div style="background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border);display:flex;align-items:center;gap:8px">
+      <div style="background:var(--bg2);border-radius:8px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border);display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px">
         ${selectedCard.photo ? `<img src="${selectedCard.photo}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:32px;height:32px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🃏</div>`}
         <div style="min-width:0;flex:1">
           <div style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${selectedCard.name}</div>
@@ -6855,7 +6952,7 @@ function renderSaleItems() {
         </div>
       </div>` : ''}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;row-gap:8px;column-gap:8px;-webkit-column-gap:8px;column-gap:8px;row-gap:8px;column-gap:8px">
         <div>
           <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">${t('sale_qty')}</div>
           <input type="number" min="1" value="${item.qty}"
@@ -6966,7 +7063,7 @@ function showSaleDropdown(i, query) {
         ? getGradeBadgeHtml(card)
         : ''
       return `<div onclick="onSaleCardSelect(${i},${ci})"
-        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
         onmouseover="this.style.background='var(--bg3)'"
         onmouseout="this.style.background='transparent'">
         ${card.photo ? `<img src="${card.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
@@ -7584,7 +7681,7 @@ function openOrderDetail(orderId) {
     itemsEl.innerHTML = o.orderItems.map(it => {
       const card = cards.find(cd => cd.name===it.name && cd.brand===it.brand)
       const cost = (card?.cost||0) * it.qty
-      return `<div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:8px;padding:10px 12px">
+      return `<div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;background:var(--bg3);border-radius:8px;padding:10px 12px">
         ${card?.photo ? `<img src="${card.photo}" style="width:44px;height:44px;border-radius:6px;object-fit:contain;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:6px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${card?.emoji||'🃏'}</div>`}
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</div>
@@ -7993,7 +8090,7 @@ function renderReports() {
           const bInfo= setupData.brands.find(b=>b.name===brand)||{}
           return `<div>
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="display:flex;align-items:center;gap:6px">
+              <span style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
                 <span>${bInfo.emoji||'📦'}</span><span style="font-weight:600">${brand}</span>
               </span>
               <span style="color:${col};font-family:var(--mono);font-weight:700">${m>0?"+":""}${m}% · ฿${d.rev.toLocaleString()}</span>
@@ -8068,7 +8165,7 @@ function renderTopCards(){
   el.innerHTML=topList.map((c,i)=>`
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
-        <span style="display:flex;align-items:center;gap:6px">
+        <span style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
           <span style="font-family:var(--mono);color:var(--text3);font-size:10px">${String(i+1).padStart(2,'0')}</span>
           ${c.name}
         </span>
@@ -8123,11 +8220,11 @@ function renderTopMargin() {
     const barColor = bc[c.brand] || bc.default
     return `<div>
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px">
-        <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;overflow:hidden">
+        <span style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;min-width:0;flex:1;overflow:hidden">
           <span style="font-family:var(--mono);color:var(--text3);font-size:10px;flex-shrink:0">${String(i + 1).padStart(2, '0')}</span>
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
         </span>
-        <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:8px">
+        <span style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;flex-shrink:0;margin-left:8px">
           <span style="color:${mColor};font-family:var(--mono);font-weight:700">${c.margin > 0 ? '+' : ''}${c.margin}%</span>
           <span style="color:var(--green);font-family:var(--mono);font-size:11px">฿${c.profit.toLocaleString()}</span>
         </span>
@@ -8217,7 +8314,7 @@ function showCsmtOwnerDrop(query) {
     drop.innerHTML = filtered.map(n => {
       const isPast = pastOwners.includes(n)
       return `<div onclick="selectCsmtOwner('${n.replace(/'/g,"\\'")}');event.stopPropagation()"
-        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s"
         onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
         <span style="font-size:16px">${isPast ? '🔄' : '👤'}</span>
         <span style="flex:1">${n}</span>
@@ -8377,7 +8474,7 @@ function renderCsmtDashboard() {
   const topEl = document.getElementById('csmt-dash-top-owners')
   if (topEl) {
     topEl.innerHTML = topOwners.length ? topOwners.map(([name, d], i) => `
-      <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
         <div style="font-size:14px;font-weight:800;color:${['#f5c842','#e2e8f0','#fb923c','var(--accent2)','var(--text3)'][i]||'var(--text3)'};width:20px;text-align:center;flex-shrink:0">${i+1}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
@@ -8450,7 +8547,7 @@ function renderConsignment() {
         : ''
       return `<tr>
         <td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${c.id}</td>
-        <td><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid ${typeCol};color:${typeCol}">${typeIcon} ${typeLabel}</span></td>
+        <td><span style="display:inline-flex;align-items:center;gap:4px;row-gap:4px;column-gap:4px;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid ${typeCol};color:${typeCol}">${typeIcon} ${typeLabel}</span></td>
         <td style="font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.cardName}</td>
         <td>${c.brand||'—'}</td>
         <td style="font-size:11px;color:var(--text2)">${c.rarity||'—'}</td>
@@ -8751,7 +8848,7 @@ function showBreakDropdown(query) {
       // lock ถ้า stock=1 และมี pending อยู่แล้ว
       const isLocked = lockedCardNames.has(c.name) && (c.stock||0) <= 1
       if (isLocked) {
-        return `<div style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);opacity:0.45;cursor:not-allowed" title="การ์ดนี้ถูก Pending Break ไว้อยู่ (stock เหลือ 1 ใบ)">
+        return `<div style="padding:10px 14px;display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;border-bottom:1px solid var(--border);opacity:0.45;cursor:not-allowed" title="การ์ดนี้ถูก Pending Break ไว้อยู่ (stock เหลือ 1 ใบ)">
           ${c.photo ? `<img src="${c.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;filter:grayscale(1)">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name} ${badge} <span style="font-size:10px;background:rgba(251,146,60,0.15);color:var(--orange);border-radius:4px;padding:1px 6px;font-family:var(--mono)">${t('break_locked_badge')}</span></div>
@@ -8760,7 +8857,7 @@ function showBreakDropdown(query) {
         </div>`
       }
       return `<div onclick="selectBreakCard(${ci})"
-        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;border-bottom:1px solid var(--border);transition:background .15s"
         onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
         ${c.photo ? `<img src="${c.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🃏</div>`}
         <div style="flex:1;min-width:0">
@@ -8844,14 +8941,14 @@ function renderBreakSpots() {
   const price = parseFloat(document.getElementById('break-spot-price')?.value) || 0
 
   list.innerHTML = breakSpots.map((spot, i) => `
-    <div style="display:flex;align-items:center;gap:8px;background:${spot.paid?'rgba(74,222,128,0.05)':'var(--bg2)'};border:1px solid ${spot.paid?'rgba(74,222,128,0.3)':'var(--border)'};border-radius:8px;padding:8px 12px;transition:all 0.2s">
+    <div style="display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px;background:${spot.paid?'rgba(74,222,128,0.05)':'var(--bg2)'};border:1px solid ${spot.paid?'rgba(74,222,128,0.3)':'var(--border)'};border-radius:8px;padding:8px 12px;transition:all 0.2s">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:28px">${String(i+1).padStart(2,'0')}</span>
       <input type="text" placeholder="${t('break_spot_ph')}"
         value="${escHtml(spot.name)}"
         oninput="breakSpots[${i}].name=this.value"
         style="flex:1;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px">
       <span data-spot-price style="font-family:var(--mono);font-size:12px;color:var(--text3);min-width:52px;text-align:right">฿${price.toLocaleString()}</span>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
+      <label style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${spot.paid?'checked':''} onchange="breakSpots[${i}].paid=this.checked;updateBreakSummary();updateEndBreakBtn()"
           style="width:16px;height:16px;accent-color:var(--green);cursor:pointer">
         <span data-paid-label style="font-size:12px;font-weight:${spot.paid?'700':'400'};color:${spot.paid?'var(--green)':'var(--text3)'}">${spot.paid?'✓ '+t('break_paid_label'):t('break_paid_label')}</span>
@@ -9108,7 +9205,7 @@ function renderPendingBreaksSidebar() {
       <div style="font-size:10px;color:var(--accent2);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">🃏 ${pb.cardName}</div>
       <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px">${pb.savedAt}</div>
       <!-- Fill bar -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;margin-bottom:6px">
         <div style="flex:1;height:4px;background:var(--border2);border-radius:2px">
           <div style="width:${fill}%;height:100%;background:${fillCol};border-radius:2px;transition:width 0.3s"></div>
         </div>
@@ -9121,7 +9218,7 @@ function renderPendingBreaksSidebar() {
       <!-- Status badge -->
       ${allPaid ? `<div style="font-size:10px;color:var(--green);font-family:var(--mono);margin-bottom:6px;font-weight:700">${t('break_pending_ready')}</div>` : `<div style="font-size:10px;color:var(--orange);font-family:var(--mono);margin-bottom:6px">${t('break_pending_waiting').replace('{n}',total-paid)}</div>`}
       <!-- Action buttons -->
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;row-gap:6px;column-gap:6px">
         <button onclick="loadPendingBreak('${pb.id}')"
           style="flex:1;padding:5px 8px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">
           📂 โหลด
@@ -9180,7 +9277,7 @@ function renderBreakHistory() {
       <td style="text-align:center;font-family:var(--mono)">${total}</td>
       <td style="text-align:center;font-family:var(--mono);color:var(--green)">${paid}</td>
       <td style="text-align:center">
-        <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
           <div style="flex:1;height:5px;background:var(--border2);border-radius:3px;min-width:40px">
             <div style="width:${fill}%;height:100%;background:${fillCol};border-radius:3px"></div>
           </div>
@@ -9329,7 +9426,7 @@ function renderPurchase(data){
       const color = b.color || 'var(--accent)'
       return `<div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-          <span style="display:flex;align-items:center;gap:6px">
+          <span style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
             <span style="font-size:16px">${b.emoji||'📦'}</span>
             <span style="font-weight:600">${b.name}</span>
           </span>
@@ -9642,13 +9739,31 @@ function cancelPO(idx) {
     (it.psaType || 'no') === (po.psaType || 'no') &&
     String(it.psaGrade || '') === String(po.psaGrade || '')
 
-  // ตรวจว่าขายไปแล้วหรือยัง — match ครบทุก field
-  const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
-  const isSoldAlready = activeOrders.some(o =>
-    o.orderItems && o.orderItems.some(it => isSameCard(it, p))
-  )
+  // ── ตรวจว่า PO นี้ถูกขายไปแล้วหรือยัง (ผูกกับ poRefs ไม่ใช่แค่ชื่อการ์ด) ──
+  // หลักการ: ถ้า card.stock >= qty ใน poRefs[po] แสดงว่าของใน PO นี้ยังไม่ได้ขาย
+  let isSoldAlready = false
+  if (p.status === 'received') {
+    const card = cards.find(cd =>
+      cd.poRefs && cd.poRefs.some(r => r.po === p.po)
+    )
+    if (card) {
+      const ref = card.poRefs.find(r => r.po === p.po)
+      const poQty = ref ? ref.qty : p.qty
+      // ถ้า stock ปัจจุบัน < qty ที่ PO นี้เพิ่มไว้ → ของถูกขายไปแล้วบางส่วน
+      if ((card.stock || 0) < poQty) {
+        isSoldAlready = true
+      }
+    } else {
+      // fallback: ถ้าไม่เจอ poRefs (migration ยังไม่ครบ) ใช้ logic เดิม
+      const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+      isSoldAlready = activeOrders.some(o =>
+        o.orderItems && o.orderItems.some(it => isSameCard(it, p))
+      )
+    }
+  }
+
   if (isSoldAlready) {
-    showToast('⚠️ การ์ดนี้ถูกขายไปแล้ว — กรุณายกเลิกออเดอร์ก่อน', 'var(--orange)')
+    showToast('⚠️ การ์ดจาก PO นี้ถูกขายไปแล้ว — กรุณายกเลิกออเดอร์ก่อน', 'var(--orange)')
     return
   }
 
@@ -9894,7 +10009,7 @@ function renderBars(barsEl, emptyEl, data, totalEl, countEl, isDailyMode) {
         const valStr = d.value >= 1000 ? (d.value/1000).toFixed(1)+'K' : d.value > 0 ? '฿'+d.value : ''
         const dayNum = parseInt(d.label)
         const showLabel = d.active || dayNum === 1 || dayNum % 5 === 0
-        return `<div style="flex:1;min-width:${barW}px;display:flex;flex-direction:column;align-items:center;gap:2px">
+        return `<div style="flex:1;min-width:${barW}px;display:flex;flex-direction:column;align-items:center;gap:2px;row-gap:2px;column-gap:2px">
           ${valStr && d.value > 0 ? `<div style="font-size:8px;color:${d.active?'var(--yellow)':'var(--text3)'};font-family:var(--mono);white-space:nowrap">${valStr}</div>` : '<div style="height:11px"></div>'}
           <div style="width:calc(100% - 4px);background:var(--border2);border-radius:3px 3px 0 0;display:flex;align-items:flex-end;height:100px">
             <div style="width:100%;height:${pct}%;background:${color};border-radius:3px 3px 0 0;transition:height 0.3s ease;min-height:${d.value>0?'3px':'0'}"></div>
@@ -9910,7 +10025,7 @@ function renderBars(barsEl, emptyEl, data, totalEl, countEl, isDailyMode) {
         const pct = Math.max(d.value>0?4:0, Math.round((d.value/maxVal)*100))
         const color = d.active ? 'var(--yellow)' : 'var(--accent)'
         const valStr = d.value >= 1000 ? (d.value/1000).toFixed(1)+'K' : d.value > 0 ? '฿'+d.value : ''
-        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;row-gap:4px;column-gap:4px;min-width:0">
           ${valStr ? `<div style="font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap">${valStr}</div>` : '<div style="height:13px"></div>'}
           <div style="width:100%;background:var(--border2);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;height:110px">
             <div style="width:100%;height:${pct}%;background:${color};border-radius:4px 4px 0 0;transition:height 0.4s ease;min-height:${d.value>0?'4px':'0'}"></div>
@@ -10047,10 +10162,10 @@ function renderTrendChart() {
 
   const legend = document.getElementById('trend-line-legend')
   if (legend) legend.innerHTML = `
-    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
+    <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
       <div style="width:16px;height:3px;background:#7c6dfa;border-radius:2px"></div> Revenue
     </div>
-    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
+    <div style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;font-size:11px;color:var(--text2);font-family:var(--mono)">
       <div style="width:16px;height:2px;background:#4ade80;border-radius:2px;border-top:1px dashed #4ade80"></div> Net Profit
     </div>
     <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto">ปี ${selYear}</span>
@@ -10151,7 +10266,7 @@ function renderTrendBrandBars() {
     const col = margin>30?'var(--green)':margin>0?'var(--yellow)':'var(--red)'
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
       <span style="font-size:12px;font-weight:600">${b}</span>
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;row-gap:12px;column-gap:12px">
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">฿${profit.toLocaleString()}</span>
         <span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${margin>0?'+':''}${margin}%</span>
       </div>
@@ -10202,7 +10317,7 @@ function renderTrendTopCards() {
   const maxQ = Math.max(1, top[0]?.qty||1)
   const RANK_COLORS=['#f5c842','#e2e8f0','#fb923c','var(--accent2)','var(--text3)']
   el.innerHTML = top.length ? top.map((c,i)=>`
-    <div style="display:flex;align-items:center;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px;row-gap:12px;column-gap:12px">
       <div style="font-size:18px;font-weight:800;color:${RANK_COLORS[i]};font-family:var(--mono);width:24px;text-align:center;flex-shrink:0">${i+1}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
@@ -10414,7 +10529,7 @@ function renderPortfolio() {
       const pct    = Math.round((data.value/maxBV)*100)
       return `<div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-          <span style="display:flex;align-items:center;gap:6px">
+          <span style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
             <span style="font-size:16px">${bInfo.emoji||'📦'}</span>
             <span style="font-weight:600">${brand}</span>
             <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${data.qty} ใบ</span>
@@ -11248,7 +11363,7 @@ function renderAIPurPreview() {
       </div>
 
       <!-- Row 4: จำนวน + ราคา/ใบ + รวม -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;row-gap:8px;column-gap:8px;margin-bottom:10px">
         <div class="form-group" style="margin-bottom:0">
           <label style="font-size:10px;font-family:var(--mono);color:var(--text3)">จำนวน</label>
           <input type="number" value="${it.qty}" min="1" oninput="_aiPurItems[${i}].qty=parseInt(this.value)||1;aiUpdateTotal()"
@@ -11272,14 +11387,14 @@ function renderAIPurPreview() {
       <div class="form-row" style="margin-bottom:10px">
         <div class="form-group" style="margin-bottom:0">
           <label style="font-size:10px;font-family:var(--mono);color:var(--text3)">Condition</label>
-          <div style="display:flex;gap:6px">
-            <label style="flex:1;display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:11px"
+          <div style="display:flex;gap:6px;row-gap:6px;column-gap:6px">
+            <label style="flex:1;display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;padding:6px 10px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:11px"
               style="background:${!it.hasDefect?'rgba(74,222,128,0.08)':'transparent'}">
               <input type="radio" name="ai-defect-${i}" value="ok" ${!it.hasDefect?'checked':''}
                 onchange="_aiPurItems[${i}].hasDefect=false" style="width:12px;height:12px">
               ✅ OK
             </label>
-            <label style="flex:1;display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:11px">
+            <label style="flex:1;display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;padding:6px 10px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:11px">
               <input type="radio" name="ai-defect-${i}" value="df" ${it.hasDefect?'checked':''}
                 onchange="_aiPurItems[${i}].hasDefect=true" style="width:12px;height:12px">
               ⚠️ Defect
@@ -11625,7 +11740,7 @@ function updatePoGradeBadge() {
   const col = colors[company] || '#6b7280'
   badge.style.display = 'block'
   badge.innerHTML = `
-    <div style="display:inline-flex;align-items:center;gap:6px;background:${col};color:#fff;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-weight:800;font-size:12px">
+    <div style="display:inline-flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px;background:${col};color:#fff;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-weight:800;font-size:12px">
       <span style="font-size:13px">🏅</span>
       <span style="letter-spacing:1px">${company}</span>
       ${score ? `<span style="font-size:15px;font-weight:900">${score}</span>` : ''}
@@ -11826,7 +11941,7 @@ function renderStaff() {
 
   list.innerHTML += users.map(([email, u]) => {
     const isMe = currentUser && currentUser.email === email
-    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg3);border-radius:12px;border:1px solid var(--border)${isMe ? ';border-color:var(--accent)' : ''}">
+    return `<div style="display:flex;align-items:center;gap:14px;row-gap:14px;column-gap:14px;padding:14px 16px;background:var(--bg3);border-radius:12px;border:1px solid var(--border)${isMe ? ';border-color:var(--accent)' : ''}">
       <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">
         ${(u.name||'?')[0].toUpperCase()}
       </div>
@@ -11836,7 +11951,7 @@ function renderStaff() {
         <span style="font-size:10px;font-weight:700;color:${roleColor[u.role]||'var(--text3)'};font-family:var(--mono)">${roleLabel[u.role]||u.role}</span>
       </div>
       ${isAdmin && !isMe ? `
-        <div style="display:flex;gap:6px;flex-shrink:0">
+        <div style="display:flex;gap:6px;row-gap:6px;column-gap:6px;flex-shrink:0">
           <button class="btn btn-sm" style="font-size:11px;padding:5px 10px" onclick="editStaff('${email}')">แก้ไข</button>
           <button class="btn btn-sm" style="font-size:11px;padding:5px 10px;color:var(--red);border-color:var(--red)" onclick="deleteStaff('${email}')">ลบ</button>
         </div>` : ''}
@@ -11978,7 +12093,7 @@ function catCard(item, type, idx){
         <button class="cat-act-btn del" onclick="deleteCat('${type}',${idx})">${t('cat_delete')}</button>
       </div>
     </div>
-    <div class="cat-name" style="display:flex;align-items:center;gap:6px">
+    <div class="cat-name" style="display:flex;align-items:center;gap:6px;row-gap:6px;column-gap:6px">
       <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${item.color};flex-shrink:0"></span>
       ${item.name}
     </div>
@@ -12002,7 +12117,7 @@ function renderSuppliers(){
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2)">${s.contact}</td>
       <td><span style="font-size:12px;color:var(--text2)">${s.brands}</span></td>
       <td><span class="cat-badge ${s.status==='active'?'cat-active':'cat-inactive'}">${s.status==='active'?'ใช้งาน':'ปิดใช้งาน'}</span></td>
-      <td style="display:flex;gap:6px;padding:12px 14px">
+      <td style="display:flex;gap:6px;row-gap:6px;column-gap:6px;padding:12px 14px">
         <button class="cat-act-btn" onclick="editCat('suppliers',${i})">แก้ไข</button>
         <button class="cat-act-btn del" onclick="deleteCat('suppliers',${i})">ลบ</button>
       </td>
