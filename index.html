@@ -7405,23 +7405,224 @@ function exportExcel(type) {
   // ตรวจ Basic plan
   const plan = getPlan()
   if (plan.cardLimit !== null) {
-    // ยังเป็น Trial
     showToast('⚠️ ' + t('export_basic_only'), 'var(--orange)')
     return
   }
 
+  // สำหรับ orders — เปิด modal เลือกช่วงเดือนก่อน
+  if (type === 'orders') {
+    openExportOrdersModal()
+    return
+  }
+
+  // สำหรับ purchases — export ตรงๆ เลย
+  doExportExcel(type)
+}
+
+// ── Export Orders Modal (Date Range Picker) ──────────────────────────────
+function openExportOrdersModal() {
+  // หาขอบเขตเดือนจาก orders ทั้งหมด
+  const dates = orders.map(o => o.date).filter(Boolean)
+  if (dates.length === 0) {
+    showToast('ไม่มีข้อมูลออเดอร์', 'var(--orange)')
+    return
+  }
+  // Parse dates (format: DD/MM/YY)
+  const parsed = dates.map(d => {
+    const [dd, mm, yy] = d.split('/')
+    return { y: parseInt('20'+yy), m: parseInt(mm), ym: parseInt('20'+yy)*100 + parseInt(mm) }
+  }).filter(x => !isNaN(x.ym))
+  if (parsed.length === 0) {
+    showToast('ไม่สามารถอ่านวันที่ได้', 'var(--orange)')
+    return
+  }
+  const minYM = Math.min(...parsed.map(x=>x.ym))
+  const maxYM = Math.max(...parsed.map(x=>x.ym))
+  // สร้างรายการเดือนระหว่าง min-max
+  const months = []
+  let curY = Math.floor(minYM/100), curM = minYM%100
+  const endY = Math.floor(maxYM/100), endM = maxYM%100
+  while (curY*100+curM <= endY*100+endM) {
+    months.push({ y: curY, m: curM, label: `${String(curM).padStart(2,'0')}/${curY}`, val: curY*100+curM })
+    curM++
+    if (curM > 12) { curM = 1; curY++ }
+  }
+  // สร้าง modal
+  const existingModal = document.getElementById('modal-exportOrders')
+  if (existingModal) existingModal.remove()
+
+  const modalHtml = `
+  <div class="modal-overlay show" id="modal-exportOrders" style="display:flex;align-items:center;justify-content:center;z-index:1000">
+    <div class="modal" style="width:min(420px,94vw);max-height:90vh;max-height:90svh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <h3 style="margin:0;font-size:16px">📊 Export Orders Excel</h3>
+        <button onclick="document.getElementById('modal-exportOrders').remove()" style="background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">เลือกช่วงเดือนที่ต้องการ Export</div>
+
+      <div class="form-group">
+        <label>เดือนเริ่มต้น</label>
+        <select id="export-from-month">
+          ${months.map(m => `<option value="${m.val}">${m.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>เดือนสิ้นสุด</label>
+        <select id="export-to-month">
+          ${months.map(m => `<option value="${m.val}" ${m.val===maxYM?'selected':''}>${m.label}</option>`).join('')}
+        </select>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:11px;color:var(--text2);line-height:1.6">
+        <div style="font-weight:700;color:var(--text);margin-bottom:4px">📄 Excel จะมี 2 ส่วน:</div>
+        <div>• <strong>Header:</strong> สรุป — Order, Revenue, Gross Margin, Hidden Cost, Net Profit</div>
+        <div>• <strong>Lines:</strong> รายละเอียดแต่ละ Order (เรียง Z-A)</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-sm" onclick="document.getElementById('modal-exportOrders').remove()">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" onclick="doExportOrdersWithRange()">📥 Export Excel</button>
+      </div>
+    </div>
+  </div>`
+  document.body.insertAdjacentHTML('beforeend', modalHtml)
+}
+
+function doExportOrdersWithRange() {
+  const fromVal = parseInt(document.getElementById('export-from-month').value)
+  const toVal   = parseInt(document.getElementById('export-to-month').value)
+  if (isNaN(fromVal) || isNaN(toVal)) { showToast('กรุณาเลือกเดือน', 'var(--orange)'); return }
+  if (fromVal > toVal) { showToast('เดือนเริ่มต้นต้องก่อนเดือนสิ้นสุด', 'var(--orange)'); return }
+
+  // กรอง orders ในช่วงที่เลือก + เฉพาะ completed (ไม่รวม cancelled)
+  const filtered = orders.filter(o => {
+    if (!o.date) return false
+    if (o.status === 'cancel' || o.status === 'cancelled') return false
+    const [dd, mm, yy] = o.date.split('/')
+    const ym = parseInt('20'+yy)*100 + parseInt(mm)
+    return ym >= fromVal && ym <= toVal
+  })
+
+  if (filtered.length === 0) {
+    showToast('ไม่มีออเดอร์ในช่วงที่เลือก', 'var(--orange)')
+    return
+  }
+
+  // เรียง Z-A (ใหม่สุดไปเก่าสุด)
+  const sorted = [...filtered].sort((a, b) => (b.id || '').localeCompare(a.id || ''))
+
+  // ── คำนวณ summary สำหรับ Header ─────────────────────────────────
+  let totalRevenue = 0, totalCost = 0, totalHidden = 0
+  sorted.forEach(o => {
+    totalRevenue += (o.total || 0)
+    totalHidden  += (o.hiddenCost || 0)
+    if (o.orderItems) {
+      o.orderItems.forEach(it => {
+        const card = cards[it.cardIdx]
+        const cost = card ? (card.cost || 0) : 0
+        totalCost += cost * (it.qty || 0)
+      })
+    }
+  })
+  const grossMargin = totalRevenue - totalCost
+  const netProfit   = grossMargin - totalHidden
+
+  // ── สร้าง rows ────────────────────────────────────────────────────
+  const rows = []
+  const fromLabel = `${String(fromVal%100).padStart(2,'0')}/${Math.floor(fromVal/100)}`
+  const toLabel   = `${String(toVal%100).padStart(2,'0')}/${Math.floor(toVal/100)}`
+
+  // Header Summary (6 rows) — 9 columns
+  rows.push(['CardestCo — Sales Report', '', '', '', '', '', '', '', ''])
+  rows.push([`Period: ${fromLabel} → ${toLabel}`, '', '', '', '', '', '', '', ''])
+  rows.push(['', '', '', '', '', '', '', '', ''])
+  rows.push(['จำนวน Orders', 'Revenue (฿)', 'Gross Margin (฿)', 'Hidden Cost (฿)', 'Net Profit (฿)', '', '', '', ''])
+  rows.push([sorted.length, totalRevenue, grossMargin, totalHidden, netProfit, '', '', '', ''])
+  rows.push(['', '', '', '', '', '', '', '', ''])
+
+  // Column Headers สำหรับ line items (9 คอลัมน์)
+  rows.push(['Order ID', 'วันที่', 'ลูกค้า', 'ชื่อการ์ด', 'จำนวน', 'ต้นทุน/ใบ (฿)', 'ราคาขาย/ใบ (฿)', 'ค่าใช้จ่ายแฝง (฿)', 'กำไร/ใบ (฿)'])
+
+  // Line items — แต่ละ order + แต่ละการ์ด
+  // ค่าใช้จ่ายแฝงของ order หาร "เท่ากัน" ตามจำนวน line (เฉพาะใบแรก เพื่อไม่ double count)
+  sorted.forEach(o => {
+    const hiddenCost = o.hiddenCost || 0
+    if (!o.orderItems || o.orderItems.length === 0) {
+      const profit = (o.total || 0) - hiddenCost
+      rows.push([o.id, o.date, o.customer, '(ไม่มีรายการ)', o.qty || 0, 0, o.total || 0, hiddenCost, profit])
+      return
+    }
+    o.orderItems.forEach((it, idx) => {
+      const card = cards[it.cardIdx]
+      const cost = card ? (card.cost || 0) : 0
+      const price = it.price || 0
+      // ใส่ hidden cost เฉพาะ line แรกของ order (เพื่อไม่ double count)
+      const hcThisLine = idx === 0 ? hiddenCost : 0
+      // กำไร/ใบ = (ราคาขาย − ต้นทุน) − (hidden cost หารเฉลี่ยถ้ามีหลาย line)
+      // แต่เพื่อความชัดเจน: ใส่ hidden cost เฉพาะ line แรก แล้วหักจากกำไรของ line นั้น
+      const profit = (price - cost) * (it.qty || 1) - hcThisLine
+      rows.push([
+        o.id, o.date, o.customer,
+        it.name || '-', it.qty || 0,
+        cost, price, hcThisLine, profit
+      ])
+    })
+  })
+
+  downloadExcelWithSummary(rows, `orders_${fromLabel.replace('/','-')}_to_${toLabel.replace('/','-')}.xls`, 'Orders Report')
+
+  const modal = document.getElementById('modal-exportOrders')
+  if (modal) modal.remove()
+}
+
+function downloadExcelWithSummary(rows, filename, sheetName) {
+  if (rows.length === 0) { showToast('ไม่มีข้อมูล', 'var(--orange)'); return }
+
+  const xmlRows = rows.map((row, rowIdx) =>
+    '<Row>' + row.map((cell, colIdx) => {
+      const isNum = typeof cell === 'number'
+      // Style: row 0 = title, row 3 = summary header, row 6 = column headers
+      let style = ''
+      if (rowIdx === 0) style = ' ss:StyleID="title"'
+      else if (rowIdx === 1) style = ' ss:StyleID="subtitle"'
+      else if (rowIdx === 3) style = ' ss:StyleID="summaryHeader"'
+      else if (rowIdx === 4) style = ' ss:StyleID="summaryValue"'
+      else if (rowIdx === 6) style = ' ss:StyleID="header"'
+      return isNum
+        ? `<Cell${style}><Data ss:Type="Number">${cell}</Data></Cell>`
+        : `<Cell${style}><Data ss:Type="String">${String(cell).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Data></Cell>`
+    }).join('') + '</Row>'
+  ).join('')
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="title"><Font ss:Bold="1" ss:Size="16" ss:Color="#6254e8"/></Style>
+    <Style ss:ID="subtitle"><Font ss:Bold="1" ss:Size="11" ss:Color="#888888"/></Style>
+    <Style ss:ID="summaryHeader"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#f59e0b" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="summaryValue"><Font ss:Bold="1" ss:Color="#1a1a1a"/><Interior ss:Color="#fef3c7" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#6254e8" ss:Pattern="Solid"/></Style>
+  </Styles>
+  <Worksheet ss:Name="${sheetName}">
+    <Table>${xmlRows}</Table>
+  </Worksheet>
+</Workbook>`
+
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+  showToast('✅ Export ' + filename, 'var(--green)')
+}
+
+function doExportExcel(type) {
   let rows = [], filename = '', sheetName = ''
 
-  if (type === 'orders') {
-    filename = 'cardestco_orders.xlsx'
-    sheetName = 'Orders'
-    rows.push(['Order ID','Customer','Channel','Total','Status','Date','Items'])
-    orders.forEach(o => {
-      const items = o.orderItems ? o.orderItems.map(i=>i.name+' x'+i.qty).join(', ') : o.items||''
-      rows.push([o.id, o.customer, o.channel, o.total, o.status, o.date, items])
-    })
-  } else if (type === 'purchases') {
-    filename = 'cardestco_purchases.xlsx'
+  if (type === 'purchases') {
+    filename = 'cardestco_purchases.xls'
     sheetName = 'Purchases'
     rows.push(['PO NO.','Card','Brand','Qty','Cost/ea','Total Cost','Status','Date'])
     purchases.forEach(p => {
@@ -7431,7 +7632,6 @@ function exportExcel(type) {
 
   if (rows.length <= 1) { showToast('ไม่มีข้อมูล', 'var(--orange)'); return }
 
-  // สร้าง XLSX แบบ simple (XML-based)
   const xmlRows = rows.map(row =>
     '<Row>' + row.map(cell => {
       const isNum = typeof cell === 'number'
@@ -9739,31 +9939,41 @@ function cancelPO(idx) {
     (it.psaType || 'no') === (po.psaType || 'no') &&
     String(it.psaGrade || '') === String(po.psaGrade || '')
 
-  // ── ตรวจว่า PO นี้ถูกขายไปแล้วหรือยัง (ผูกกับ poRefs ไม่ใช่แค่ชื่อการ์ด) ──
-  // หลักการ: ถ้า card.stock >= qty ใน poRefs[po] แสดงว่าของใน PO นี้ยังไม่ได้ขาย
+  // ── ตรวจว่า PO นี้ cancel ได้ไหม ──────────────────────────────────────
+  // Logic: block เฉพาะเมื่อ stock ของการ์ด = 0 (ขายหมดแล้วจริงๆ)
+  //        ถ้ามี stock เหลือ ≥ 1 ให้ cancel ได้ (จะ deduct min(ref.qty, stock))
   let isSoldAlready = false
   if (p.status === 'received') {
     const card = cards.find(cd =>
       cd.poRefs && cd.poRefs.some(r => r.po === p.po)
     )
     if (card) {
-      const ref = card.poRefs.find(r => r.po === p.po)
-      const poQty = ref ? ref.qty : p.qty
-      // ถ้า stock ปัจจุบัน < qty ที่ PO นี้เพิ่มไว้ → ของถูกขายไปแล้วบางส่วน
-      if ((card.stock || 0) < poQty) {
+      // ถ้า stock = 0 แสดงว่าการ์ดนี้ขายหมดแล้ว → cancel ไม่ได้
+      if ((card.stock || 0) <= 0) {
         isSoldAlready = true
       }
     } else {
-      // fallback: ถ้าไม่เจอ poRefs (migration ยังไม่ครบ) ใช้ logic เดิม
-      const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
-      isSoldAlready = activeOrders.some(o =>
-        o.orderItems && o.orderItems.some(it => isSameCard(it, p))
+      // fallback: ไม่เจอ card จาก poRefs — ลอง match name+brand+grade
+      const cardByName = cards.find(cd =>
+        cd.name === p.name &&
+        cd.brand === p.brand &&
+        (cd.psaType || 'no') === (p.psaType || 'no') &&
+        String(cd.psaGrade || '') === String(p.psaGrade || '')
       )
+      if (cardByName && (cardByName.stock || 0) <= 0) {
+        isSoldAlready = true
+      } else if (!cardByName) {
+        // ไม่เจอการ์ดเลย → น่าจะถูกลบหลังขายหมด
+        const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+        isSoldAlready = activeOrders.some(o =>
+          o.orderItems && o.orderItems.some(it => isSameCard(it, p))
+        )
+      }
     }
   }
 
   if (isSoldAlready) {
-    showToast('⚠️ การ์ดจาก PO นี้ถูกขายไปแล้ว — กรุณายกเลิกออเดอร์ก่อน', 'var(--orange)')
+    showToast('⚠️ การ์ดจาก PO นี้ขายหมดแล้ว — กรุณายกเลิกออเดอร์ก่อน', 'var(--orange)')
     return
   }
 
@@ -9796,8 +10006,10 @@ function cancelPO(idx) {
       if (cardIdx !== -1) {
         const card = cards[cardIdx]
         // หา qty จาก poRefs ถ้ามี ไม่งั้นใช้ p.qty
+        // ใช้ min(ref.qty, stock) เพื่อไม่หักเกินที่มีจริง (กรณีขายไปบางส่วนแล้ว)
         const ref = card.poRefs?.find(r => r.po === p.po)
-        const deduct = ref ? ref.qty : Math.min(p.qty, card.stock || 0)
+        const wantDeduct = ref ? ref.qty : p.qty
+        const deduct = Math.min(wantDeduct, card.stock || 0)
 
         card.stock = Math.max(0, (card.stock || 0) - deduct)
         // ลบ poRef ออก
@@ -9807,9 +10019,9 @@ function cancelPO(idx) {
 
         if (card.stock <= 0) {
           cards.splice(cardIdx, 1)
-          showToast('🗑 ยกเลิกซื้อ ' + p.po + ' และลบการ์ดออกจากสต็อกแล้ว', 'var(--orange)')
+          showToast('🗑 ยกเลิกซื้อ ' + p.po + ' หัก ' + deduct + ' ใบ และลบการ์ดออกจากสต็อกแล้ว', 'var(--orange)')
         } else {
-          showToast('🗑 ยกเลิกซื้อ ' + p.po + ' หัก Stock เหลือ ' + card.stock + ' ใบ', 'var(--orange)')
+          showToast('🗑 ยกเลิกซื้อ ' + p.po + ' หัก ' + deduct + ' ใบ เหลือ ' + card.stock + ' ใบ', 'var(--orange)')
         }
       } else {
         showToast(t('toast_po_cancelled').replace('{po}', p.po), 'var(--orange)')
