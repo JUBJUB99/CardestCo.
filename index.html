@@ -3858,11 +3858,79 @@ function applySnapshot(data) {
       })
       if (c.poRefs.length > 0) needsMigration = true
     }
+    // ── ซ่อม poRefs: ลบ ref ของ PO ที่ไม่ใช่ status received ──
+    if (c.poRefs && c.poRefs.length > 0) {
+      const before = c.poRefs.length
+      c.poRefs = c.poRefs.filter(ref => {
+        const refPO = purchases.find(pp => pp.po === ref.po)
+        return refPO && refPO.status === 'received'
+      })
+      if (c.poRefs.length !== before) needsMigration = true
+    }
+    // ── ซ่อม cost: ถ้า cost ของ card ไม่ตรงกับ PO ปัจจุบันที่ active ──
+    //    ใช้ weighted average ของ PO ที่ยัง received อยู่
+    if (c.poRefs && c.poRefs.length > 0) {
+      let totalValue = 0, totalQty = 0
+      c.poRefs.forEach(ref => {
+        const refPO = purchases.find(pp => pp.po === ref.po)
+        if (refPO && refPO.status === 'received') {
+          totalValue += (refPO.cost || 0) * (ref.qty || 0)
+          totalQty   += (ref.qty || 0)
+        }
+      })
+      if (totalQty > 0) {
+        const correctCost = Math.round(totalValue / totalQty)
+        // ถ้า cost ปัจจุบันต่างจาก correctCost มากกว่า 1 บาท → migrate
+        if (Math.abs((c.cost || 0) - correctCost) > 1) {
+          console.log(`[MIGRATION] Fix cost: ${c.name} ${c.cost} → ${correctCost}`)
+          c.cost = correctCost
+          needsMigration = true
+        }
+      }
+    }
   })
   // save กลับถ้ามีการ migrate
   if (needsMigration && currentUser) {
+    console.log('[MIGRATION] Saving migrated data...')
     setTimeout(() => saveData(), 500)
   }
+}
+
+// ── Manual migration: เรียกจาก console หรือปุ่มเพื่อ refresh cost ทุก card ──
+function fixAllCardCosts() {
+  let fixed = 0
+  cards.forEach(c => {
+    // Clean stale poRefs
+    if (c.poRefs && c.poRefs.length > 0) {
+      c.poRefs = c.poRefs.filter(ref => {
+        const refPO = purchases.find(pp => pp.po === ref.po)
+        return refPO && refPO.status === 'received'
+      })
+    }
+    // Recalculate cost
+    if (c.poRefs && c.poRefs.length > 0) {
+      let totalValue = 0, totalQty = 0
+      c.poRefs.forEach(ref => {
+        const refPO = purchases.find(pp => pp.po === ref.po)
+        if (refPO && refPO.status === 'received') {
+          totalValue += (refPO.cost || 0) * (ref.qty || 0)
+          totalQty   += (ref.qty || 0)
+        }
+      })
+      if (totalQty > 0) {
+        const correctCost = Math.round(totalValue / totalQty)
+        if (Math.abs((c.cost || 0) - correctCost) > 1) {
+          console.log(`[FIX] ${c.name}: ${c.cost} → ${correctCost}`)
+          c.cost = correctCost
+          fixed++
+        }
+      }
+    }
+  })
+  saveData()
+  filterCards()
+  showToast(`✅ ซ่อม cost ${fixed} ใบ`, 'var(--green)')
+  return fixed
 }
 
 // ── Save: localStorage + Supabase ────────────────────────────────────────────
@@ -7937,7 +8005,8 @@ function openOrderDetail(orderId) {
   if (o.orderItems && o.orderItems.length > 0) {
     itemsEl.innerHTML = o.orderItems.map(it => {
       const card = cards.find(cd => cd.name===it.name && cd.brand===it.brand)
-      const cost = (card?.cost||0) * it.qty
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost||0)
+      const cost = itCost * it.qty
       return `<div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;background:var(--bg3);border-radius:8px;padding:10px 12px">
         ${card?.photo ? `<img src="${card.photo}" style="width:44px;height:44px;border-radius:6px;object-fit:contain;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:6px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${card?.emoji||'🃏'}</div>`}
         <div style="flex:1;min-width:0">
@@ -7954,12 +8023,17 @@ function openOrderDetail(orderId) {
     itemsEl.innerHTML = `<div style="text-align:center;color:var(--text3);padding:16px;font-size:12px">${o.items||t('no_items')}</div>`
   }
 
-  // summary
+  // summary — ใช้ cost ที่ snapshot ไว้ใน orderItem ก่อน (ตอนขายจริง)
+  // ถ้าไม่มี (order เก่า) → fallback ดึงจาก card ปัจจุบัน
   const totalCost = o.orderItems ? o.orderItems.reduce((s,it)=>{
-    const card = cards.find(cd=>cd.name===it.name&&cd.brand===it.brand)
-    return s + (card?.cost||0)*it.qty
+    let cost = it.cost
+    if (cost === undefined || cost === null) {
+      const card = cards.find(cd=>cd.name===it.name&&cd.brand===it.brand)
+      cost = card?.cost || 0
+    }
+    return s + cost * it.qty
   }, 0) : 0
-  const profit = (o.total||0) - totalCost
+  const profit = (o.total||0) - totalCost - (o.hiddenCost||0)
   const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)'
 
   document.getElementById('od-total').textContent  = '฿'+(o.total||0).toLocaleString()
@@ -8268,11 +8342,16 @@ function renderReports() {
 
   // ── KPI ───────────────────────────────────────────────────────────────────
   const totalRev  = activeOrders.reduce((s,o) => s+(o.total||0), 0)
+  // ใช้ cost ที่ snapshot ไว้ใน orderItem (it.cost) ก่อน — ถ้าไม่มี (order เก่า) ค่อย fallback
   const totalCost = activeOrders.reduce((s,o) => {
     if (!o.orderItems) return s
     return s + o.orderItems.reduce((ss,it) => {
-      const card = cards.find(cd => cd.name===it.name && cd.brand===it.brand)
-      return ss + (card?.cost||0)*it.qty
+      let cost = it.cost
+      if (cost === undefined || cost === null) {
+        const card = cards.find(cd => cd.name===it.name && cd.brand===it.brand)
+        cost = card?.cost || 0
+      }
+      return ss + cost * it.qty
     }, 0)
   }, 0)
   const profit = totalRev - totalCost
@@ -8333,7 +8412,8 @@ function renderReports() {
       if (!bMap[it.brand]) bMap[it.brand] = {rev:0, cost:0}
       bMap[it.brand].rev  += (it.price||0)*it.qty
       const card = cards.find(cd=>cd.name===it.name&&cd.brand===it.brand)
-      bMap[it.brand].cost += (card?.cost||0)*it.qty
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost||0)
+      bMap[it.brand].cost += itCost*it.qty
     })
   })
   const bmEl = document.getElementById('rpt-brand-margin')
@@ -8369,7 +8449,8 @@ function renderReports() {
     mMap[m].rev += o.total||0
     if (o.orderItems) o.orderItems.forEach(it => {
       const card = cards.find(cd=>cd.name===it.name&&cd.brand===it.brand)
-      mMap[m].cost += (card?.cost||0)*it.qty
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost||0)
+      mMap[m].cost += itCost*it.qty
     })
   })
   const tbody = document.getElementById('rpt-monthly-table')
@@ -8448,7 +8529,8 @@ function renderTopMargin() {
       cardMap[key].rev  += (it.price || 0) * it.qty
       cardMap[key].qty  += it.qty
       const card = cards.find(cd => cd.name === it.name && cd.brand === it.brand)
-      cardMap[key].cost += (card?.cost || 0) * it.qty
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost || 0)
+      cardMap[key].cost += itCost * it.qty
     })
   })
 
@@ -9792,14 +9874,33 @@ function markReceived(idx){
   )
 
   if(card){
-    card.stock += p.qty
+    // ── Clean stale poRefs ก่อน — ลบ ref ของ PO ที่ status ไม่ใช่ 'received' หรือถูก cancel ──
+    if (card.poRefs && card.poRefs.length > 0) {
+      card.poRefs = card.poRefs.filter(ref => {
+        const refPO = purchases.find(pp => pp.po === ref.po)
+        return refPO && refPO.status === 'received'
+      })
+    }
+
+    // ── อัปเดต cost เป็นค่าเฉลี่ยถ่วงน้ำหนัก (weighted average) เมื่อมีของอยู่ในสต็อก ──
+    //    ถ้า stock=0 (เคยขายหมด) → ใช้ cost ของ PO ใหม่ทั้งหมด
+    if ((card.stock || 0) <= 0) {
+      card.cost = p.cost  // refresh cost จาก PO ใหม่ล้วน
+    } else {
+      const oldValue = (card.cost || 0) * (card.stock || 0)
+      const newValue = (p.cost || 0) * (p.qty || 0)
+      const totalQty = (card.stock || 0) + (p.qty || 0)
+      card.cost = totalQty > 0 ? Math.round((oldValue + newValue) / totalQty) : p.cost
+    }
+
+    card.stock = (card.stock || 0) + p.qty
     if(poPhoto && (!card.photo || card.photo.length === 0)) card.photo = poPhoto
     if(p.psa) {
       card.psa      = true
       card.psaType  = psaType
       card.psaGrade = psaGrade
     }
-    // เพิ่ม poRef เข้าไปใน card
+    // เพิ่ม poRef ของ PO ใหม่
     if (!card.poRefs) card.poRefs = []
     const existingRef = card.poRefs.find(r => r.po === p.po)
     if (!existingRef) {
@@ -9866,9 +9967,26 @@ function renderCancelTab() {
     if (selectedMonth) cancellable = cancellable.filter(p => getM(p.date) === selectedMonth)
 
     // ตรวจว่าการ์ดใน PO ถูกขายไปแล้วหรือยัง
-    // ถ้าขายแล้ว (มีใน orders ที่ไม่ cancelled) → ต้องยกเลิกขายก่อน
-    const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+    // ใช้ poRefs + stock check (เหมือน cancelPOSelected) — block เฉพาะเมื่อ stock=0
     const isSold = p => {
+      if (p.status !== 'received') return false  // pending ไม่นับว่าขาย
+      const card = cards.find(cd =>
+        cd.poRefs && cd.poRefs.some(r => r.po === p.po)
+      )
+      if (card) {
+        // ถ้า stock = 0 แสดงว่าขายหมดแล้ว
+        return (card.stock || 0) <= 0
+      }
+      // fallback: ไม่เจอ card จาก poRefs (อาจถูกลบ) → ถือว่าขายไปแล้ว
+      const cardByName = cards.find(cd =>
+        cd.name === p.name &&
+        cd.brand === p.brand &&
+        (cd.psaType || 'no') === (p.psaType || 'no') &&
+        String(cd.psaGrade || '') === String(p.psaGrade || '')
+      )
+      if (cardByName && (cardByName.stock || 0) > 0) return false
+      // ไม่มี card จริงๆ → เช็ค order match แบบเดิม
+      const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
       return activeOrders.some(o =>
         o.orderItems && o.orderItems.some(it =>
           it.name === p.name && it.brand === p.brand
@@ -10374,7 +10492,8 @@ function renderTrendChart() {
     monthlyRev[mi] += (o.total||0)
     const cost = (o.orderItems||[]).reduce((s,it)=>{
       const card = cards.find(c=>c.name===it.name&&c.brand===it.brand)
-      return s + (card?.cost||0)*(it.qty||1)
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost||0)
+      return s + itCost*(it.qty||1)
     },0)
     monthlyProfit[mi] += (o.total||0) - cost - (o.hiddenCost||0)
   })
@@ -10489,7 +10608,8 @@ function renderTrendBrandBars() {
     ;(o.orderItems||[]).forEach(it=>{
       const b = it.brand||'Other'
       const card = cards.find(c=>c.name===it.name&&c.brand===it.brand)
-      const cost = (card?.cost||0)*(it.qty||1)
+      const itCost = (it.cost !== undefined && it.cost !== null) ? it.cost : (card?.cost||0)
+      const cost = itCost*(it.qty||1)
       brandRev[b]  = (brandRev[b]||0)  + (it.price||it.qty*(it.sellPrice||0)||0)
       brandCost[b] = (brandCost[b]||0) + cost
       brandQty[b]  = (brandQty[b]||0)  + (it.qty||1)
