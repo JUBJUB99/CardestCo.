@@ -8355,7 +8355,8 @@ function renderReports() {
     }, 0)
   }, 0)
   const profit = totalRev - totalCost
-  const margin = totalCost > 0 ? Math.round((profit/totalCost)*100) : 0
+  // Gross Margin % = (Revenue − Cost) / Revenue × 100
+  const margin = totalRev > 0 ? Math.round((profit/totalRev)*100) : 0
   const mColor = margin>20?'var(--green)':margin>=0?'var(--yellow)':'var(--red)'
 
   // Hidden Cost รวมจาก orders ที่ filter แล้ว
@@ -11299,19 +11300,24 @@ function renderDashboard(){
     if (o.orderItems && o.orderItems.length > 0) {
       o.orderItems.forEach(item => {
         totalSellFromOrders += (item.price||0) * item.qty
-        // หาต้นทุนจาก cards array
-        const card = cards.find(cd => cd.name===item.name && cd.brand===item.brand)
-        totalCostFromOrders += (card?.cost||0) * item.qty
+        // ใช้ cost ที่ snapshot ไว้ใน orderItem ก่อน — ถ้าไม่มี (order เก่า) ค่อย fallback
+        let cost = item.cost
+        if (cost === undefined || cost === null) {
+          const card = cards.find(cd => cd.name===item.name && cd.brand===item.brand)
+          cost = card?.cost || 0
+        }
+        totalCostFromOrders += cost * item.qty
       })
     } else {
       // fallback สำหรับ order เก่าที่ไม่มี orderItems
       totalSellFromOrders += o.total || 0
     }
   })
-  const margin = totalCostFromOrders > 0
-    ? Math.round(((totalSellFromOrders - totalCostFromOrders) / totalCostFromOrders) * 100)
-    : 0
+  // Gross Margin % = (Revenue − Cost) / Revenue × 100  (ตาม standard formula)
   const profit = totalSellFromOrders - totalCostFromOrders
+  const margin = totalSellFromOrders > 0
+    ? Math.round((profit / totalSellFromOrders) * 100)
+    : 0
   const el_margin = document.getElementById('dash-margin')
   const el_margin_sub = document.getElementById('kpi-sub-margin')
   const mColor = margin>20?'var(--green)':margin>=0?'var(--yellow)':'var(--red)'
