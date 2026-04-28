@@ -11282,9 +11282,10 @@ function renderDashboard(){
   const el_rev = document.getElementById('dash-revenue')
   if(el_rev) el_rev.textContent = '฿'+revenue.toLocaleString()
 
-  // Orders count
+  // Orders count — เฉพาะที่ไม่ใช่ cancelled
+  const activeOrdCount = orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').length
   const el_ord = document.getElementById('dash-orders')
-  if(el_ord) el_ord.textContent = orders.length
+  if(el_ord) el_ord.textContent = activeOrdCount
 
   // Cards in stock
   const totalStock = cards.reduce((s,c)=>s+(c.stock||0),0)
@@ -11292,7 +11293,7 @@ function renderDashboard(){
   if(el_stk) el_stk.textContent = totalStock
 
   // Gross Margin จาก orders ที่ขายไป (ราคาขาย - ต้นทุน)
-  const soldOrders = orders.filter(o => o.status !== 'cancelled')
+  const soldOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
   let totalSellFromOrders = 0
   let totalCostFromOrders = 0
   soldOrders.forEach(o => {
