@@ -1066,6 +1066,9 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       <div class="nav-item" id="nav-purchase" onclick="showPageMobile('purchase',null,t('title_purchase'));closeSidebar()">
         <span class="nav-icon">◉</span><span data-i18n="nav_purchase">สั่งซื้อสินค้า</span>
       </div>
+      <div class="nav-item" id="nav-expenses" onclick="showPageMobile('expenses',null,t('title_expenses'));closeSidebar()">
+        <span class="nav-icon">💸</span><span data-i18n="nav_expenses">ค่าใช้จ่ายรายเดือน</span>
+      </div>
       <div class="nav-section" data-i18n="nav_section_master">MASTER</div>
       <div class="nav-item" id="nav-customers" onclick="showPageMobile('customers',null,t('title_customers'));closeSidebar()">
         <span class="nav-icon">◎</span><span data-i18n="nav_customers">ลูกค้า</span>
@@ -1114,6 +1117,11 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       <button id="btn-upgrade-proai" onclick="upgradeToProAI()"
         style="width:100%;margin-top:6px;padding:7px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:0.3px;display:none">
         ✨ Upgrade Pro AI ฿349
+      </button>
+      <!-- Upgrade Package (Basic) — แสดงเมื่อยังไม่ subscribe -->
+      <button id="btn-upgrade-pkg" onclick="upgradeToBasic()"
+        style="width:100%;margin-top:6px;padding:7px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:0.3px;display:none">
+        🚀 Upgrade Package
       </button>
     </div>
   </aside>
@@ -2672,6 +2680,122 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       </div>
     </div>
 
+    <!-- EXPENSES -->
+    <div id="page-expenses" class="page">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
+          <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+          <span class="page-title" id="title-expenses">💸 ค่าใช้จ่ายรายเดือน</span>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-primary btn-sm" onclick="openModal('newExpense')">+ บันทึกค่าใช้จ่าย</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary -->
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-card" style="border-top-color:var(--orange)">
+          <div class="kpi-label">เดือนนี้</div>
+          <div class="kpi-value" id="exp-month-total">฿0</div>
+          <div class="kpi-sub" id="exp-month-count">0 รายการ</div>
+        </div>
+        <div class="kpi-card" style="border-top-color:var(--accent)">
+          <div class="kpi-label">รวมทั้งหมด</div>
+          <div class="kpi-value" id="exp-total">฿0</div>
+          <div class="kpi-sub" id="exp-total-count">0 รายการ</div>
+        </div>
+        <div class="kpi-card" style="border-top-color:var(--yellow)">
+          <div class="kpi-label">เฉลี่ย/เดือน</div>
+          <div class="kpi-value" id="exp-avg">฿0</div>
+          <div class="kpi-sub">จาก <span id="exp-avg-months">0</span> เดือน</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="panel" style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;row-gap:12px;column-gap:12px">
+          <div style="font-weight:700;font-size:14px">📋 ประวัติค่าใช้จ่าย</div>
+          <div style="display:flex;gap:8px;column-gap:8px;flex-wrap:wrap">
+            <select id="exp-filter-year" class="select-sm" onchange="renderExpenses()" style="font-size:11px"></select>
+            <select id="exp-filter-month" class="select-sm" onchange="renderExpenses()" style="font-size:11px">
+              <option value="0">ทุกเดือน</option>
+              <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
+              <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
+              <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
+              <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+            </select>
+            <select id="exp-filter-category" class="select-sm" onchange="renderExpenses()" style="font-size:11px">
+              <option value="">ทุกประเภท</option>
+              <option value="razz">Razz</option>
+              <option value="lottery">Lottery</option>
+              <option value="mystery_box">กล่องสุ่ม</option>
+              <option value="other">อื่นๆ</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="expenses-list-empty" style="display:none;text-align:center;color:var(--text3);padding:40px;font-size:13px">
+          ยังไม่มีค่าใช้จ่ายในเดือนนี้
+        </div>
+        <table id="expenses-table" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border2)">
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">วันที่</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">ประเภท</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">รายการ</th>
+              <th style="text-align:right;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">จำนวนเงิน</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">หมายเหตุ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expenses-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- New Expense Modal -->
+    <div class="modal-overlay" id="modal-newExpense">
+      <div class="modal" style="width:min(440px,94vw)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <h3 style="margin:0;font-size:16px">💸 บันทึกค่าใช้จ่าย</h3>
+          <span onclick="closeModal('newExpense')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
+        </div>
+
+        <div class="form-group">
+          <label>ประเภท *</label>
+          <select id="exp-category">
+            <option value="razz">🎲 Razz</option>
+            <option value="lottery">🎟 Lottery</option>
+            <option value="mystery_box">📦 กล่องสุ่ม</option>
+            <option value="other">📌 อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ชื่อรายการ *</label>
+          <input type="text" id="exp-name" placeholder="เช่น Razz Charizard, ลอตเตอรี่ 16/4">
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label>จำนวนเงิน (฿) *</label>
+            <input type="number" id="exp-amount" placeholder="0" min="0">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>วันที่</label>
+            <input type="date" id="exp-date">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุ</label>
+          <textarea id="exp-note" placeholder="ระบุหมายเหตุ..." rows="2"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-sm" onclick="closeModal('newExpense')">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveExpense()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SETUP -->
     <div id="page-setup" class="page">
       <div class="topbar">
@@ -3644,6 +3768,9 @@ let pendingBreaks = []  // [{id, cardIdx, cardName, cardBrand, cardMeta, spots, 
 // ── Purchase Data ─────────────────────────────────────────────────────────────
 let purchases = []
 
+// ── Expenses Data ─────────────────────────────────────────────────────────────
+let expenses = []  // [{id, category, name, amount, date, note}]
+
 // ── Safe localStorage wrapper ──────────────────────────────────────────────────
 const safeLS = {
   get(k) { try { return localStorage.getItem(k) } catch(e) { return null } },
@@ -3793,6 +3920,7 @@ function buildSnapshot() {
   return {
     cards: cleanCards, orders, purchases,
     consignments,
+    expenses,
     pendingBreaks: cleanPendingBreaks,
     setupData: {
       brands:    setupData.brands,
@@ -3817,6 +3945,9 @@ function applySnapshot(data) {
   if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
   consignments.length = 0
   if (data.consignments)  { consignments.push(...data.consignments) }
+  // expenses
+  expenses.length = 0
+  if (data.expenses)      { expenses.push(...data.expenses) }
   // pendingBreaks — reset เสมอ (ถ้า user ใหม่ไม่มีข้อมูลให้เป็น [])
   pendingBreaks.length = 0
   if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
@@ -5014,6 +5145,7 @@ function updateSubBadge(subscribed, daysLeft) {
   const topbarIcon  = document.getElementById('topbar-tier-icon')
   const topbarText  = document.getElementById('topbar-tier-text')
   const upgradeBtn  = document.getElementById('btn-upgrade-proai')
+  const upgradePkgBtn = document.getElementById('btn-upgrade-pkg')
   // Show floating badge on mobile (width < 768)
   if (floatBadge) floatBadge.style.display = window.innerWidth < 768 ? 'flex' : 'none'
   if (!badge) return
@@ -5036,8 +5168,9 @@ function updateSubBadge(subscribed, daysLeft) {
     if (floatBadge) { floatBadge.style.background=isProAI?'rgba(251,146,60,0.12)':'rgba(26,122,74,0.12)'; floatBadge.style.color=planColor; floatBadge.style.borderColor=isProAI?'rgba(251,146,60,0.3)':'rgba(74,222,128,0.3)' }
     if (floatIcon)  floatIcon.textContent  = isProAI ? '✨' : '✅'
     if (floatText)  floatText.textContent  = isProAI ? 'Pro AI' : 'Basic'
-    // ซ่อน upgrade button ถ้าเป็น Pro AI แล้ว
+    // ซ่อน upgrade button ถ้าเป็น Pro AI แล้ว / ซ่อน upgrade package เพราะ subscribe แล้ว
     if (upgradeBtn) upgradeBtn.style.display = isProAI ? 'none' : 'block'
+    if (upgradePkgBtn) upgradePkgBtn.style.display = 'none'
   } else if (daysLeft > 0) {
     badge.style.background = 'rgba(212,150,10,0.15)'
     badge.style.color      = 'var(--yellow)'
@@ -5065,6 +5198,7 @@ function updateSubBadge(subscribed, daysLeft) {
     if (floatIcon)  floatIcon.textContent  = '⏳'
     if (floatText)  floatText.textContent  = 'Trial ' + daysLeft + (currentLang==='en'?' d':' วัน')
     if (upgradeBtn) upgradeBtn.style.display = 'block'
+    if (upgradePkgBtn) upgradePkgBtn.style.display = 'block'
   } else {
     badge.style.background = 'rgba(248,113,113,0.15)'
     badge.style.color      = 'var(--red)'
@@ -5079,6 +5213,7 @@ function updateSubBadge(subscribed, daysLeft) {
     if (floatIcon)  floatIcon.textContent  = '❌'
     if (floatText)  floatText.textContent  = 'Expired'
     if (upgradeBtn) upgradeBtn.style.display = 'block'
+    if (upgradePkgBtn) upgradePkgBtn.style.display = 'block'
   }
 }
 
@@ -5086,6 +5221,13 @@ function upgradeToProAI() {
   // เลือก Pro AI plan แล้วไปหน้า Subscribe
   _selectedSubPlan = 'proai'
   selectSubPlan('proai')
+  showSubScreen()
+}
+
+function upgradeToBasic() {
+  // เปิดหน้า Subscribe — default plan = basic (user เลือกเองได้)
+  _selectedSubPlan = 'basic'
+  selectSubPlan('basic')
   showSubScreen()
 }
 window.addEventListener('resize', () => {
@@ -6227,6 +6369,7 @@ function showPage(id,el){
   if(id==='purchase') renderPurchase()
   if(id==='setup') renderSetup()
   if(id==='dashboard') renderDashboard()
+  if(id==='expenses') renderExpenses()
   if(id==='break') renderBreakPage()
   if(id==='consignment') {
     // Switch to dashboard tab by default
@@ -8359,8 +8502,18 @@ function renderReports() {
   const margin = totalRev > 0 ? Math.round((profit/totalRev)*100) : 0
   const mColor = margin>20?'var(--green)':margin>=0?'var(--yellow)':'var(--red)'
 
-  // Hidden Cost รวมจาก orders ที่ filter แล้ว
-  const totalHiddenCost = activeOrders.reduce((s,o) => s+(o.hiddenCost||0), 0)
+  // Hidden Cost รวมจาก orders ที่ filter แล้ว + ค่าใช้จ่ายรายเดือนในช่วงเดียวกัน
+  const hiddenFromOrders = activeOrders.reduce((s,o) => s+(o.hiddenCost||0), 0)
+  const filteredExpenses = expenses.filter(e => {
+    const [d, m, y] = e.date.split('/')
+    const expY = parseInt('20' + y)
+    const expM = parseInt(m)
+    if (expY !== selYear) return false
+    if (selMonth > 0 && expM !== selMonth) return false
+    return true
+  })
+  const expenseTotal = filteredExpenses.reduce((s,e) => s + (e.amount||0), 0)
+  const totalHiddenCost = hiddenFromOrders + expenseTotal
   const hiddenOrderCount = activeOrders.filter(o=>(o.hiddenCost||0)>0).length
   const netProfit = profit - totalHiddenCost
 
@@ -8370,7 +8523,10 @@ function renderReports() {
   ss('rpt-profit',  (profit>=0?'+':'')+'฿'+Math.abs(profit).toLocaleString(), profit>=0?'var(--green)':'var(--red)')
   ss('rpt-margin-sub', 'Gross Margin '+(margin>0?'+':'')+margin+'%', mColor)
   ss('rpt-hidden-cost', '฿'+totalHiddenCost.toLocaleString(), totalHiddenCost>0?'var(--orange)':'var(--text2)')
-  ss('rpt-hidden-cost-sub', hiddenOrderCount+' '+(currentLang==='en'?'orders with cost':'orders มีค่าใช้จ่าย'))
+  const hiddenSub = []
+  if (hiddenOrderCount > 0) hiddenSub.push(hiddenOrderCount+' orders')
+  if (filteredExpenses.length > 0) hiddenSub.push(filteredExpenses.length+' expenses')
+  ss('rpt-hidden-cost-sub', hiddenSub.join(' + ') || '0')
   ss('rpt-net-profit', (netProfit>=0?'+ ':'')+'฿'+Math.abs(netProfit).toLocaleString(), netProfit>=0?'var(--green)':'var(--red)')
   ss('rpt-net-profit-sub', 'Gross '+(profit>=0?'+':'')+'฿'+Math.abs(profit).toLocaleString()+' − ฿'+totalHiddenCost.toLocaleString())
   ss('rpt-orders',  activeOrders.length)
@@ -11325,14 +11481,25 @@ function renderDashboard(){
   if(el_margin){ el_margin.textContent = (margin>0?'+':'')+margin+'%'; el_margin.style.color = mColor }
   if(el_margin_sub) el_margin_sub.textContent = t('dash_profit')+' ฿'+profit.toLocaleString()
 
-  // Net Profit = Gross Profit - ค่าใช้จ่ายแฝงจากทุก order
-  const totalHiddenCost = soldOrders.reduce((s,o) => s + (o.hiddenCost||0), 0)
+  // Net Profit = Gross Profit - ค่าใช้จ่ายแฝงจาก order - ค่าใช้จ่ายรายเดือน
+  const hiddenFromOrders = soldOrders.reduce((s,o) => s + (o.hiddenCost||0), 0)
+  const totalExpenses = expenses.reduce((s,e) => s + (e.amount||0), 0)
+  const totalHiddenCost = hiddenFromOrders + totalExpenses
   const netProfit = profit - totalHiddenCost
   const el_net = document.getElementById('dash-net-profit')
   const el_net_sub = document.getElementById('kpi-sub-net-profit')
   const netColor = netProfit >= 0 ? 'var(--green)' : 'var(--red)'
   if(el_net){ el_net.textContent = (netProfit>=0?'+':'')+' ฿'+Math.abs(netProfit).toLocaleString(); el_net.style.color = netColor }
-  if(el_net_sub) el_net_sub.textContent = t('kpi_net_profit_sub') + (totalHiddenCost>0?' (หัก ฿'+totalHiddenCost.toLocaleString()+')':'')
+  if(el_net_sub) {
+    let subText = t('kpi_net_profit_sub')
+    if (totalHiddenCost > 0) {
+      const parts = []
+      if (hiddenFromOrders > 0) parts.push('Order ฿'+hiddenFromOrders.toLocaleString())
+      if (totalExpenses > 0)    parts.push('ค่าใช้จ่าย ฿'+totalExpenses.toLocaleString())
+      subText += ' (หัก ' + parts.join(' + ') + ')'
+    }
+    el_net_sub.textContent = subText
+  }
 
   // Recent orders table
   const tbody = document.getElementById('recentOrdersTable')
@@ -12515,6 +12682,164 @@ function catCard(item, type, idx){
 function renderBrands(){ document.getElementById('brands-grid').innerHTML = setupData.brands.map((b,i)=>catCard(b,'brands',i)).join('') }
 
 // ── หน่วยสินค้า ────────────────────────────────────────────────────────────
+// ── ค่าใช้จ่ายรายเดือน ────────────────────────────────────────────────────────
+const EXPENSE_CATEGORIES = {
+  razz:        { label: 'Razz',       icon: '🎲', color: '#a594fc' },
+  lottery:     { label: 'Lottery',    icon: '🎟', color: '#f5c842' },
+  mystery_box: { label: 'กล่องสุ่ม',  icon: '📦', color: '#fb923c' },
+  other:       { label: 'อื่นๆ',      icon: '📌', color: '#94a3b8' },
+}
+
+function saveExpense() {
+  const category = document.getElementById('exp-category').value
+  const name     = document.getElementById('exp-name').value.trim()
+  const amount   = parseFloat(document.getElementById('exp-amount').value) || 0
+  const dateInput = document.getElementById('exp-date').value
+  const note     = document.getElementById('exp-note').value.trim()
+
+  if (!name)   { showToast('กรุณากรอกชื่อรายการ', 'var(--orange)'); return }
+  if (!amount) { showToast('กรุณากรอกจำนวนเงิน', 'var(--orange)'); return }
+
+  // แปลง date input (yyyy-mm-dd) → DD/MM/YY
+  let date
+  if (dateInput) {
+    const [y, m, d] = dateInput.split('-')
+    date = `${d}/${m}/${y.slice(-2)}`
+  } else {
+    date = formatDate()
+  }
+
+  const newExp = {
+    id: 'EXP-' + Date.now(),
+    category, name, amount, date, note,
+    createdAt: Date.now()
+  }
+  expenses.unshift(newExp)
+  saveData()
+  closeModal('newExpense')
+  renderExpenses()
+  renderDashboard()  // refresh dashboard เพราะ hidden cost เปลี่ยน
+
+  // reset form
+  document.getElementById('exp-name').value   = ''
+  document.getElementById('exp-amount').value = ''
+  document.getElementById('exp-note').value   = ''
+  document.getElementById('exp-date').value   = ''
+
+  showToast('✅ บันทึกค่าใช้จ่าย ฿'+amount.toLocaleString()+' แล้ว', 'var(--green)')
+}
+
+function deleteExpense(id) {
+  const exp = expenses.find(e => e.id === id)
+  if (!exp) return
+  if (!confirm(`ลบ "${exp.name}" (฿${exp.amount.toLocaleString()})?`)) return
+  expenses = expenses.filter(e => e.id !== id)
+  saveData()
+  renderExpenses()
+  renderDashboard()
+  showToast('🗑 ลบ "'+exp.name+'" แล้ว', 'var(--orange)')
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expenses-list')
+  const emptyEl = document.getElementById('expenses-list-empty')
+  const tableEl = document.getElementById('expenses-table')
+  if (!tbody) return
+
+  // populate year dropdown — รวมปีจาก expenses + ปีปัจจุบัน
+  const yearEl = document.getElementById('exp-filter-year')
+  if (yearEl) {
+    const years = new Set(expenses.map(e => '20' + e.date.split('/')[2]))
+    years.add(String(new Date().getFullYear()))
+    const sortedYears = [...years].sort((a, b) => b.localeCompare(a))
+    const prevYear = yearEl.value || String(new Date().getFullYear())
+    yearEl.innerHTML = '<option value="0">ทุกปี</option>' +
+      sortedYears.map(y => `<option value="${y}">${y}</option>`).join('')
+    yearEl.value = prevYear
+  }
+
+  // filter
+  const yearFilter = parseInt(document.getElementById('exp-filter-year')?.value || 0)
+  const monthFilter = parseInt(document.getElementById('exp-filter-month')?.value || 0)
+  const catFilter = document.getElementById('exp-filter-category')?.value || ''
+  let filtered = [...expenses]
+  if (yearFilter > 0) {
+    filtered = filtered.filter(e => {
+      const yy = e.date.split('/')[2]
+      return parseInt('20' + yy) === yearFilter
+    })
+  }
+  if (monthFilter > 0) {
+    filtered = filtered.filter(e => {
+      const m = parseInt(e.date.split('/')[1])
+      return m === monthFilter
+    })
+  }
+  if (catFilter) {
+    filtered = filtered.filter(e => e.category === catFilter)
+  }
+
+  // ── KPI summary ──
+  const now = new Date()
+  const curMonth = (now.getMonth()+1)
+  const curYY = String(now.getFullYear()).slice(-2)
+  const thisMonthExp = expenses.filter(e => {
+    const [d, m, y] = e.date.split('/')
+    return parseInt(m) === curMonth && y === curYY
+  })
+  const monthTotal = thisMonthExp.reduce((s, e) => s + (e.amount||0), 0)
+  const allTotal = expenses.reduce((s, e) => s + (e.amount||0), 0)
+  const uniqMonths = new Set(expenses.map(e => e.date.split('/').slice(1).join('/'))).size
+  const avg = uniqMonths > 0 ? Math.round(allTotal / uniqMonths) : 0
+
+  const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val }
+  setSafe('exp-month-total', '฿' + monthTotal.toLocaleString())
+  setSafe('exp-month-count', thisMonthExp.length + ' รายการ')
+  setSafe('exp-total',       '฿' + allTotal.toLocaleString())
+  setSafe('exp-total-count', expenses.length + ' รายการ')
+  setSafe('exp-avg',         '฿' + avg.toLocaleString())
+  setSafe('exp-avg-months',  uniqMonths)
+
+  // ── List ──
+  if (filtered.length === 0) {
+    tableEl.style.display = 'none'
+    emptyEl.style.display = 'block'
+    return
+  }
+  tableEl.style.display = 'table'
+  emptyEl.style.display = 'none'
+
+  tbody.innerHTML = filtered.map(e => {
+    const cat = EXPENSE_CATEGORIES[e.category] || EXPENSE_CATEGORIES.other
+    return `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:12px 10px;font-family:var(--mono);font-size:11px;color:var(--text2)">${e.date}</td>
+        <td style="padding:12px 10px">
+          <span style="display:inline-flex;align-items:center;gap:6px;column-gap:6px;background:${cat.color}22;color:${cat.color};padding:3px 10px;border-radius:20px;font-size:11px;font-family:var(--mono);font-weight:700">
+            ${cat.icon} ${cat.label}
+          </span>
+        </td>
+        <td style="padding:12px 10px;font-size:13px;font-weight:600">${e.name}</td>
+        <td style="padding:12px 10px;font-family:var(--mono);font-weight:700;color:var(--red);text-align:right">฿${(e.amount||0).toLocaleString()}</td>
+        <td style="padding:12px 10px;font-size:11px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.note||''}">${e.note || '–'}</td>
+        <td style="padding:12px 10px;text-align:right">
+          <button onclick="deleteExpense('${e.id}')" style="background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--red);cursor:pointer">ลบ</button>
+        </td>
+      </tr>`
+  }).join('')
+}
+
+// helper: รวมค่าใช้จ่ายรายเดือนปัจจุบัน (สำหรับ Dashboard hidden cost)
+function getCurrentMonthExpenses() {
+  const now = new Date()
+  const curMonth = now.getMonth()+1
+  const curYY = String(now.getFullYear()).slice(-2)
+  return expenses.filter(e => {
+    const parts = e.date.split('/')
+    return parseInt(parts[1]) === curMonth && parts[2] === curYY
+  }).reduce((s, e) => s + (e.amount||0), 0)
+}
+
 function renderUnits() {
   const el = document.getElementById('units-list')
   if (!el) return
