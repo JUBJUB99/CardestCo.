@@ -2694,66 +2694,66 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px">
           <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
-          <span class="page-title" id="title-expenses">💸 ค่าใช้จ่ายรายเดือน</span>
+          <span class="page-title" id="title-expenses" data-i18n="title_expenses">💸 ค่าใช้จ่ายรายเดือน</span>
         </div>
         <div class="topbar-right">
-          <button class="btn btn-primary btn-sm" onclick="openModal('newExpense')">+ บันทึกค่าใช้จ่าย</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('newExpense')" data-i18n="exp_btn_new">+ บันทึกค่าใช้จ่าย</button>
         </div>
       </div>
 
       <!-- KPI Summary -->
       <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
         <div class="kpi-card" style="border-top-color:var(--orange)">
-          <div class="kpi-label">เดือนนี้</div>
+          <div class="kpi-label" data-i18n="exp_kpi_this_month">เดือนนี้</div>
           <div class="kpi-value" id="exp-month-total">฿0</div>
           <div class="kpi-sub" id="exp-month-count">0 รายการ</div>
         </div>
         <div class="kpi-card" style="border-top-color:var(--accent)">
-          <div class="kpi-label">รวมทั้งหมด</div>
+          <div class="kpi-label" data-i18n="exp_kpi_total">รวมทั้งหมด</div>
           <div class="kpi-value" id="exp-total">฿0</div>
           <div class="kpi-sub" id="exp-total-count">0 รายการ</div>
         </div>
         <div class="kpi-card" style="border-top-color:var(--yellow)">
-          <div class="kpi-label">เฉลี่ย/เดือน</div>
+          <div class="kpi-label" data-i18n="exp_kpi_avg">เฉลี่ย/เดือน</div>
           <div class="kpi-value" id="exp-avg">฿0</div>
-          <div class="kpi-sub">จาก <span id="exp-avg-months">0</span> เดือน</div>
+          <div class="kpi-sub"><span data-i18n="exp_kpi_from">จาก</span> <span id="exp-avg-months">0</span><span data-i18n="exp_kpi_months"> เดือน</span></div>
         </div>
       </div>
 
       <!-- Filter -->
       <div class="panel" style="margin-top:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;row-gap:12px;column-gap:12px">
-          <div style="font-weight:700;font-size:14px">📋 ประวัติค่าใช้จ่าย</div>
+          <div style="font-weight:700;font-size:14px" data-i18n="exp_history">📋 ประวัติค่าใช้จ่าย</div>
           <div style="display:flex;gap:6px;column-gap:6px;row-gap:6px;flex-wrap:wrap">
             <select id="exp-filter-year" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:70px;max-width:90px"></select>
             <select id="exp-filter-month" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:90px;max-width:120px">
-              <option value="0">ทุกเดือน</option>
-              <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
-              <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
-              <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
-              <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+              <option value="0" data-i18n="exp_filter_all_month">ทุกเดือน</option>
+              <option value="1" data-i18n="exp_filter_m1">มกราคม</option><option value="2" data-i18n="exp_filter_m2">กุมภาพันธ์</option><option value="3" data-i18n="exp_filter_m3">มีนาคม</option>
+              <option value="4" data-i18n="exp_filter_m4">เมษายน</option><option value="5" data-i18n="exp_filter_m5">พฤษภาคม</option><option value="6" data-i18n="exp_filter_m6">มิถุนายน</option>
+              <option value="7" data-i18n="exp_filter_m7">กรกฎาคม</option><option value="8" data-i18n="exp_filter_m8">สิงหาคม</option><option value="9" data-i18n="exp_filter_m9">กันยายน</option>
+              <option value="10" data-i18n="exp_filter_m10">ตุลาคม</option><option value="11" data-i18n="exp_filter_m11">พฤศจิกายน</option><option value="12" data-i18n="exp_filter_m12">ธันวาคม</option>
             </select>
             <select id="exp-filter-category" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:90px;max-width:120px">
-              <option value="">ทุกประเภท</option>
-              <option value="razz">Razz</option>
-              <option value="lottery">Lottery</option>
-              <option value="mystery_box">กล่องสุ่ม</option>
-              <option value="other">อื่นๆ</option>
+              <option value="" data-i18n="exp_filter_all_cat">ทุกประเภท</option>
+              <option value="razz" data-i18n="exp_cat_razz">Razz</option>
+              <option value="lottery" data-i18n="exp_cat_lottery">Lottery</option>
+              <option value="mystery_box" data-i18n="exp_cat_box">กล่องสุ่ม</option>
+              <option value="other" data-i18n="exp_cat_other">อื่นๆ</option>
             </select>
           </div>
         </div>
 
-        <div id="expenses-list-empty" style="display:none;text-align:center;color:var(--text3);padding:40px;font-size:13px">
+        <div id="expenses-list-empty" style="display:none;text-align:center;color:var(--text3);padding:40px;font-size:13px" data-i18n="exp_empty">
           ยังไม่มีค่าใช้จ่ายในเดือนนี้
         </div>
         <table id="expenses-table" style="width:100%;border-collapse:collapse">
           <thead>
             <tr style="border-bottom:1px solid var(--border2)">
-              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">วันที่</th>
-              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">ประเภท</th>
-              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">รายการ</th>
-              <th style="text-align:right;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">จำนวนเงิน</th>
-              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)">หมายเหตุ</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)" data-i18n="exp_col_date">วันที่</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)" data-i18n="exp_col_cat">ประเภท</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)" data-i18n="exp_col_name">รายการ</th>
+              <th style="text-align:right;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)" data-i18n="exp_col_amount">จำนวนเงิน</th>
+              <th style="text-align:left;padding:10px;font-size:11px;color:var(--text3);font-weight:600;font-family:var(--mono)" data-i18n="exp_col_note">หมายเหตุ</th>
               <th></th>
             </tr>
           </thead>
@@ -2766,41 +2766,41 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
     <div class="modal-overlay" id="modal-newExpense">
       <div class="modal" style="width:min(440px,94vw)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-          <h3 style="margin:0;font-size:16px">💸 บันทึกค่าใช้จ่าย</h3>
+          <h3 style="margin:0;font-size:16px" data-i18n="exp_modal_title">💸 บันทึกค่าใช้จ่าย</h3>
           <span onclick="closeModal('newExpense')" style="cursor:pointer;font-size:20px;color:var(--text3)">✕</span>
         </div>
 
         <div class="form-group">
-          <label>ประเภท *</label>
+          <label data-i18n="exp_lbl_cat">ประเภท *</label>
           <select id="exp-category">
             <option value="razz">🎲 Razz</option>
             <option value="lottery">🎟 Lottery</option>
-            <option value="mystery_box">📦 กล่องสุ่ม</option>
-            <option value="other">📌 อื่นๆ</option>
+            <option value="mystery_box" data-i18n="exp_cat_box">📦 กล่องสุ่ม</option>
+            <option value="other" data-i18n="exp_cat_other">📌 อื่นๆ</option>
           </select>
         </div>
         <div class="form-group">
-          <label>ชื่อรายการ *</label>
-          <input type="text" id="exp-name" placeholder="เช่น Razz Charizard, ลอตเตอรี่ 16/4">
+          <label data-i18n="exp_lbl_name">ชื่อรายการ *</label>
+          <input type="text" id="exp-name" placeholder="เช่น Razz Charizard, ลอตเตอรี่ 16/4" data-ph-i18n="exp_ph_name">
         </div>
         <div class="form-row">
           <div class="form-group" style="margin-bottom:0">
-            <label>จำนวนเงิน (฿) *</label>
+            <label data-i18n="exp_lbl_amount">จำนวนเงิน (฿) *</label>
             <input type="number" id="exp-amount" placeholder="0" min="0">
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label>วันที่</label>
+            <label data-i18n="exp_lbl_date">วันที่</label>
             <input type="date" id="exp-date">
           </div>
         </div>
         <div class="form-group">
-          <label>หมายเหตุ</label>
-          <textarea id="exp-note" placeholder="ระบุหมายเหตุ..." rows="2"></textarea>
+          <label data-i18n="exp_lbl_note">หมายเหตุ</label>
+          <textarea id="exp-note" placeholder="ระบุหมายเหตุ..." rows="2" data-ph-i18n="exp_ph_note"></textarea>
         </div>
 
         <div class="form-actions">
-          <button class="btn btn-sm" onclick="closeModal('newExpense')">ยกเลิก</button>
-          <button class="btn btn-primary btn-sm" onclick="saveExpense()">บันทึก</button>
+          <button class="btn btn-sm" onclick="closeModal('newExpense')" data-i18n="exp_btn_cancel">ยกเลิก</button>
+          <button class="btn btn-primary btn-sm" onclick="saveExpense()" data-i18n="exp_btn_save">บันทึก</button>
         </div>
       </div>
     </div>
@@ -5539,6 +5539,27 @@ const LANG = {
     // Nav
     nav_dashboard:'Dashboard', nav_inventory:'สต็อกสินค้า', nav_orders:'ขายสินค้า',
     nav_purchase:'สั่งซื้อสินค้า', nav_break:'เบรคการ์ด', nav_customers:'ลูกค้า', nav_reports:'รายงาน', nav_setup:'ตั้งค่า / Setup',
+    nav_expenses:'ค่าใช้จ่ายรายเดือน',
+    title_expenses:'💸 ค่าใช้จ่ายรายเดือน',
+    exp_btn_new:'+ บันทึกค่าใช้จ่าย',
+    exp_kpi_this_month:'เดือนนี้', exp_kpi_total:'รวมทั้งหมด', exp_kpi_avg:'เฉลี่ย/เดือน',
+    exp_kpi_n_items:' รายการ', exp_kpi_from:'จาก', exp_kpi_months:' เดือน',
+    exp_history:'📋 ประวัติค่าใช้จ่าย',
+    exp_filter_all_year:'ทุกปี', exp_filter_all_month:'ทุกเดือน', exp_filter_all_cat:'ทุกประเภท',
+    exp_filter_m1:'มกราคม', exp_filter_m2:'กุมภาพันธ์', exp_filter_m3:'มีนาคม', exp_filter_m4:'เมษายน',
+    exp_filter_m5:'พฤษภาคม', exp_filter_m6:'มิถุนายน', exp_filter_m7:'กรกฎาคม', exp_filter_m8:'สิงหาคม',
+    exp_filter_m9:'กันยายน', exp_filter_m10:'ตุลาคม', exp_filter_m11:'พฤศจิกายน', exp_filter_m12:'ธันวาคม',
+    exp_cat_razz:'Razz', exp_cat_lottery:'Lottery', exp_cat_box:'กล่องสุ่ม', exp_cat_other:'อื่นๆ',
+    exp_empty:'ยังไม่มีค่าใช้จ่ายในเดือนนี้',
+    exp_col_date:'วันที่', exp_col_cat:'ประเภท', exp_col_name:'รายการ', exp_col_amount:'จำนวนเงิน', exp_col_note:'หมายเหตุ',
+    exp_modal_title:'💸 บันทึกค่าใช้จ่าย',
+    exp_lbl_cat:'ประเภท *', exp_lbl_name:'ชื่อรายการ *', exp_lbl_amount:'จำนวนเงิน (฿) *', exp_lbl_date:'วันที่', exp_lbl_note:'หมายเหตุ',
+    exp_ph_name:'เช่น Razz Charizard, ลอตเตอรี่ 16/4', exp_ph_note:'ระบุหมายเหตุ...',
+    exp_btn_cancel:'ยกเลิก', exp_btn_save:'บันทึก',
+    exp_toast_need_name:'กรุณากรอกชื่อรายการ', exp_toast_need_amount:'กรุณากรอกจำนวนเงิน',
+    exp_toast_saved:'✅ บันทึกค่าใช้จ่าย ', exp_toast_baht:' บาทแล้ว',
+    exp_confirm_delete:'ลบ', exp_btn_delete:'ลบ',
+    exp_toast_deleted:'🗑 ลบ ',
     nav_consignment:'ฝากขาย&เกรด', title_consignment:'ฝากขาย & เกรด',
     // Consignment
     csmt_tab_active:'รายการที่รับฝาก', csmt_tab_completed:'เสร็จสิ้นแล้ว',
@@ -5854,6 +5875,27 @@ const LANG = {
   en: {
     nav_dashboard:'Dashboard', nav_inventory:'Stock', nav_orders:'Sell item',
     nav_purchase:'Purchase item', nav_break:'Card Break', nav_customers:'Customers', nav_reports:'Reports', nav_setup:'Settings',
+    nav_expenses:'Monthly Expenses',
+    title_expenses:'💸 Monthly Expenses',
+    exp_btn_new:'+ Add Expense',
+    exp_kpi_this_month:'This Month', exp_kpi_total:'Total', exp_kpi_avg:'Avg/Month',
+    exp_kpi_n_items:' items', exp_kpi_from:'from', exp_kpi_months:' months',
+    exp_history:'📋 Expense History',
+    exp_filter_all_year:'All Years', exp_filter_all_month:'All Months', exp_filter_all_cat:'All Categories',
+    exp_filter_m1:'January', exp_filter_m2:'February', exp_filter_m3:'March', exp_filter_m4:'April',
+    exp_filter_m5:'May', exp_filter_m6:'June', exp_filter_m7:'July', exp_filter_m8:'August',
+    exp_filter_m9:'September', exp_filter_m10:'October', exp_filter_m11:'November', exp_filter_m12:'December',
+    exp_cat_razz:'Razz', exp_cat_lottery:'Lottery', exp_cat_box:'Mystery Box', exp_cat_other:'Other',
+    exp_empty:'No expenses this month',
+    exp_col_date:'Date', exp_col_cat:'Category', exp_col_name:'Item', exp_col_amount:'Amount', exp_col_note:'Note',
+    exp_modal_title:'💸 Add Expense',
+    exp_lbl_cat:'Category *', exp_lbl_name:'Item Name *', exp_lbl_amount:'Amount (฿) *', exp_lbl_date:'Date', exp_lbl_note:'Note',
+    exp_ph_name:'e.g. Razz Charizard, Lottery 16/4', exp_ph_note:'Add note...',
+    exp_btn_cancel:'Cancel', exp_btn_save:'Save',
+    exp_toast_need_name:'Please enter item name', exp_toast_need_amount:'Please enter amount',
+    exp_toast_saved:'✅ Expense saved ', exp_toast_baht:' THB',
+    exp_confirm_delete:'Delete', exp_btn_delete:'Delete',
+    exp_toast_deleted:'🗑 Deleted ',
     nav_consignment:'Consignment&Grade', title_consignment:'Consignment & Grade',
     // Consignment
     csmt_tab_active:'Active Consignments', csmt_tab_completed:'Completed',
@@ -12741,11 +12783,13 @@ function renderBrands(){ document.getElementById('brands-grid').innerHTML = setu
 
 // ── หน่วยสินค้า ────────────────────────────────────────────────────────────
 // ── ค่าใช้จ่ายรายเดือน ────────────────────────────────────────────────────────
-const EXPENSE_CATEGORIES = {
-  razz:        { label: 'Razz',       icon: '🎲', color: '#a594fc' },
-  lottery:     { label: 'Lottery',    icon: '🎟', color: '#f5c842' },
-  mystery_box: { label: 'กล่องสุ่ม',  icon: '📦', color: '#fb923c' },
-  other:       { label: 'อื่นๆ',      icon: '📌', color: '#94a3b8' },
+function getExpenseCategories() {
+  return {
+    razz:        { label: t('exp_cat_razz'),    icon: '🎲', color: '#a594fc' },
+    lottery:     { label: t('exp_cat_lottery'), icon: '🎟', color: '#f5c842' },
+    mystery_box: { label: t('exp_cat_box'),     icon: '📦', color: '#fb923c' },
+    other:       { label: t('exp_cat_other'),   icon: '📌', color: '#94a3b8' },
+  }
 }
 
 function saveExpense() {
@@ -12755,8 +12799,8 @@ function saveExpense() {
   const dateInput = document.getElementById('exp-date').value
   const note     = document.getElementById('exp-note').value.trim()
 
-  if (!name)   { showToast('กรุณากรอกชื่อรายการ', 'var(--orange)'); return }
-  if (!amount) { showToast('กรุณากรอกจำนวนเงิน', 'var(--orange)'); return }
+  if (!name)   { showToast(t('exp_toast_need_name'), 'var(--orange)'); return }
+  if (!amount) { showToast(t('exp_toast_need_amount'), 'var(--orange)'); return }
 
   // แปลง date input (yyyy-mm-dd) → DD/MM/YY
   let date
@@ -12784,18 +12828,18 @@ function saveExpense() {
   document.getElementById('exp-note').value   = ''
   document.getElementById('exp-date').value   = ''
 
-  showToast('✅ บันทึกค่าใช้จ่าย ฿'+amount.toLocaleString()+' แล้ว', 'var(--green)')
+  showToast(t('exp_toast_saved')+'฿'+amount.toLocaleString()+t('exp_toast_baht'), 'var(--green)')
 }
 
 function deleteExpense(id) {
   const exp = expenses.find(e => e.id === id)
   if (!exp) return
-  if (!confirm(`ลบ "${exp.name}" (฿${exp.amount.toLocaleString()})?`)) return
+  if (!confirm(`${t('exp_confirm_delete')} "${exp.name}" (฿${exp.amount.toLocaleString()})?`)) return
   expenses = expenses.filter(e => e.id !== id)
   saveData()
   renderExpenses()
   renderDashboard()
-  showToast('🗑 ลบ "'+exp.name+'" แล้ว', 'var(--orange)')
+  showToast(t('exp_toast_deleted')+'"'+exp.name+'"', 'var(--orange)')
 }
 
 function renderExpenses() {
@@ -12860,9 +12904,9 @@ function renderExpenses() {
 
   const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val }
   setSafe('exp-month-total', '฿' + monthTotal.toLocaleString())
-  setSafe('exp-month-count', thisMonthExp.length + ' รายการ')
+  setSafe('exp-month-count', thisMonthExp.length + t('exp_kpi_n_items'))
   setSafe('exp-total',       '฿' + allTotal.toLocaleString())
-  setSafe('exp-total-count', expenses.length + ' รายการ')
+  setSafe('exp-total-count', expenses.length + t('exp_kpi_n_items'))
   setSafe('exp-avg',         '฿' + avg.toLocaleString())
   setSafe('exp-avg-months',  uniqMonths)
 
@@ -12876,7 +12920,8 @@ function renderExpenses() {
   emptyEl.style.display = 'none'
 
   tbody.innerHTML = filtered.map(e => {
-    const cat = EXPENSE_CATEGORIES[e.category] || EXPENSE_CATEGORIES.other
+    const CATS = getExpenseCategories()
+    const cat = CATS[e.category] || CATS.other
     return `
       <tr style="border-bottom:1px solid var(--border)">
         <td style="padding:12px 10px;font-family:var(--mono);font-size:11px;color:var(--text2)">${e.date}</td>
@@ -12889,7 +12934,7 @@ function renderExpenses() {
         <td style="padding:12px 10px;font-family:var(--mono);font-weight:700;color:var(--red);text-align:right">฿${(e.amount||0).toLocaleString()}</td>
         <td style="padding:12px 10px;font-size:11px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.note||''}">${e.note || '–'}</td>
         <td style="padding:12px 10px;text-align:right">
-          <button onclick="deleteExpense('${e.id}')" style="background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--red);cursor:pointer">ลบ</button>
+          <button onclick="deleteExpense('${e.id}')" style="background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--red);cursor:pointer">${t('exp_btn_delete')}</button>
         </td>
       </tr>`
   }).join('')
