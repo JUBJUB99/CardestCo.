@@ -1163,6 +1163,30 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
 
         <!-- TAB: Overview -->
         <div id="dtab-overview">
+        <!-- Onboarding Checklist (auto-hide เมื่อทำครบ) -->
+        <div id="onboarding-panel" style="display:none;background:linear-gradient(135deg,rgba(124,109,250,0.08),rgba(245,200,66,0.06));border:1px solid rgba(124,109,250,0.3);border-radius:14px;padding:18px 22px;margin-bottom:20px;position:relative">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;column-gap:12px">
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px">
+                <span data-i18n="onb_title">🎉 ยินดีต้อนรับสู่ CardestCo!</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2)" data-i18n="onb_sub">มาเริ่มใช้งานกันเถอะ ทำตาม 5 ขั้นตอนนี้ใน 5 นาที</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;column-gap:8px;flex-shrink:0">
+              <span id="onb-progress-text" style="font-size:11px;font-family:var(--mono);color:var(--accent2);font-weight:700">0/4</span>
+              <button onclick="dismissOnboarding()" title="ซ่อน" style="background:transparent;border:1px solid var(--border2);border-radius:6px;width:24px;height:24px;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0">✕</button>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:14px">
+            <div id="onb-progress-bar" style="height:100%;background:linear-gradient(90deg,#7c6dfa,#f5c842);border-radius:4px;width:0%;transition:width 0.4s ease"></div>
+          </div>
+          <!-- Tip box (shows when step 1 not done) -->
+          <div id="onb-tip" style="display:none;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.6" data-i18n="onb_tip">
+            💡 เคล็ดลับ: เราเตรียมแบรนด์ยอดนิยมไว้ให้แล้ว — Pokemon, One Piece, MTG, Yu-Gi-Oh เปิดใช้งานได้เลยที่หน้า Setup!
+          </div>
+          <div id="onb-steps" style="display:grid;grid-template-columns:1fr;gap:8px;row-gap:8px"></div>
+        </div>
+
         <div class="kpi-row">
           <div class="kpi-card" style="--kpi-color:var(--yellow)">
             <div class="kpi-label" id="kpi-label-revenue" data-i18n="kpi_revenue">REVENUE MTD</div>
@@ -5704,6 +5728,24 @@ const LANG = {
     // Dashboard panels
     dash_sales_chart:'ยอดขาย', dash_recent_orders:'ออเดอร์ล่าสุด', dash_view_all:'ดูทั้งหมด →',
     dash_pie_brand:'📊 แบรนด์ขายดี', dash_pie_channel:'📡 ช่องทางการขาย',
+    onb_title:'🎉 ยินดีต้อนรับสู่ CardestCo!',
+    onb_sub:'มาเริ่มใช้งานกันเถอะ ทำตาม 4 ขั้นตอนนี้ใน 5 นาที',
+    onb_step1:'ตั้งค่าแบรนด์สินค้า', onb_step1_desc:'สร้างแบรนด์เพื่อจัดหมวดหมู่สินค้า เช่น Pokemon, One Piece, MTG, Yu-Gi-Oh',
+    onb_step2:'สั่งซื้อสินค้าครั้งแรก', onb_step2_desc:'เช่น ซื้อ Charizard VMAX 2 ใบ ราคาใบละ 1,500',
+    onb_step3:'รับสินค้าเข้าสต็อก', onb_step3_desc:'กดปุ่ม “รับสินค้า” ใน PO ของยอดที่ซื้อมา',
+    onb_step4:'ขายสินค้าครั้งแรก', onb_step4_desc:'เช่น ขาย Charizard VMAX ใบละ 2,500 ผ่าน Line OA',
+    onb_step5:'ดูกำไรใน Dashboard', onb_step5_desc:'ดู Revenue / Gross Margin / Net Profit',
+    onb_btn_start:'เริ่ม →', onb_btn_done:'✓ เสร็จแล้ว',
+    onb_tip:'💡 เคล็ดลับ: เราเตรียมแบรนด์ยอดนิยมไว้ให้แล้ว — Pokemon, One Piece, MTG, Yu-Gi-Oh เปิดใช้งานได้เลยที่หน้า Setup!',
+    empty_inv_title:'🃏 ยังไม่มีสินค้าในสต็อก',
+    empty_inv_sub:'เริ่มต้นด้วยการสั่งซื้อสินค้าเข้ามาก่อน',
+    empty_inv_btn:'+ สั่งซื้อสินค้า',
+    empty_pur_title:'📦 ยังไม่มีใบสั่งซื้อ',
+    empty_pur_sub:'สร้างใบสั่งซื้อเพื่อบันทึกสินค้าที่ซื้อเข้ามา',
+    empty_pur_btn:'+ สั่งซื้อสินค้า',
+    empty_ord_title:'🛒 ยังไม่มีออเดอร์ขาย',
+    empty_ord_sub:'สร้างออเดอร์ขายสินค้าให้ลูกค้า',
+    empty_ord_btn:'+ ขายสินค้า',
     pie_others:'อื่นๆ', pie_no_channel:'ไม่ระบุ',
     // Portfolio
     pf_value:'PORTFOLIO VALUE', pf_pnl:'UNREALIZED P&L', pf_qty:'TOTAL CARDS', pf_avg:'AVG COST/CARD',
@@ -6597,7 +6639,7 @@ function renderCardsDisplay(data) {
       </div>
     </div>`
   }).join('')
-  if (data.length===0) grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text3);font-family:var(--mono)">'+t('no_cards_stock')+'</div>'
+  if (data.length===0) { grid.innerHTML='<div style="grid-column:1/-1">'+emptyStateHTML('inv')+'</div>'; return }
 }
 
 // ── renderCardsEdit (edit mode) ───────────────────────────────────────────────
@@ -6660,7 +6702,7 @@ function renderCardsEdit(data) {
       <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${c.stock}${getCardUnit(c)} · ${t('inv_cost_short')}${(c.cost||0).toLocaleString()}</div>
     </div>`
   }).join('')
-  if (data.length===0) grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text3);font-family:var(--mono)">'+t('no_cards_stock')+'</div>'
+  if (data.length===0) { grid.innerHTML='<div style="grid-column:1/-1">'+emptyStateHTML('inv')+'</div>'; return }
 }
 
 function renderCards(data){
@@ -6728,7 +6770,7 @@ function renderCards(data){
       </div>
     </div>`
   }).join('')
-  if(data.length===0) grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text3);font-family:var(--mono)">'+t('no_cards_stock')+'</div>`
+  if(data.length===0) { grid.innerHTML='<div style="grid-column:1/-1">'+emptyStateHTML('inv')+'</div>'; return }
 }
 
 // ── Card Photo Upload & Auto Crop ────────────────────────────────────────────
@@ -8301,6 +8343,12 @@ function renderOrders(){
     }
     return true
   })
+  const ordTable = document.getElementById('ordersTable')
+  if (ordTable && filtered.length === 0 && orders.length === 0) {
+    // ยังไม่เคยขายเลย → แสดง CTA
+    ordTable.innerHTML = '<tr><td colspan="9">'+emptyStateHTML('ord')+'</td></tr>'
+    return
+  }
   document.getElementById('ordersTable').innerHTML=filtered.map(o=>`
     <tr>
       <td style="font-family:var(--mono);color:var(--text3)">${o.id}</td>
@@ -10092,6 +10140,14 @@ function renderPurchase(data){
     </tr>`
   }).join('')
 
+  // Empty state CTA สำหรับ user ใหม่
+  if (purchases.length === 0) {
+    const emptyHtml = '<tr><td colspan="11">'+emptyStateHTML('pur')+'</td></tr>'
+    if(document.getElementById('purchaseTable'))  document.getElementById('purchaseTable').innerHTML  = emptyHtml
+    if(document.getElementById('purchaseTable2')) document.getElementById('purchaseTable2').innerHTML = emptyHtml
+    return
+  }
+
   if(document.getElementById('purchaseTable'))  document.getElementById('purchaseTable').innerHTML  = rows
   if(document.getElementById('ptab-cancel') && document.getElementById('ptab-cancel').style.display!=='none') renderCancelTab()
   if(document.getElementById('purchaseTable2')) document.getElementById('purchaseTable2').innerHTML = rows2
@@ -10451,6 +10507,125 @@ function cancelPO(idx) {
     renderDashboard()
     if (document.getElementById('ptab-cancel')?.style.display !== 'none') renderCancelTab()
   })
+}
+
+// ── Empty State Helper ─────────────────────────────────────────────────────
+function emptyStateHTML(type) {
+  const configs = {
+    inv: { title: t('empty_inv_title'), sub: t('empty_inv_sub'), btn: t('empty_inv_btn'), action: "checkLimitThenOpenPO()" },
+    pur: { title: t('empty_pur_title'), sub: t('empty_pur_sub'), btn: t('empty_pur_btn'), action: "checkLimitThenOpenPO()" },
+    ord: { title: t('empty_ord_title'), sub: t('empty_ord_sub'), btn: t('empty_ord_btn'), action: "openModal('newSale')" }
+  }
+  const cfg = configs[type] || configs.inv
+  return `<div style="text-align:center;padding:48px 24px;color:var(--text3)">
+    <div style="font-size:18px;font-weight:700;color:var(--text2);margin-bottom:6px">${cfg.title}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:18px">${cfg.sub}</div>
+    <button class="btn btn-primary btn-sm" onclick="${cfg.action}" style="font-size:12px">${cfg.btn}</button>
+  </div>`
+}
+
+// ── Onboarding Checklist ───────────────────────────────────────────────────
+function _onboardKey() {
+  return 'cv_onboard_dismissed_' + (currentUser?.email || '')
+}
+function dismissOnboarding() {
+  try { localStorage.setItem(_onboardKey(), '1') } catch(e) {}
+  const panel = document.getElementById('onboarding-panel')
+  if (panel) panel.style.display = 'none'
+}
+function navigateToStep(action) {
+  if (typeof closeSidebar === 'function') closeSidebar()
+  switch(action) {
+    case 'setup':
+      showPageMobile('setup', null, t('title_setup') || 'Setup')
+      setTimeout(() => {
+        const tab = document.querySelector('.setup-tab[onclick*="brands"]')
+        if (tab) tab.click()
+      }, 100)
+      break
+    case 'po':
+      showPageMobile('purchase', null, t('title_purchase') || 'Purchase')
+      setTimeout(() => {
+        if (typeof checkLimitThenOpenPO === 'function') checkLimitThenOpenPO()
+        else if (typeof openModal === 'function') openModal('newPurchase')
+      }, 200)
+      break
+    case 'receive':
+      showPageMobile('purchase', null, t('title_purchase') || 'Purchase')
+      break
+    case 'sell':
+      showPageMobile('orders', null, t('title_orders') || 'Sell')
+      setTimeout(() => {
+        if (typeof openModal === 'function') openModal('newSale')
+      }, 200)
+      break
+    case 'dashboard':
+      showPageMobile('dashboard', null, 'Dashboard')
+      break
+  }
+}
+function renderOnboarding() {
+  const panel = document.getElementById('onboarding-panel')
+  const stepsEl = document.getElementById('onb-steps')
+  if (!panel || !stepsEl) return
+
+  let dismissed = false
+  try { dismissed = localStorage.getItem(_onboardKey()) === '1' } catch(e) {}
+  if (dismissed) { panel.style.display = 'none'; return }
+
+  const hasPO      = purchases.length > 0
+  const hasReceived = purchases.some(p => p.status === 'received')
+  const hasOrder   = orders.length > 0
+  const viewedDash = hasOrder
+
+  const steps = [
+    { done: hasPO,        label: t('onb_step2'), desc: t('onb_step2_desc'), action: 'po' },
+    { done: hasReceived,  label: t('onb_step3'), desc: t('onb_step3_desc'), action: 'receive' },
+    { done: hasOrder,     label: t('onb_step4'), desc: t('onb_step4_desc'), action: 'sell' },
+    { done: viewedDash,   label: t('onb_step5'), desc: t('onb_step5_desc'), action: 'dashboard' },
+  ]
+
+  const doneCount = steps.filter(s => s.done).length
+  const total = steps.length
+
+  if (doneCount === total) {
+    try { localStorage.setItem(_onboardKey(), '1') } catch(e) {}
+    panel.style.display = 'none'
+    return
+  }
+
+  panel.style.display = 'block'
+  document.getElementById('onb-progress-text').textContent = doneCount + '/' + total
+  const pct = Math.round((doneCount / total) * 100)
+  document.getElementById('onb-progress-bar').style.width = pct + '%'
+
+  // Tip box แสดงเฉพาะตอนที่ user ยังไม่ทำอะไรเลย (เพิ่งเริ่มใช้)
+  const tipEl = document.getElementById('onb-tip')
+  if (tipEl) tipEl.style.display = (!hasPO && !hasOrder) ? 'block' : 'none'
+
+  const nextIdx = steps.findIndex(s => !s.done)
+
+  stepsEl.innerHTML = steps.map((s, i) => {
+    const isNext = i === nextIdx
+    const numBg = s.done ? 'var(--green)' : (isNext ? 'var(--accent)' : 'var(--bg3)')
+    const numColor = (s.done || isNext) ? '#fff' : 'var(--text3)'
+    const numContent = s.done ? '✓' : (i+1)
+    const opacity = s.done ? '0.7' : '1'
+    const bg = isNext ? 'rgba(124,109,250,0.08)' : 'transparent'
+    const border = isNext ? '1px solid rgba(124,109,250,0.4)' : '1px solid var(--border)'
+    return `
+      <div style="display:flex;align-items:center;gap:12px;column-gap:12px;padding:10px 12px;background:${bg};border:${border};border-radius:10px;opacity:${opacity}">
+        <div style="width:26px;height:26px;border-radius:50%;background:${numBg};color:${numColor};font-size:12px;font-weight:800;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0">${numContent}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text);${s.done?'text-decoration:line-through;color:var(--text2)':''}">${s.label}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${s.desc}</div>
+        </div>
+        ${s.done
+          ? `<span style="font-size:10px;color:var(--green);font-family:var(--mono);font-weight:700;flex-shrink:0">${t('onb_btn_done')}</span>`
+          : `<button onclick="navigateToStep('${s.action}')" style="background:${isNext?'var(--accent)':'transparent'};color:${isNext?'#fff':'var(--accent2)'};border:1px solid var(--accent);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);flex-shrink:0">${t('onb_btn_start')}</button>`
+        }
+      </div>`
+  }).join('')
 }
 
 // ── Dashboard Pie Charts ─────────────────────────────────────────────────────
@@ -11229,7 +11404,7 @@ function renderPortfolio() {
   const tbody = document.getElementById('pf-holdings-table')
   if (tbody) {
     if (holdings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">'+t('no_cards_stock')+'</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="7">'+emptyStateHTML('ord')+'</td></tr>'
     } else {
       tbody.innerHTML = holdings.map(h => {
         const pnlStr   = h.hasMarket ? (h.pnl>=0?'+':'')+' ฿'+h.pnl.toLocaleString() : '-'
@@ -11763,6 +11938,7 @@ function renderDashboard(){
   // render sales chart + update badge
   setTimeout(renderSalesChart, 0)
   setTimeout(renderDashboardPies, 0)
+  setTimeout(renderOnboarding, 0)
   setTimeout(refreshSubBadge, 0)
 }
 
