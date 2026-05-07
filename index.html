@@ -1133,10 +1133,19 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="pageTitle">Dashboard</span></div>
-        <div class="topbar-right" style="display:flex;align-items:center;gap:8px;row-gap:8px;column-gap:8px">
-          <span id="dash-month-label" style="font-size:11px;color:var(--text3);font-family:var(--mono);display:none">มีนาคม 2026</span>
-          <button onclick="refreshDashboard()" id="btn-refresh-dashboard" title="Refresh" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">↻</button>
+        <div style="display:flex;align-items:center;gap:10px;row-gap:10px;column-gap:10px;flex-shrink:0"><button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button><span class="page-title" id="pageTitle">Dashboard</span></div>
+        <div class="topbar-right" style="display:flex;align-items:center;gap:6px;column-gap:6px;flex-wrap:nowrap;justify-content:flex-end;flex-shrink:0">
+          <select id="dash-filter-year" onchange="renderDashboard()"
+            style="padding:5px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:var(--mono);cursor:pointer;width:72px;flex-shrink:0"></select>
+          <select id="dash-filter-month" onchange="renderDashboard()"
+            style="padding:5px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:var(--mono);cursor:pointer;width:90px;flex-shrink:0">
+            <option value="0">ทุกเดือน</option>
+            <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
+            <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
+            <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
+            <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+          </select>
+          <button onclick="refreshDashboard()" id="btn-refresh-dashboard" title="Refresh" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);font-size:14px;line-height:1;transition:all 0.2s;flex-shrink:0" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">↻</button>
         </div>
       </div>
       <div class="content">
@@ -2715,16 +2724,16 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       <div class="panel" style="margin-top:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;row-gap:12px;column-gap:12px">
           <div style="font-weight:700;font-size:14px">📋 ประวัติค่าใช้จ่าย</div>
-          <div style="display:flex;gap:8px;column-gap:8px;flex-wrap:wrap">
-            <select id="exp-filter-year" class="select-sm" onchange="renderExpenses()" style="font-size:11px"></select>
-            <select id="exp-filter-month" class="select-sm" onchange="renderExpenses()" style="font-size:11px">
+          <div style="display:flex;gap:6px;column-gap:6px;row-gap:6px;flex-wrap:wrap">
+            <select id="exp-filter-year" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:70px;max-width:90px"></select>
+            <select id="exp-filter-month" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:90px;max-width:120px">
               <option value="0">ทุกเดือน</option>
               <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
               <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
               <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
               <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
             </select>
-            <select id="exp-filter-category" class="select-sm" onchange="renderExpenses()" style="font-size:11px">
+            <select id="exp-filter-category" class="select-sm" onchange="renderExpenses()" style="font-size:11px;min-width:90px;max-width:120px">
               <option value="">ทุกประเภท</option>
               <option value="razz">Razz</option>
               <option value="lottery">Lottery</option>
@@ -8506,7 +8515,7 @@ function renderReports() {
   const hiddenFromOrders = activeOrders.reduce((s,o) => s+(o.hiddenCost||0), 0)
   const filteredExpenses = expenses.filter(e => {
     const [d, m, y] = e.date.split('/')
-    const expY = parseInt('20' + y)
+    const expY = y.length === 4 ? parseInt(y) : parseInt('20' + y)
     const expM = parseInt(m)
     if (expY !== selYear) return false
     if (selMonth > 0 && expM !== selMonth) return false
@@ -11433,23 +11442,71 @@ function refreshDashboard() {
 }
 
 function renderDashboard(){
-  // Revenue = sum ออเดอร์ทั้งหมดที่ไม่ใช่ cancelled
-  const revenue = orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').reduce((s,o)=>s+(o.total||0),0)
+  // ── populate filter dropdown และอ่านค่าที่เลือก ───────────────────────
+  const yearEl  = document.getElementById('dash-filter-year')
+  const monthEl = document.getElementById('dash-filter-month')
+  const now = new Date()
+  const curYear  = now.getFullYear()
+  const curMonth = now.getMonth() + 1
+
+  if (yearEl) {
+    // เก็บปีจาก orders + ปีปัจจุบัน
+    const years = new Set([String(curYear)])
+    orders.forEach(o => {
+      if (o.date) {
+        const yy = o.date.split('/')[2]
+        if (yy) {
+          // รองรับทั้ง YY (26) และ YYYY (2026)
+          const fullYear = yy.length === 4 ? yy : '20' + yy
+          years.add(fullYear)
+        }
+      }
+    })
+    const sortedYears = [...years].sort((a,b) => b.localeCompare(a))
+    // default = ปีปัจจุบัน, รักษาค่าเดิมถ้ามี
+    const prev = yearEl.value || String(curYear)
+    yearEl.innerHTML = '<option value="0">ทุกปี</option>' +
+      sortedYears.map(y => `<option value="${y}">${y}</option>`).join('')
+    yearEl.value = (prev && [...yearEl.options].some(o=>o.value===prev)) ? prev : String(curYear)
+  }
+  if (monthEl && !monthEl.dataset.initialized) {
+    // default เดือนปัจจุบัน — ตั้งครั้งแรกเท่านั้น
+    monthEl.value = String(curMonth)
+    monthEl.dataset.initialized = '1'
+  }
+
+  const selYear  = parseInt(yearEl?.value || curYear)
+  const selMonth = parseInt(monthEl?.value || 0)
+
+  // ── Filter orders ตาม year/month ที่เลือก ───────────────────────────
+  const inRange = (dateStr) => {
+    if (!dateStr) return false
+    const [d, m, y] = dateStr.split('/')
+    const oY = y.length === 4 ? parseInt(y) : parseInt('20' + y)
+    const oM = parseInt(m)
+    if (selYear > 0 && oY !== selYear) return false
+    if (selMonth > 0 && oM !== selMonth) return false
+    return true
+  }
+  const filteredOrders = orders.filter(o => inRange(o.date))
+
+  // Revenue = sum ออเดอร์ที่ไม่ใช่ cancelled (ใน range)
+  const revenue = filteredOrders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').reduce((s,o)=>s+(o.total||0),0)
   const el_rev = document.getElementById('dash-revenue')
   if(el_rev) el_rev.textContent = '฿'+revenue.toLocaleString()
 
-  // Orders count — เฉพาะที่ไม่ใช่ cancelled
-  const activeOrdCount = orders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').length
+  // Orders count — เฉพาะที่ไม่ใช่ cancelled (ใน range)
+  const activeOrdCount = filteredOrders.filter(o=>o.status!=='cancel'&&o.status!=='cancelled').length
   const el_ord = document.getElementById('dash-orders')
   if(el_ord) el_ord.textContent = activeOrdCount
 
-  // Cards in stock
+  // Cards in stock — ไม่ filter (เป็นค่าปัจจุบัน)
   const totalStock = cards.reduce((s,c)=>s+(c.stock||0),0)
   const el_stk = document.getElementById('dash-stock')
   if(el_stk) el_stk.textContent = totalStock
 
-  // Gross Margin จาก orders ที่ขายไป (ราคาขาย - ต้นทุน)
-  const soldOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+  // Gross Margin จาก orders ที่ขายไป (ราคาขาย - ต้นทุน) — ใน range
+  const soldOrders = filteredOrders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
   let totalSellFromOrders = 0
   let totalCostFromOrders = 0
   soldOrders.forEach(o => {
@@ -11481,9 +11538,10 @@ function renderDashboard(){
   if(el_margin){ el_margin.textContent = (margin>0?'+':'')+margin+'%'; el_margin.style.color = mColor }
   if(el_margin_sub) el_margin_sub.textContent = t('dash_profit')+' ฿'+profit.toLocaleString()
 
-  // Net Profit = Gross Profit - ค่าใช้จ่ายแฝงจาก order - ค่าใช้จ่ายรายเดือน
+  // Net Profit = Gross Profit - ค่าใช้จ่ายแฝงจาก order - ค่าใช้จ่ายรายเดือน (ใน range)
   const hiddenFromOrders = soldOrders.reduce((s,o) => s + (o.hiddenCost||0), 0)
-  const totalExpenses = expenses.reduce((s,e) => s + (e.amount||0), 0)
+  const filteredExpenses = expenses.filter(e => inRange(e.date))
+  const totalExpenses = filteredExpenses.reduce((s,e) => s + (e.amount||0), 0)
   const totalHiddenCost = hiddenFromOrders + totalExpenses
   const netProfit = profit - totalHiddenCost
   const el_net = document.getElementById('dash-net-profit')
@@ -12749,7 +12807,14 @@ function renderExpenses() {
   // populate year dropdown — รวมปีจาก expenses + ปีปัจจุบัน
   const yearEl = document.getElementById('exp-filter-year')
   if (yearEl) {
-    const years = new Set(expenses.map(e => '20' + e.date.split('/')[2]))
+    const years = new Set()
+    expenses.forEach(e => {
+      const yy = e.date.split('/')[2]
+      if (yy) {
+        const fullYear = yy.length === 4 ? yy : '20' + yy
+        years.add(fullYear)
+      }
+    })
     years.add(String(new Date().getFullYear()))
     const sortedYears = [...years].sort((a, b) => b.localeCompare(a))
     const prevYear = yearEl.value || String(new Date().getFullYear())
@@ -12766,7 +12831,8 @@ function renderExpenses() {
   if (yearFilter > 0) {
     filtered = filtered.filter(e => {
       const yy = e.date.split('/')[2]
-      return parseInt('20' + yy) === yearFilter
+      const fullYear = yy.length === 4 ? parseInt(yy) : parseInt('20' + yy)
+      return fullYear === yearFilter
     })
   }
   if (monthFilter > 0) {
