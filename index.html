@@ -610,6 +610,9 @@ select{background-image:none;}
 
 /* ── Safari Compatibility (old) ──────────────────────────────────────────── */
 .kpi-row{-webkit-column-gap:14px;column-gap:14px;row-gap:14px;}
+@media (max-width:768px){
+  #dash-pie-grid{grid-template-columns:1fr!important;}
+}
 .topbar-right{-webkit-column-gap:10px;column-gap:10px;}
 .bar-chart{-webkit-column-gap:8px;column-gap:8px;}
 .legend-row{-webkit-column-gap:12px;column-gap:12px;}
@@ -1217,6 +1220,34 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
             <span style="font-size:11px;color:var(--text3);font-family:var(--mono)"><span data-i18n="chart_orders">ออเดอร์:</span> <span id="chart-count" style="color:var(--accent2);font-weight:700">0</span> <span data-i18n="chart_items">รายการ</span></span>
           </div>
         </div>
+
+        <!-- 2 Pie Charts: Brand & Channel -->
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;column-gap:14px;row-gap:14px;margin-bottom:20px" id="dash-pie-grid">
+          <!-- Brand Pie -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="dash_pie_brand">📊 แบรนด์ขายดี</span>
+            </div>
+            <div id="pie-brand-empty" style="display:none;height:200px;align-items:center;justify-content:center;color:var(--text3);font-size:12px" data-i18n="chart_no_data">ยังไม่มีข้อมูลยอดขาย</div>
+            <div id="pie-brand-wrap" style="display:flex;align-items:center;gap:18px;column-gap:18px;margin-top:12px;flex-wrap:wrap;row-gap:12px">
+              <svg id="pie-brand-svg" width="160" height="160" viewBox="0 0 160 160" style="flex-shrink:0"></svg>
+              <div id="pie-brand-legend" style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:6px;row-gap:6px;font-size:11px;font-family:var(--mono)"></div>
+            </div>
+          </div>
+
+          <!-- Channel Pie -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title" data-i18n="dash_pie_channel">📡 ช่องทางการขาย</span>
+            </div>
+            <div id="pie-channel-empty" style="display:none;height:200px;align-items:center;justify-content:center;color:var(--text3);font-size:12px" data-i18n="chart_no_data">ยังไม่มีข้อมูลยอดขาย</div>
+            <div id="pie-channel-wrap" style="display:flex;align-items:center;gap:18px;column-gap:18px;margin-top:12px;flex-wrap:wrap;row-gap:12px">
+              <svg id="pie-channel-svg" width="160" height="160" viewBox="0 0 160 160" style="flex-shrink:0"></svg>
+              <div id="pie-channel-legend" style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:6px;row-gap:6px;font-size:11px;font-family:var(--mono)"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
             <span class="panel-title" id="dash-recent-title" data-i18n="dash_recent_orders">ออเดอร์ล่าสุด</span>
@@ -5672,6 +5703,8 @@ const LANG = {
     kpi_revenue_sub:'ยอดขายเดือนนี้', kpi_margin_sub:'ราคาขาย - ต้นทุน', kpi_stock_sub:'การ์ดทั้งหมด', kpi_orders_sub:'ออเดอร์ทั้งหมด',
     // Dashboard panels
     dash_sales_chart:'ยอดขาย', dash_recent_orders:'ออเดอร์ล่าสุด', dash_view_all:'ดูทั้งหมด →',
+    dash_pie_brand:'📊 แบรนด์ขายดี', dash_pie_channel:'📡 ช่องทางการขาย',
+    pie_others:'อื่นๆ', pie_no_channel:'ไม่ระบุ',
     // Portfolio
     pf_value:'PORTFOLIO VALUE', pf_pnl:'UNREALIZED P&L', pf_qty:'TOTAL CARDS', pf_avg:'AVG COST/CARD',
     pf_holdings:'Holdings', pf_brand:'มูลค่าตาม Brand',
@@ -10420,6 +10453,111 @@ function cancelPO(idx) {
   })
 }
 
+// ── Dashboard Pie Charts ─────────────────────────────────────────────────────
+function renderDashboardPies() {
+  // ใช้ filter เดียวกับ Dashboard (year + month)
+  const yearEl  = document.getElementById('dash-filter-year')
+  const monthEl = document.getElementById('dash-filter-month')
+  const selYear  = parseInt(yearEl?.value || 0)
+  const selMonth = parseInt(monthEl?.value || 0)
+
+  const inRange = (dateStr) => {
+    if (!dateStr) return false
+    const [d, m, y] = dateStr.split('/')
+    const oY = y.length === 4 ? parseInt(y) : parseInt('20' + y)
+    const oM = parseInt(m)
+    if (selYear > 0 && oY !== selYear) return false
+    if (selMonth > 0 && oM !== selMonth) return false
+    return true
+  }
+
+  const filteredOrders = orders.filter(o => 
+    o.status !== 'cancel' && o.status !== 'cancelled' && inRange(o.date)
+  )
+
+  // ── Brand Pie ────────────────────────────────────────────────────────────
+  const brandMap = {}
+  filteredOrders.forEach(o => {
+    if (!o.orderItems) return
+    o.orderItems.forEach(it => {
+      const b = it.brand || t('pie_others')
+      brandMap[b] = (brandMap[b] || 0) + (it.price||0) * (it.qty||1)
+    })
+  })
+  const brandData = Object.entries(brandMap)
+    .map(([k,v]) => ({label:k, value:v}))
+    .sort((a,b) => b.value - a.value)
+  drawPie('pie-brand', brandData)
+
+  // ── Channel Pie ──────────────────────────────────────────────────────────
+  const channelMap = {}
+  filteredOrders.forEach(o => {
+    const ch = o.channel || t('pie_no_channel')
+    channelMap[ch] = (channelMap[ch] || 0) + (o.total||0)
+  })
+  const channelData = Object.entries(channelMap)
+    .map(([k,v]) => ({label:k, value:v}))
+    .sort((a,b) => b.value - a.value)
+  drawPie('pie-channel', channelData)
+}
+
+function drawPie(idPrefix, data) {
+  const svg     = document.getElementById(idPrefix + '-svg')
+  const legend  = document.getElementById(idPrefix + '-legend')
+  const wrap    = document.getElementById(idPrefix + '-wrap')
+  const empty   = document.getElementById(idPrefix + '-empty')
+  if (!svg || !legend) return
+
+  const total = data.reduce((s,d) => s + d.value, 0)
+  if (total === 0 || data.length === 0) {
+    if (wrap) wrap.style.display = 'none'
+    if (empty) empty.style.display = 'flex'
+    return
+  }
+  if (wrap) wrap.style.display = 'flex'
+  if (empty) empty.style.display = 'none'
+
+  // Limit to top 6 + group rest as "อื่นๆ"
+  let displayData = data
+  if (data.length > 6) {
+    const top = data.slice(0, 5)
+    const rest = data.slice(5).reduce((s,d) => s + d.value, 0)
+    displayData = [...top, {label: t('pie_others'), value: rest}]
+  }
+
+  const colors = ['#7c6dfa','#a594fc','#f5c842','#fb923c','#34d399','#60a5fa','#94a3b8']
+  const cx = 80, cy = 80, r = 65
+  let cumAngle = -Math.PI / 2  // start at top
+
+  const slices = displayData.map((d, i) => {
+    const angle = (d.value / total) * Math.PI * 2
+    const x1 = cx + r * Math.cos(cumAngle)
+    const y1 = cy + r * Math.sin(cumAngle)
+    cumAngle += angle
+    const x2 = cx + r * Math.cos(cumAngle)
+    const y2 = cy + r * Math.sin(cumAngle)
+    const largeArc = angle > Math.PI ? 1 : 0
+    // ถ้ามี slice เดียว 100% → วาด full circle
+    const path = displayData.length === 1
+      ? `M ${cx-r},${cy} A ${r},${r} 0 1,1 ${cx+r},${cy} A ${r},${r} 0 1,1 ${cx-r},${cy}`
+      : `M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`
+    return `<path d="${path}" fill="${colors[i % colors.length]}" stroke="var(--bg2)" stroke-width="1.5"/>`
+  }).join('')
+
+  svg.innerHTML = slices
+
+  // legend
+  legend.innerHTML = displayData.map((d, i) => {
+    const pct = ((d.value / total) * 100).toFixed(0)
+    return `
+      <div style="display:flex;align-items:center;gap:8px;column-gap:8px">
+        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i % colors.length]};flex-shrink:0"></span>
+        <span style="flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label}</span>
+        <span style="color:var(--text);font-weight:700">${pct}%</span>
+      </div>`
+  }).join('')
+}
+
 function renderSalesChart() {
   const mode      = document.getElementById('chart-mode')?.value || 'month'
   const monthFilt = document.getElementById('chart-month-filter')
@@ -11624,6 +11762,7 @@ function renderDashboard(){
   }
   // render sales chart + update badge
   setTimeout(renderSalesChart, 0)
+  setTimeout(renderDashboardPies, 0)
   setTimeout(refreshSubBadge, 0)
 }
 
@@ -12806,7 +12945,7 @@ function saveExpense() {
   let date
   if (dateInput) {
     const [y, m, d] = dateInput.split('-')
-    date = `${d}/${m}/${y.slice(-2)}`
+    date = `${d}/${m}/${y}`
   } else {
     date = formatDate()
   }
@@ -12892,14 +13031,21 @@ function renderExpenses() {
   // ── KPI summary ──
   const now = new Date()
   const curMonth = (now.getMonth()+1)
-  const curYY = String(now.getFullYear()).slice(-2)
+  const curFullYear = now.getFullYear()
   const thisMonthExp = expenses.filter(e => {
     const [d, m, y] = e.date.split('/')
-    return parseInt(m) === curMonth && y === curYY
+    const fullYear = (y && y.length === 4) ? parseInt(y) : parseInt('20' + y)
+    return parseInt(m) === curMonth && fullYear === curFullYear
   })
   const monthTotal = thisMonthExp.reduce((s, e) => s + (e.amount||0), 0)
   const allTotal = expenses.reduce((s, e) => s + (e.amount||0), 0)
-  const uniqMonths = new Set(expenses.map(e => e.date.split('/').slice(1).join('/'))).size
+  const uniqMonths = new Set(expenses.map(e => {
+    const parts = e.date.split('/')
+    const m = parts[1]
+    const y = parts[2]
+    const fullYear = (y && y.length === 4) ? y : '20' + y
+    return m + '/' + fullYear
+  })).size
   const avg = uniqMonths > 0 ? Math.round(allTotal / uniqMonths) : 0
 
   const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val }
@@ -12944,10 +13090,11 @@ function renderExpenses() {
 function getCurrentMonthExpenses() {
   const now = new Date()
   const curMonth = now.getMonth()+1
-  const curYY = String(now.getFullYear()).slice(-2)
+  const curFullYear = now.getFullYear()
   return expenses.filter(e => {
     const parts = e.date.split('/')
-    return parseInt(parts[1]) === curMonth && parts[2] === curYY
+    const fullYear = (parts[2] && parts[2].length === 4) ? parseInt(parts[2]) : parseInt('20' + parts[2])
+    return parseInt(parts[1]) === curMonth && fullYear === curFullYear
   }).reduce((s, e) => s + (e.amount||0), 0)
 }
 
