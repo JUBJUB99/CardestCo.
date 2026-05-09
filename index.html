@@ -2501,6 +2501,26 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
 
         <!-- TAB: Overview -->
         <div id="ptab-overview">
+        <!-- Filter + Action buttons -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;column-gap:8px;flex-wrap:wrap;row-gap:8px;margin-bottom:12px">
+          <!-- Action buttons (left) -->
+          <div style="display:flex;gap:6px;column-gap:6px;flex-wrap:wrap;row-gap:6px">
+            <button id="btnAIPOOverview" class="btn btn-sm" onclick="openAIPurchaseGated()" style="background:linear-gradient(135deg,rgba(124,109,250,0.1),rgba(245,200,66,0.1));border:1px solid var(--accent);color:var(--accent2);font-size:11px;padding:6px 12px"><span data-i18n="pur_btn_ai">✨ AI ซื้อสินค้า</span></button>
+            <button class="btn btn-primary btn-sm" onclick="checkLimitThenOpenPO()" style="font-size:11px;padding:6px 12px"><span data-i18n="pur_btn_new">+ สั่งซื้อสินค้า</span></button>
+          </div>
+          <!-- Filters (right) -->
+          <div style="display:flex;gap:6px;column-gap:6px;flex-wrap:wrap;row-gap:6px">
+            <select id="pur-filter-year" onchange="renderPurchaseOverview()" style="padding:5px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:var(--mono);cursor:pointer;width:80px;flex-shrink:0"></select>
+            <select id="pur-filter-month" onchange="renderPurchaseOverview()" style="padding:5px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:var(--mono);cursor:pointer;width:100px;flex-shrink:0">
+              <option value="0" data-i18n="exp_filter_all_month">ทุกเดือน</option>
+              <option value="1" data-i18n="exp_filter_m1">มกราคม</option><option value="2" data-i18n="exp_filter_m2">กุมภาพันธ์</option><option value="3" data-i18n="exp_filter_m3">มีนาคม</option>
+              <option value="4" data-i18n="exp_filter_m4">เมษายน</option><option value="5" data-i18n="exp_filter_m5">พฤษภาคม</option><option value="6" data-i18n="exp_filter_m6">มิถุนายน</option>
+              <option value="7" data-i18n="exp_filter_m7">กรกฎาคม</option><option value="8" data-i18n="exp_filter_m8">สิงหาคม</option><option value="9" data-i18n="exp_filter_m9">กันยายน</option>
+              <option value="10" data-i18n="exp_filter_m10">ตุลาคม</option><option value="11" data-i18n="exp_filter_m11">พฤศจิกายน</option><option value="12" data-i18n="exp_filter_m12">ธันวาคม</option>
+            </select>
+          </div>
+        </div>
+
         <!-- KPI — 2x2 grid -->
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;row-gap:10px;column-gap:10px;margin-bottom:20px">
           <div class="kpi-card" style="--kpi-color:var(--blue);padding:14px 12px">
@@ -9988,6 +10008,9 @@ function renderBreakAnalytics() {
 }
 
 // ── Purchase ──────────────────────────────────────────────────────────────────
+// alias: เรียกจาก filter dropdown เพื่อ refresh overview KPI
+function renderPurchaseOverview() { renderPurchase() }
+
 function renderPurchase(data){
   // sync brand filter
   const pbf = document.getElementById('pur-brand-filter')
@@ -10014,10 +10037,47 @@ function renderPurchase(data){
   })
   const bc={Pokemon:'tag-poke',['Yu-Gi-Oh']:'tag-yugi',MTG:'tag-mtg',['One Piece']:'tag-op'}
 
-  // อัพเดท KPI หน้าซื้อ
-  const activePO    = purchases.filter(p=>p.status!=='cancelled')
+  // ── populate filter dropdown + อ่านค่าที่เลือก ─────────────────────
+  const purYearEl  = document.getElementById('pur-filter-year')
+  const purMonthEl = document.getElementById('pur-filter-month')
+  const purNow = new Date()
+  const purCurYear  = purNow.getFullYear()
+  const purCurMonth = purNow.getMonth() + 1
+  if (purYearEl) {
+    const purYears = new Set([String(purCurYear)])
+    purchases.forEach(p => {
+      if (p.date) {
+        const yy = p.date.split('/')[2]
+        if (yy) purYears.add(yy.length === 4 ? yy : '20' + yy)
+      }
+    })
+    const sortedY = [...purYears].sort((a,b) => b.localeCompare(a))
+    const prev = purYearEl.value || String(purCurYear)
+    purYearEl.innerHTML = '<option value="0">' + (t('exp_filter_all_year') || 'ทุกปี') + '</option>' +
+      sortedY.map(y => `<option value="${y}">${y}</option>`).join('')
+    purYearEl.value = (prev && [...purYearEl.options].some(o=>o.value===prev)) ? prev : String(purCurYear)
+  }
+  if (purMonthEl && !purMonthEl.dataset.initialized) {
+    purMonthEl.value = String(purCurMonth)
+    purMonthEl.dataset.initialized = '1'
+  }
+  const purSelYear  = parseInt(purYearEl?.value || purCurYear)
+  const purSelMonth = parseInt(purMonthEl?.value || 0)
+  const purInRange = (dateStr) => {
+    if (!dateStr) return false
+    const [d, m, y] = dateStr.split('/')
+    const oY = y && y.length === 4 ? parseInt(y) : parseInt('20' + y)
+    const oM = parseInt(m)
+    if (purSelYear > 0 && oY !== purSelYear) return false
+    if (purSelMonth > 0 && oM !== purSelMonth) return false
+    return true
+  }
+
+  // อัพเดท KPI หน้าซื้อ — filter ตาม year/month
+  const filteredPurchases = purchases.filter(p => purInRange(p.date))
+  const activePO    = filteredPurchases.filter(p=>p.status!=='cancelled')
   const totalVal    = activePO.reduce((s,p)=>s+(p.cost*p.qty),0)
-  const pendingList = purchases.filter(p=>p.status==='pending')
+  const pendingList = filteredPurchases.filter(p=>p.status==='pending')
   const pendingVal  = pendingList.reduce((s,p)=>s+(p.cost*p.qty),0)
   const el_total = document.getElementById('po-kpi-total')
   const el_count = document.getElementById('po-kpi-count')
@@ -10039,11 +10099,11 @@ function renderPurchase(data){
   if(el2_pv)  el2_pv.textContent  = '฿'+pendingVal.toLocaleString()
   if(el2_sub) el2_sub.textContent = t('from_n_po').replace('{n}',pendingList.length)
 
-  // ── ต้นทุนสะสมตามแบรนด์ (dynamic จาก setupData) ──
+  // ── ต้นทุนสะสมตามแบรนด์ (dynamic จาก setupData) — filter ตามช่วงเดือน ──
   const allBrands = setupData.brands.filter(b=>b.status==='active')
   const brandCosts = {}
   allBrands.forEach(b => {
-    brandCosts[b.name] = purchases.filter(p=>p.brand===b.name && p.status!=='cancelled').reduce((s,p)=>s+(p.cost*p.qty),0)
+    brandCosts[b.name] = filteredPurchases.filter(p=>p.brand===b.name && p.status!=='cancelled').reduce((s,p)=>s+(p.cost*p.qty),0)
   })
   const maxCost = Math.max(1, ...Object.values(brandCosts))
   const brandListEl = document.getElementById('brand-cost-list')
