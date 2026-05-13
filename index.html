@@ -2647,9 +2647,10 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
           <div class="panel">
             <div class="panel-head">
               <span class="panel-title" data-i18n="pur_all_po">ใบสั่งซื้อทั้งหมด</span>
-              <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px">
-                <input class="search-input" id="po-search-input" style="width:180px;font-size:12px" placeholder="ค้นหา PO..." data-ph-i18n="pur_search_po" oninput="renderPurchase()">
-                <select class="select-sm" style="font-size:11px">
+              <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center">
+                <button class="btn btn-sm" onclick="openEditPO()" style="font-size:11px;padding:5px 12px;border-color:var(--accent);color:var(--accent);white-space:nowrap">✏ แก้ไข PO</button>
+                <input class="search-input" id="po-search-input" style="width:200px;font-size:12px" placeholder="ค้นหา PO / ชื่อการ์ด..." oninput="renderPurchase()">
+                <select class="select-sm" id="po2-status-filter" style="font-size:11px" onchange="renderPurchase()">
                   <option value="" data-i18n="all_status">ทุกสถานะ</option>
                   <option value="pending" data-i18n="pur_status_wait">รอสินค้า</option>
                   <option value="received" data-i18n="pur_status_received">รับแล้ว</option>
@@ -3598,6 +3599,54 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div style="display:flex;gap:10px;row-gap:10px;column-gap:10px">
       <button class="btn btn-sm" onclick="confirmResolve(false)" style="flex:1">ยกเลิก</button>
       <button class="btn btn-sm" id="confirm-ok-btn" onclick="confirmResolve(true)" style="flex:1.5;color:var(--red);border-color:var(--red);font-weight:700"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit PO Modal -->
+<div class="modal-overlay" id="modal-editPO">
+  <div class="modal" style="width:min(480px,96vw)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="margin:0;font-size:16px">✏ แก้ไขใบสั่งซื้อ</h3>
+      <button onclick="closeModal('editPO')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);line-height:1">×</button>
+    </div>
+    <div class="form-group">
+      <label style="font-size:12px;color:var(--text2)">เลือก PO ที่ต้องการแก้ไข</label>
+      <select id="epo-select" onchange="onEditPOSelect()" style="font-size:13px">
+        <option value="">— เลือก PO —</option>
+      </select>
+    </div>
+    <div id="epo-sold-warn" style="display:none;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:12px">
+      ⚠️ การ์ดนี้ถูกขายไปแล้ว — ไม่สามารถแก้ไข PO นี้ได้
+    </div>
+    <div id="epo-fields" style="display:none">
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+        <span id="epo-po-label" style="font-family:var(--mono);color:var(--accent)"></span>
+        <span id="epo-status-label" style="margin-left:8px"></span>
+      </div>
+      <div class="form-group">
+        <label style="font-size:12px;color:var(--text2)">ชื่อการ์ด <span style="color:var(--red)">*</span></label>
+        <input type="text" id="epo-name" placeholder="ชื่อการ์ด">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;color:var(--text2)">จำนวน (ใบ) <span style="color:var(--red)">*</span></label>
+          <input type="number" id="epo-qty" min="1" placeholder="1">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;color:var(--text2)">ต้นทุน/ใบ (฿) <span style="color:var(--red)">*</span></label>
+          <input type="number" id="epo-cost" min="0" placeholder="0">
+        </div>
+      </div>
+      <div id="epo-stock-warn" style="display:none;background:rgba(251,146,60,0.1);border:1px solid var(--orange);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--orange);margin-bottom:12px">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-sm" onclick="closeModal('editPO')" style="flex:1">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEditPO()" style="flex:2">💾 บันทึกการแก้ไข</button>
+      </div>
+    </div>
+    <div id="epo-placeholder" style="text-align:center;padding:24px 0;color:var(--text3);font-size:13px">
+      กรุณาเลือก PO ที่ต้องการแก้ไข
     </div>
   </div>
 </div>
@@ -10022,7 +10071,8 @@ function renderPurchase(data){
     pbf.value = cur
   }
   // filter ตาม status, brand, search
-  const purStatusFilt = document.getElementById('pur-status-filter')?.value || ''
+  const purStatusFilt = document.getElementById('pur-status-filter')?.value
+    || document.getElementById('po2-status-filter')?.value || ''
   const purBrandFilt  = document.getElementById('pur-brand-filter')?.value || ''
   const purSearch     = (document.getElementById('po-search-input')?.value || '').toLowerCase().trim()
   let list = (data || purchases).filter(p => {
@@ -10194,7 +10244,7 @@ function renderPurchase(data){
       <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${fmtD(p.date)}</td>
       <td>
         ${p.status==='pending'?`
-          <button class="btn btn-sm" style="font-size:10px;padding:4px 10px" onclick="markReceived(${list.indexOf(p)})">รับสินค้า</button>
+          <button class="btn btn-sm" style="font-size:10px;padding:4px 10px" onclick="markReceived(${purchases.indexOf(p)})">รับสินค้า</button>
         `:''}
       </td>
     </tr>`
@@ -10239,28 +10289,27 @@ function markReceived(idx){
       })
     }
 
-    // ── อัปเดต cost เป็นค่าเฉลี่ยถ่วงน้ำหนัก (weighted average) เมื่อมีของอยู่ในสต็อก ──
-    //    ถ้า stock=0 (เคยขายหมด) → ใช้ cost ของ PO ใหม่ทั้งหมด
-    if ((card.stock || 0) <= 0) {
-      card.cost = p.cost  // refresh cost จาก PO ใหม่ล้วน
-    } else {
-      const oldValue = (card.cost || 0) * (card.stock || 0)
-      const newValue = (p.cost || 0) * (p.qty || 0)
-      const totalQty = (card.stock || 0) + (p.qty || 0)
-      card.cost = totalQty > 0 ? Math.round((oldValue + newValue) / totalQty) : p.cost
-    }
-
-    card.stock = (card.stock || 0) + p.qty
     if(poPhoto && (!card.photo || card.photo.length === 0)) card.photo = poPhoto
     if(p.psa) {
       card.psa      = true
       card.psaType  = psaType
       card.psaGrade = psaGrade
     }
-    // เพิ่ม poRef ของ PO ใหม่
+    // เพิ่ม poRef, บวก stock และ update cost เฉพาะเมื่อ PO นี้ยังไม่เคย received (ป้องกัน double-tap)
     if (!card.poRefs) card.poRefs = []
     const existingRef = card.poRefs.find(r => r.po === p.po)
     if (!existingRef) {
+      // ── อัปเดต cost เป็นค่าเฉลี่ยถ่วงน้ำหนัก (weighted average) ──
+      //    ถ้า stock=0 (เคยขายหมด) → ใช้ cost ของ PO ใหม่ทั้งหมด
+      if ((card.stock || 0) <= 0) {
+        card.cost = p.cost
+      } else {
+        const oldValue = (card.cost || 0) * (card.stock || 0)
+        const newValue = (p.cost || 0) * (p.qty || 0)
+        const totalQty = (card.stock || 0) + (p.qty || 0)
+        card.cost = totalQty > 0 ? Math.round((oldValue + newValue) / totalQty) : p.cost
+      }
+      card.stock = (card.stock || 0) + p.qty
       card.poRefs.push({ po: p.po, qty: p.qty })
     }
   } else {
@@ -10443,6 +10492,180 @@ function showConfirm(icon, title, body, okLabel='ยืนยัน') {
 function confirmResolve(result) {
   document.getElementById('modal-confirm').classList.remove('open')
   if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null }
+}
+
+// ── Edit PO ─────────────────────────────────────────────────────────────────
+
+function openEditPO() {
+  const sel = document.getElementById('epo-select')
+  if (!sel) return
+
+  // populate dropdown: PO ที่ยังไม่ถูก cancel
+  const active = purchases.filter(p => p.status !== 'cancelled')
+  sel.innerHTML = '<option value="">— เลือก PO —</option>'
+  active.forEach(p => {
+    const statusLabel = p.status === 'received' ? '✅ รับแล้ว' : '⏳ รอสินค้า'
+    const opt = document.createElement('option')
+    opt.value = purchases.indexOf(p)
+    opt.textContent = `${p.po} · ${p.name} · ${statusLabel}`
+    const isSold = _editPOIsSold(p)
+    if (isSold) {
+      opt.textContent += ' · ⚠️ ขายแล้ว'
+      opt.disabled = true
+      opt.style.color = 'var(--text3)'
+    }
+    sel.appendChild(opt)
+  })
+  sel.value = ''
+
+  // reset UI
+  document.getElementById('epo-fields').style.display = 'none'
+  document.getElementById('epo-placeholder').style.display = 'block'
+  document.getElementById('epo-sold-warn').style.display = 'none'
+  openModal('editPO')
+}
+
+function _editPOIsSold(p) {
+  if (p.status !== 'received') return false
+  // เช็คจาก orderItems ว่าการ์ดนี้ถูก order ไปแล้วไหม (status ไม่ใช่ cancel)
+  const activeOrders = orders.filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+  return activeOrders.some(o =>
+    o.orderItems && o.orderItems.some(it =>
+      it.name === p.name && it.brand === p.brand
+    )
+  )
+}
+
+function onEditPOSelect() {
+  const sel = document.getElementById('epo-select')
+  const idx = parseInt(sel.value)
+  const fieldsEl = document.getElementById('epo-fields')
+  const placeholderEl = document.getElementById('epo-placeholder')
+  const soldWarnEl = document.getElementById('epo-sold-warn')
+
+  if (isNaN(idx) || sel.value === '') {
+    fieldsEl.style.display = 'none'
+    placeholderEl.style.display = 'block'
+    soldWarnEl.style.display = 'none'
+    return
+  }
+
+  const p = purchases[idx]
+  if (!p) return
+
+  const isSold = _editPOIsSold(p)
+  if (isSold) {
+    fieldsEl.style.display = 'none'
+    placeholderEl.style.display = 'none'
+    soldWarnEl.style.display = 'block'
+    return
+  }
+
+  soldWarnEl.style.display = 'none'
+  placeholderEl.style.display = 'none'
+
+  // populate fields
+  document.getElementById('epo-po-label').textContent = p.po
+  const statusMap = { pending: '⏳ รอสินค้า', received: '✅ รับแล้ว' }
+  document.getElementById('epo-status-label').textContent = statusMap[p.status] || p.status
+  document.getElementById('epo-name').value = p.name || ''
+  document.getElementById('epo-qty').value  = p.qty  || 1
+  document.getElementById('epo-cost').value = p.cost || 0
+
+  // แสดง warning ถ้า PO รับแล้ว
+  const stockWarnEl = document.getElementById('epo-stock-warn')
+  if (p.status === 'received') {
+    const card = cards.find(c => c.poRefs && c.poRefs.some(r => r.po === p.po))
+    const currentStock = card ? card.stock : 0
+    stockWarnEl.textContent = `⚠️ PO นี้รับสินค้าแล้ว — stock ปัจจุบัน ${currentStock} ใบ การแก้จำนวน/ต้นทุนจะคำนวณใหม่อัตโนมัติ`
+    stockWarnEl.style.display = 'block'
+  } else {
+    stockWarnEl.style.display = 'none'
+  }
+
+  fieldsEl.style.display = 'block'
+}
+
+function saveEditPO() {
+  const sel = document.getElementById('epo-select')
+  const idx = parseInt(sel.value)
+  if (isNaN(idx)) { showToast('กรุณาเลือก PO', 'var(--orange)'); return }
+
+  const p = purchases[idx]
+  if (!p) return
+  if (_editPOIsSold(p)) { showToast('⚠️ การ์ดนี้ถูกขายไปแล้ว', 'var(--orange)'); return }
+
+  const newName = document.getElementById('epo-name').value.trim()
+  const newQty  = parseInt(document.getElementById('epo-qty').value) || 0
+  const newCost = parseFloat(document.getElementById('epo-cost').value) || 0
+
+  if (!newName) { showToast('กรุณากรอกชื่อการ์ด', 'var(--orange)'); return }
+  if (newQty < 1) { showToast('จำนวนต้องมากกว่า 0', 'var(--orange)'); return }
+  if (newCost < 0) { showToast('ต้นทุนต้องไม่ติดลบ', 'var(--orange)'); return }
+
+  const oldName = p.name
+  const oldQty  = p.qty
+  const oldCost = p.cost
+  const wasReceived = p.status === 'received'
+
+  // อัปเดต PO
+  p.name = newName
+  p.qty  = newQty
+  p.cost = newCost
+
+  // ถ้า PO รับแล้ว → ต้องอัปเดต card ด้วย
+  if (wasReceived) {
+    // หา card จาก poRefs
+    let card = cards.find(c => c.poRefs && c.poRefs.some(r => r.po === p.po))
+    if (!card) {
+      // fallback: match ชื่อเดิม
+      card = cards.find(c => c.name === oldName && c.brand === p.brand)
+    }
+    if (card) {
+      // ปรับ stock: ลบ qty เก่า บวก qty ใหม่
+      const stockDiff = newQty - oldQty
+      card.stock = Math.max(0, (card.stock || 0) + stockDiff)
+
+      // อัปเดตชื่อถ้าเปลี่ยน
+      if (newName !== oldName) card.name = newName
+
+      // อัปเดต poRef qty
+      const ref = card.poRefs && card.poRefs.find(r => r.po === p.po)
+      if (ref) ref.qty = newQty
+
+      // recalculate cost จาก poRefs ทั้งหมด (weighted average)
+      if (card.poRefs && card.poRefs.length > 0) {
+        let totalValue = 0, totalQty = 0
+        card.poRefs.forEach(r => {
+          const refPO = purchases.find(pp => pp.po === r.po)
+          if (refPO && refPO.status === 'received') {
+            totalValue += (refPO.cost || 0) * (r.qty || 0)
+            totalQty   += (r.qty || 0)
+          }
+        })
+        if (totalQty > 0) card.cost = Math.round(totalValue / totalQty)
+      } else {
+        card.cost = newCost
+      }
+    }
+
+    // อัปเดตชื่อใน orderItems ที่เคยขายไปแล้ว (ถ้าชื่อเปลี่ยน)
+    if (newName !== oldName) {
+      orders.forEach(o => {
+        if (!o.orderItems) return
+        o.orderItems.forEach(it => {
+          if (it.name === oldName && it.brand === p.brand) it.name = newName
+        })
+      })
+    }
+  }
+
+  saveData()
+  renderPurchase()
+  renderDashboard()
+  filterCards()
+  closeModal('editPO')
+  showToast(`✅ แก้ไข ${p.po} เรียบร้อย`, 'var(--green)')
 }
 
 function cancelPOSelected() {
