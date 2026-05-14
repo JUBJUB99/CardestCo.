@@ -3332,16 +3332,17 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       </div>
 
       <!-- AI Read Card -->
-      <div style="background:var(--bg3);border:1px solid rgba(124,109,250,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:4px">
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:center;margin-bottom:4px;opacity:0.5">
         <div style="font-size:20px;margin-bottom:6px">🤖</div>
         <div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:4px">AI อ่านข้อมูลการ์ด</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">อัพโหลดรูปการ์ด → AI จะอ่านชื่อ, Brand, Rarity ให้อัตโนมัติ</div>
-        <button type="button" id="po-ai-btn" class="btn btn-primary btn-sm" style="width:100%;padding:10px;font-size:13px" onclick="skipAI()">
-          <span id="po-ai-icon">✨</span> <span id="po-ai-label">ให้ AI อ่านการ์ด →</span>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">Coming Soon</div>
+        <button type="button" id="po-ai-btn" class="btn btn-primary btn-sm" style="width:100%;padding:10px;font-size:13px;opacity:0.5;cursor:not-allowed" disabled>
+          <span id="po-ai-icon">🔒</span> <span id="po-ai-label">ยังไม่พร้อมใช้งาน</span>
         </button>
-        <div style="font-size:10px;color:var(--text3);margin-top:8px">ถ้าไม่ได้อัพโหลดรูป หรืออยากกรอกเอง</div>
-        <button type="button" onclick="goToStep2(null)" style="background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;margin-top:2px;text-decoration:underline">กรอกข้อมูลเอง →</button>
       </div>
+      <button type="button" onclick="goToStep2(null)" class="btn btn-primary btn-sm" style="width:100%;padding:10px;font-size:13px;margin-top:4px">
+        ✏️ กรอกข้อมูลเอง →
+      </button>
 
       <!-- AI status (hidden, kept for compat) -->
       <div id="po-ai-status" style="display:none"></div>
@@ -10400,10 +10401,11 @@ async function markReceived(idx){
   renderPurchase()
   renderDashboard()
   refreshSubBadge()
-} {
-  const isAdmin = currentUser && currentUser.role === 'admin'
+}
+
+function renderCancelTab() {
   const banner  = document.getElementById('cancel-admin-banner')
-  if (banner) banner.style.display = isAdmin ? 'none' : 'flex'
+  if (banner) banner.style.display = 'none'
 
   const bc = {Pokemon:'tag-poke',['Yu-Gi-Oh']:'tag-yugi',MTG:'tag-mtg',['One Piece']:'tag-op'}
 
@@ -10430,7 +10432,7 @@ async function markReceived(idx){
       monthSel.appendChild(opt)
     })
     if ([...monthSel.options].some(o => o.value === prevMonth)) monthSel.value = prevMonth
-    monthSel.disabled = !isAdmin
+    monthSel.disabled = false
   }
 
   // populate PO dropdown filtered by month
@@ -10487,7 +10489,7 @@ async function markReceived(idx){
     })
     if ([...sel.options].some(o => o.value === prev)) sel.value = prev
     else { sel.value = ''; document.getElementById('cancel-po-detail').style.display = 'none' }
-    sel.disabled = !isAdmin
+    sel.disabled = false
   }
 
   // render history
