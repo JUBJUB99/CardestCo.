@@ -10401,9 +10401,8 @@ async function markReceived(idx){
   renderDashboard()
   refreshSubBadge()
 } {
-  const isAdmin = currentUser && currentUser.role === 'admin'
   const banner  = document.getElementById('cancel-admin-banner')
-  if (banner) banner.style.display = isAdmin ? 'none' : 'flex'
+  if (banner) banner.style.display = 'none'
 
   const bc = {Pokemon:'tag-poke',['Yu-Gi-Oh']:'tag-yugi',MTG:'tag-mtg',['One Piece']:'tag-op'}
 
@@ -10430,7 +10429,7 @@ async function markReceived(idx){
       monthSel.appendChild(opt)
     })
     if ([...monthSel.options].some(o => o.value === prevMonth)) monthSel.value = prevMonth
-    monthSel.disabled = !isAdmin
+    monthSel.disabled = false
   }
 
   // populate PO dropdown filtered by month
