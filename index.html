@@ -5451,8 +5451,7 @@ async function enterApp() {
   // แสดง sidebar เมื่อ login สำเร็จ
   const _sb_el = document.getElementById('sidebar')
   if (_sb_el) _sb_el.classList.remove('sidebar-hidden')
-  document.getElementById('bottomNav').style.display = 'grid'
-  try { navIsSide = localStorage.getItem('cv_nav_side') === 'true' } catch(e) {}
+    try { navIsSide = localStorage.getItem('cv_nav_side') === 'true' } catch(e) {}
   applyNavMode()
   applyTheme(currentTheme)
   currentLang = (()=>{ try { return localStorage.getItem('cv_lang')||'th' } catch(e){ return 'th' } })()
@@ -5656,8 +5655,7 @@ function doLogout(){
   // ลบ inline style ที่ auto-login inject ไว้ ก่อน remove('hidden')
   const loginEl = document.getElementById('loginScreen')
   if (loginEl) { loginEl.style.removeProperty('display'); loginEl.classList.remove('hidden') }
-  document.getElementById('bottomNav').style.display = 'none'
-
+  
   // reset payment state ป้องกัน session เก่าโผล่ใน user ใหม่
   currentRefId  = null
   currentTxnId  = null
@@ -14366,29 +14364,5 @@ document.addEventListener('change', e=>{
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <!-- Bottom Navigation (mobile) -->
-<nav class="bottom-nav" id="bottomNav" style="display:none">
-  <div class="bnav-item active" onclick="showPageMobile('dashboard',this,t('title_dashboard'))">
-    <span class="bnav-icon">⬡</span><span data-i18n="bnav_home">หน้าหลัก</span>
-  </div>
-  <div class="bnav-item" onclick="showPageMobile('inventory',this,t('title_inventory'))">
-    <span class="bnav-icon">◫</span><span data-i18n="bnav_stock">สต็อก</span>
-  </div>
-  <div class="bnav-item" onclick="showPageMobile('orders',this,t('title_orders'))">
-    <span class="bnav-icon">◈</span><span data-i18n="bnav_orders">ขายสินค้า</span>
-  </div>
-  <div class="bnav-item" onclick="showPageMobile('purchase',this,t('title_purchase'))">
-    <span class="bnav-icon">◉</span><span data-i18n="bnav_buy">ซื้อ</span>
-  </div>
-  <div class="bnav-item" onclick="showPageMobile('reports',this,t('title_reports'))">
-    <span class="bnav-icon">◱</span><span data-i18n="bnav_reports">รายงาน</span>
-  </div>
-  <div class="bnav-item" onclick="showPageMobile('setup',this,t('title_setup'))">
-    <span class="bnav-icon">◧</span><span data-i18n="bnav_settings">ตั้งค่า</span>
-  </div>
-  <!-- Toggle position button -->
-  <div class="bnav-item" id="navToggleBtn" onclick="toggleNavPosition()" title="สลับซ้าย/ล่าง" style="opacity:0.5">
-    <span class="bnav-icon" id="navToggleIcon">⇔</span><span data-i18n="bnav_back">สลับ</span>
-  </div>
-</nav>
 </body>
 </html>
