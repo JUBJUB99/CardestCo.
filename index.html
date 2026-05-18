@@ -6788,6 +6788,9 @@ function closeModal(id){
     const p = document.getElementById('emoji-picker-panel')
     if (p) p.style.display = 'none'
   }
+  if (id === 'newSale') {
+    window._pendingReservationId = null
+  }
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   if(m.id === 'modal-cropImage') return  // crop modal จัดการเอง
@@ -7855,7 +7858,7 @@ function _updateSaleRowTotal(i) {
     : ''
 }
 
-function saveOrder() {
+async function saveOrder() {
   if (saleItems.length === 0) { showToast(t('sale_toast_no_items'),'var(--orange)'); return }
   const validItems = saleItems.filter(it => it.cardIdx >= 0)
   if (validItems.length === 0) { showToast(t('sale_toast_no_card'),'var(--orange)'); return }
@@ -7909,6 +7912,13 @@ function saveOrder() {
   renderDashboard()
   filterCards()
   showToast(t('toast_order_saved').replace('{id}', newOrder.id), 'var(--green)')
+
+  // ถ้ามาจาก reservation → mark confirmed อัตโนมัติ
+  if (window._pendingReservationId) {
+    const resId = window._pendingReservationId
+    window._pendingReservationId = null
+    await updateReservation(resId, 'confirmed')
+  }
 }
 
 // ── Order Tabs ───────────────────────────────────────────────────────────────
@@ -11548,8 +11558,7 @@ async function renderReservationsTab() {
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
     const rows = await res.json()
-
-    // อัพเดต badge
+    window._reservationRows = rows  // เก็บไว้ให้ confirmReservationSale ใช้
     const pending = rows.filter(r => r.status === 'pending').length
     const badge   = document.getElementById('res-badge')
     if (badge) {
@@ -11604,7 +11613,7 @@ async function renderReservationsTab() {
                 <td style="padding:8px;text-align:center">
                   ${r.status==='pending'?`
                     <div style="display:flex;gap:4px;justify-content:center">
-                      <button class="btn btn-sm" onclick="updateReservation('${r.id}','confirmed')" style="font-size:10px;padding:3px 8px;color:var(--green);border-color:var(--green)">✅</button>
+                      <button class="btn btn-sm" onclick="confirmReservationSale(${i})" style="font-size:10px;padding:3px 8px;color:var(--green);border-color:var(--green)">✅</button>
                       <button class="btn btn-sm" onclick="updateReservation('${r.id}','rejected')" style="font-size:10px;padding:3px 8px;color:var(--red);border-color:var(--red)">❌</button>
                     </div>
                   `:'—'}
@@ -11618,6 +11627,84 @@ async function renderReservationsTab() {
   } catch(e) {
     wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);font-size:13px">โหลดไม่สำเร็จ</div>'
   }
+}
+
+async function confirmReservationSale(idx) {
+  const r = (window._reservationRows || [])[idx]
+  if (!r) { showToast('ไม่พบข้อมูล กรุณา Refresh', 'var(--orange)'); return }
+  openNewSaleModal()
+
+  const contactName = r.contact_name || ''
+
+  // เช็คว่าชื่อนี้เคย order ในระบบแล้วไหม
+  const existingCust = orders
+    .filter(o => o.status !== 'cancel' && o.status !== 'cancelled')
+    .find(o => o.customer && o.customer.toLowerCase() === contactName.toLowerCase())
+
+  if (existingCust) {
+    // ชื่อซ้ำ → เลือก existing customer
+    const existSel = document.getElementById('sale-cust-existing')
+    if (existSel) {
+      existSel.checked = true
+      toggleSaleCust()
+      // populate existing select แล้วเลือกชื่อนั้น
+      setTimeout(() => {
+        const sel = document.getElementById('sale-cust-existing-select')
+        if (sel) {
+          // หา option ที่ตรงกับชื่อ
+          const opt = [...sel.options].find(o => o.value.toLowerCase() === contactName.toLowerCase())
+          if (opt) sel.value = opt.value
+          else {
+            // ถ้าไม่เจอใน dropdown ให้ fallback เป็น new
+            document.getElementById('sale-cust-new').checked = true
+            toggleSaleCust()
+            document.getElementById('sale-cust-name').value = contactName
+          }
+        }
+      }, 50)
+    }
+  } else {
+    // ชื่อใหม่ → ใส่ชื่อใหม่
+    document.getElementById('sale-cust-new').checked = true
+    toggleSaleCust()
+    document.getElementById('sale-cust-name').value = contactName
+  }
+
+  // default note
+  const noteEl = document.getElementById('sale-note')
+  if (noteEl) {
+    const parts = []
+    if (r.contact_phone) parts.push(`📞 ${r.contact_phone}`)
+    if (r.contact_line)  parts.push(`💬 ${r.contact_line}`)
+    if (r.note)          parts.push(r.note)
+    noteEl.value = parts.join(' · ')
+  }
+
+  // หาการ์ดใน inventory ที่ตรงกับชื่อ
+  const card = cards.find(c =>
+    c.name === r.card_name && c.brand === r.card_brand && (c.stock || 0) > 0
+  )
+
+  if (card) {
+    const cardIdx = cards.indexOf(card)
+    // รอให้ openNewSaleModal() render row แรกเสร็จก่อน แล้วค่อย override
+    setTimeout(() => {
+      saleItems[0] = {
+        cardIdx,
+        qty:     Math.min(r.qty || 1, card.stock),
+        price:   r.card_price > 0 ? r.card_price : (card.price || 0),
+        _search: card.name
+      }
+      renderSaleItems()
+      // ใส่ชื่อการ์ดใน search input
+      setTimeout(() => {
+        const inp = document.getElementById('sale-search-0')
+        if (inp) inp.value = card.name
+      }, 50)
+    }, 100)
+  }
+
+  window._pendingReservationId = r.id
 }
 
 async function updateReservation(id, status) {
