@@ -1495,7 +1495,10 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
           <div class="setup-tab active" onclick="switchInvTab('display',this)" id="inv-tab-display" data-i18n="inv_tab_display">สต็อก</div>
           <div class="setup-tab" onclick="switchInvTab('edit',this)" id="inv-tab-edit" data-i18n="inv_tab_edit">✏️ แก้ไข</div>
           <div class="setup-tab" onclick="switchInvTab('consignment',this)" id="inv-tab-consignment" data-i18n="inv_tab_consignment">🤝 ฝากขาย&เกรด</div>
-          <button class="btn btn-sm" data-i18n="inv_btn_share" onclick="shareScreenshot('invtab-display','สต็อกการ์ด')" style="margin-left:auto;font-size:11px;padding:4px 10px;flex-shrink:0">📤 แชร์</button>
+          <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0">
+            <button class="btn btn-sm" onclick="copyPublicLinkQuick()" style="font-size:11px;padding:4px 10px;border-color:var(--accent);color:var(--accent)">🔗 Public Link</button>
+            <button class="btn btn-sm" data-i18n="inv_btn_share" onclick="shareScreenshot('invtab-display','สต็อกการ์ด')" style="font-size:11px;padding:4px 10px;flex-shrink:0">📤 แชร์</button>
+          </div>
         </div>
 
         <!-- Filter row (shared) -->
@@ -11344,6 +11347,24 @@ function savePublicSettings() {
   s.showPrice    = document.getElementById('pub-show-price')?.checked ?? true
   s.allowReserve = document.getElementById('pub-allow-reserve')?.checked ?? true
   saveData()
+}
+
+function copyPublicLinkQuick() {
+  const token = getPublicToken()
+  if (!token) { showToast('กรุณาตั้งค่า Public Link ใน Settings ก่อน', 'var(--orange)'); return }
+  const link = `https://cardestco.com/cardest-shop.html?shop=${token}`
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('✅ Copy link แล้ว!', 'var(--green)')
+  }).catch(() => {
+    // fallback สำหรับ mobile ที่ clipboard API ไม่รองรับ
+    const el = document.createElement('textarea')
+    el.value = link
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+    showToast('✅ Copy link แล้ว!', 'var(--green)')
+  })
 }
 
 function copyPublicLink() {
