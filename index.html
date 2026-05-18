@@ -11268,17 +11268,33 @@ function getPublicToken() {
   if (!setupData.publicSettings) setupData.publicSettings = {}
   if (!setupData.publicSettings.token) {
     setupData.publicSettings.token = _generateToken()
-    saveData()
+    saveData()  // save ทันที — token จะติดไปกับ setupData
   }
   return setupData.publicSettings.token
+}
+
+async function ensurePublicTokenSynced() {
+  const token = getPublicToken()
+  // force sync public_token column ใน Supabase โดยตรง
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/shop_data?shop_id=eq.${encodeURIComponent(currentUser.email)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ public_token: token })
+    })
+  } catch(e) { console.warn('token sync failed', e) }
+  return token
 }
 
 function getPublicLink() {
   return `https://cardestco.com/cardest-shop.html?shop=${getPublicToken()}`
 }
 
-function renderPublicLinkTab() {
-  const token = getPublicToken()
+async function renderPublicLinkTab() {
+  const token = await ensurePublicTokenSynced()
   const linkEl = document.getElementById('pub-link-input')
   if (linkEl) linkEl.value = getPublicLink()
   const tokenEl = document.getElementById('pub-token-display')
