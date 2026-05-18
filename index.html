@@ -4258,12 +4258,13 @@ function buildSnapshot() {
     expenses,
     pendingBreaks: cleanPendingBreaks,
     setupData: {
-      brands:    setupData.brands,
-      rarity:    setupData.rarity,
-      channels:  setupData.channels,
-      suppliers: setupData.suppliers,
-      tiers:     setupData.tiers,
-      units:     setupData.units,
+      brands:         setupData.brands,
+      rarity:         setupData.rarity,
+      channels:       setupData.channels,
+      suppliers:      setupData.suppliers,
+      tiers:          setupData.tiers,
+      units:          setupData.units,
+      publicSettings: setupData.publicSettings || {},
     },
     USERS: Object.fromEntries(
       Object.entries(USERS).filter(([k]) => !['admin@546bfopg.com','staff@546bfopg.com'].includes(k))
@@ -4287,12 +4288,13 @@ function applySnapshot(data) {
   pendingBreaks.length = 0
   if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
   if (data.setupData) {
-    if (data.setupData.brands)    setupData.brands    = data.setupData.brands
-    if (data.setupData.rarity)    setupData.rarity    = data.setupData.rarity
-    if (data.setupData.channels)  setupData.channels  = data.setupData.channels
-    if (data.setupData.suppliers) setupData.suppliers = data.setupData.suppliers
-    if (data.setupData.tiers)     setupData.tiers     = data.setupData.tiers
-    if (data.setupData.units)     setupData.units     = data.setupData.units
+    if (data.setupData.brands)         setupData.brands         = data.setupData.brands
+    if (data.setupData.rarity)         setupData.rarity         = data.setupData.rarity
+    if (data.setupData.channels)       setupData.channels       = data.setupData.channels
+    if (data.setupData.suppliers)      setupData.suppliers      = data.setupData.suppliers
+    if (data.setupData.tiers)          setupData.tiers          = data.setupData.tiers
+    if (data.setupData.units)          setupData.units          = data.setupData.units
+    if (data.setupData.publicSettings) setupData.publicSettings = data.setupData.publicSettings
   }
   if (data.USERS) Object.assign(USERS, data.USERS)
   if (data.trialData && currentUser) {

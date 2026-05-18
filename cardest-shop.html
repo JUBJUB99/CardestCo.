@@ -519,10 +519,10 @@ function renderCards() {
     const photos = card.photos && card.photos.length > 0 ? card.photos : (card.photo ? [card.photo] : [])
     const mainPhoto = photos[0] || null
     const hasMany = photos.length > 1
-    const cardJson = JSON.stringify(JSON.stringify(card))
+    const cardIdx = shopCards.indexOf(card)
     return `
     <div class="card">
-      <div class="card-img" onclick="openGallery(${cardJson})" style="cursor:pointer;position:relative">
+      <div class="card-img" onclick="openGallery(${cardIdx})" style="cursor:pointer;position:relative">
         ${mainPhoto
           ? `<img src="${mainPhoto}" alt="${card.name}" loading="lazy">`
           : '🃏'}
@@ -537,7 +537,7 @@ function renderCards() {
             ? `<div class="card-price">฿${(card.price||0).toLocaleString()}</div>`
             : ''}
         </div>
-        ${allowR ? `<button class="btn-reserve" onclick="event.stopPropagation();openReserve(${cardJson})">📦 จอง</button>` : ''}
+        ${allowR ? `<button class="btn-reserve" onclick="event.stopPropagation();openReserve(${cardIdx})">📦 จอง</button>` : ''}
       </div>
     </div>`
   }).join('')
@@ -548,8 +548,8 @@ let _galleryCard  = null
 let _galleryIdx   = 0
 let _galleryPhotos = []
 
-function openGallery(cardJson) {
-  _galleryCard   = JSON.parse(cardJson)
+function openGallery(idx) {
+  _galleryCard   = shopCards[idx]
   _galleryPhotos = _galleryCard.photos && _galleryCard.photos.length > 0
     ? _galleryCard.photos
     : (_galleryCard.photo ? [_galleryCard.photo] : [])
@@ -607,11 +607,11 @@ function closeGallery() {
 
 function galleryReserve() {
   closeGallery()
-  openReserve(JSON.stringify(_galleryCard))
+  openReserve(shopCards.indexOf(_galleryCard))
 }
 
-function openReserve(cardJson) {
-  resCard = JSON.parse(cardJson)
+function openReserve(idx) {
+  resCard = typeof idx === 'number' ? shopCards[idx] : JSON.parse(idx)
   const show = settings.showPrice !== false
   document.getElementById('reserve-info').innerHTML = `
     <b style="font-size:13px;color:#f1f0ff">${resCard.name}</b><br>
