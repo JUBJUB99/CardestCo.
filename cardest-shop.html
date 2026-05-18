@@ -437,7 +437,6 @@ let shopCards = []
 let settings  = {}
 let resCard   = null
 
-async function 
 // Swipe support for gallery
 ;(function() {
   let startX = 0
@@ -450,7 +449,7 @@ async function
   }, { passive: true })
 })()
 
-init() {
+async function init() {
   const token = new URLSearchParams(window.location.search).get('shop')
   if (!token) { showError(); return }
 
