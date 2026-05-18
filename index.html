@@ -710,6 +710,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
 </style>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -3637,10 +3638,10 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         ondrop="event.preventDefault();handleImportPOFile({target:{files:event.dataTransfer.files}})"
         style="border:2px dashed var(--border2);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s">
         <div style="font-size:24px;margin-bottom:6px">📄</div>
-        <div style="font-size:13px;color:var(--text2)">คลิกหรือลากไฟล์ .csv มาวาง</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)">.csv เท่านั้น · UTF-8</div>
+        <div style="font-size:13px;color:var(--text2)">คลิกหรือลากไฟล์มาวาง</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)">.xlsx · .xls · .csv · UTF-8</div>
       </div>
-      <input type="file" id="ipo-file-input" accept=".csv" style="display:none" onchange="handleImportPOFile(event)">
+      <input type="file" id="ipo-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportPOFile(event)">
     </div>
 
     <!-- Step 3: Preview -->
@@ -10757,28 +10758,54 @@ function downloadImportPOTemplate() {
     'note'
   ]
   const sample = [
-    ['YAMATO OP01-121',       'One Piece', '1', '45000', 'Secret Rare', 'OK', '',    '',   'ประยุทธ', 'ซื้อจากงาน'],
-    ['Charizard VMAX',        'Pokemon',   '2', '5000',  'Rare Holo',   'OK', '',    '',   '',        ''],
-    ['Blue-Eyes White Dragon','Yu-Gi-Oh',  '1', '2000',  'Ultra Rare',  'OK', 'PSA', '10', '',        'Graded card'],
+    ['YAMATO OP01-121',       'One Piece', 1, 45000, 'Secret Rare', 'OK', '',    '',   'ประยุทธ', 'ซื้อจากงาน'],
+    ['Charizard VMAX',        'Pokemon',   2, 5000,  'Rare Holo',   'OK', '',    '',   '',        ''],
+    ['Blue-Eyes White Dragon','Yu-Gi-Oh',  1, 2000,  'Ultra Rare',  'OK', 'PSA', '10', '',        'Graded card'],
   ]
-  const csv = [headers, ...sample].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href = url; a.download = 'cardest_import_po_template.csv'; a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 2000)
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...sample])
+  // กำหนด column width
+  ws['!cols'] = [
+    {wch:30},{wch:12},{wch:8},{wch:10},{wch:14},
+    {wch:10},{wch:16},{wch:14},{wch:14},{wch:20}
+  ]
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Import PO')
+  XLSX.writeFile(wb, 'cardest_import_po_template.xlsx')
   showToast('⬇️ Downloaded template', 'var(--green)')
 }
 
 function handleImportPOFile(e) {
   const file = e.target.files[0]
   if (!file) return
-  if (!file.name.endsWith('.csv')) {
-    showToast('กรุณาเลือกไฟล์ .csv เท่านั้น', 'var(--orange)'); return
+
+  const name = file.name.toLowerCase()
+  const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls')
+  const isCSV   = name.endsWith('.csv')
+
+  if (!isExcel && !isCSV) {
+    showToast('รองรับเฉพาะ .xlsx, .xls, .csv เท่านั้น', 'var(--orange)'); return
   }
+
   const reader = new FileReader()
-  reader.onload = ev => parseImportPOCSV(ev.target.result)
-  reader.readAsText(file, 'UTF-8')
+
+  if (isExcel) {
+    reader.onload = ev => {
+      try {
+        const data     = new Uint8Array(ev.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const sheet    = workbook.Sheets[workbook.SheetNames[0]]
+        const csv      = XLSX.utils.sheet_to_csv(sheet)
+        parseImportPOCSV(csv)
+      } catch(err) {
+        showToast('อ่านไฟล์ Excel ไม่สำเร็จ', 'var(--red)')
+        console.error(err)
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  } else {
+    reader.onload = ev => parseImportPOCSV(ev.target.result)
+    reader.readAsText(file, 'UTF-8')
+  }
 }
 
 function parseImportPOCSV(text) {
