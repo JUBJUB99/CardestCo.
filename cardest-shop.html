@@ -455,12 +455,13 @@ init() {
   if (!token) { showError(); return }
 
   try {
+    // query ตรงจาก public_token column — เร็วกว่า และไม่ติด limit
     const res  = await fetch(
-      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data',
+      SUPABASE_URL + '/rest/v1/shop_data?public_token=eq.' + encodeURIComponent(token) + '&select=shop_id,data&limit=1',
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
     const rows = await res.json()
-    const match = rows.find(r => r.data?.setupData?.publicSettings?.token === token)
+    const match = rows && rows[0]
     if (!match) { showError(); return }
 
     shopId    = match.shop_id

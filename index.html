@@ -4445,13 +4445,14 @@ async function saveData() {
     // ─────────────────────────────────────────────────────────────────────
 
     const merged = { ...existing_data, ...snapshot }
+    const publicToken = merged?.setupData?.publicSettings?.token || null
     await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
         'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
       },
-      body: JSON.stringify({ shop_id: email, data: merged, updated_at: new Date().toISOString() })
+      body: JSON.stringify({ shop_id: email, data: merged, updated_at: new Date().toISOString(), public_token: publicToken })
     })
     _lastSyncedAt = snapshot.savedAt  // บันทึกเวลา sync ล่าสุด
   } catch(e) { console.warn('saveData Supabase failed:', e) }
