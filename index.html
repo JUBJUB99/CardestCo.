@@ -11603,7 +11603,8 @@ async function renderReservationsTab() {
                 </td>
                 <td style="padding:8px;font-size:11px">
                   ${r.contact_phone?`📞 ${r.contact_phone}<br>`:''}
-                  ${r.contact_line?`💬 ${r.contact_line}`:''}
+                  ${r.contact_line?`💬 ${r.contact_line}<br>`:''}
+                  ${r.contact_facebook?`📘 ${r.contact_facebook}`:''}
                 </td>
                 <td style="padding:8px;text-align:center">
                   <span style="font-size:10px;font-weight:600;color:${statusColor[r.status]||'var(--text3)'};padding:2px 8px;border-radius:10px;border:1px solid ${statusColor[r.status]||'var(--border)'}">
@@ -11674,9 +11675,10 @@ async function confirmReservationSale(idx) {
   const noteEl = document.getElementById('sale-note')
   if (noteEl) {
     const parts = []
-    if (r.contact_phone) parts.push(`📞 ${r.contact_phone}`)
-    if (r.contact_line)  parts.push(`💬 ${r.contact_line}`)
-    if (r.note)          parts.push(r.note)
+    if (r.contact_phone)    parts.push(`📞 ${r.contact_phone}`)
+    if (r.contact_line)     parts.push(`💬 ${r.contact_line}`)
+    if (r.contact_facebook) parts.push(`📘 ${r.contact_facebook}`)
+    if (r.note)             parts.push(r.note)
     noteEl.value = parts.join(' · ')
   }
 

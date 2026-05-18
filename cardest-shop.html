@@ -412,6 +412,10 @@
       <input class="form-input" id="res-line" type="text" placeholder="@lineid">
     </div>
     <div class="form-group">
+      <label class="form-label">Facebook</label>
+      <input class="form-input" id="res-facebook" type="text" placeholder="ชื่อ Facebook">
+    </div>
+    <div class="form-group">
       <label class="form-label">จำนวนที่ต้องการ</label>
       <input class="form-input" id="res-qty" type="number" min="1" value="1">
     </div>
@@ -619,7 +623,7 @@ function openReserve(idx) {
     ${show && (resCard.price||0) > 0 ? `<br><span style="color:#f87171;font-weight:700">฿${(resCard.price||0).toLocaleString()}</span>` : ''}
     <br><span style="color:#5f5d80;font-size:11px">คงเหลือ ${resCard.stock} ใบ</span>
   `
-  ;['res-name','res-phone','res-line','res-note-input'].forEach(id => {
+  ;['res-name','res-phone','res-line','res-facebook','res-note-input'].forEach(id => {
     const el = document.getElementById(id)
     if (el) el.value = ''
   })
@@ -637,10 +641,11 @@ async function submitReserve() {
   const phone = document.getElementById('res-phone').value.trim()
   const line  = document.getElementById('res-line').value.trim()
   const qty   = parseInt(document.getElementById('res-qty').value) || 1
+  const facebook = document.getElementById('res-facebook').value.trim()
   const note  = document.getElementById('res-note-input').value.trim()
 
   if (!name) { showToast('⚠️ กรุณากรอกชื่อผู้ติดต่อ'); return }
-  if (!phone && !line) { showToast('⚠️ กรุณากรอกเบอร์โทร หรือ Line ID'); return }
+  if (!phone && !line && !facebook) { showToast('⚠️ กรุณากรอกเบอร์โทร, Line ID หรือ Facebook อย่างน้อย 1 ช่องทาง'); return }
 
   const btn = document.getElementById('submit-btn')
   btn.disabled = true; btn.textContent = '⏳ กำลังส่ง...'
@@ -662,7 +667,8 @@ async function submitReserve() {
         qty,
         contact_name:  name,
         contact_phone: phone || '',
-        contact_line:  line  || '',
+        contact_line:  line     || '',
+        contact_facebook: facebook || '',
         note:          note  || '',
         status:        'pending'
       })
@@ -672,11 +678,16 @@ async function submitReserve() {
     closeReserve()
     showToast('✅ จองสำเร็จ! ร้านค้าจะติดต่อกลับเร็วๆ นี้')
 
-    // mark card as reserved in UI temporarily
+    // ลด reserved stock ใน UI ทันที (กันจองซ้ำ)
     const idx = shopCards.findIndex(c => c.name === resCard.name)
     if (idx >= 0) {
-      shopCards[idx]._reserved = true
+      shopCards[idx].stock = Math.max(0, (shopCards[idx].stock || 0) - qty)
+      if (shopCards[idx].stock === 0) {
+        // ถ้าหมด → เอาออกจาก list
+        shopCards.splice(idx, 1)
+      }
     }
+    renderCards()
 
   } catch(e) {
     showToast('❌ เกิดข้อผิดพลาด กรุณาลองใหม่')
