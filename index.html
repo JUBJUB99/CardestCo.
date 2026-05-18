@@ -6788,9 +6788,7 @@ function closeModal(id){
     const p = document.getElementById('emoji-picker-panel')
     if (p) p.style.display = 'none'
   }
-  if (id === 'newSale') {
-    window._pendingReservationId = null
-  }
+  // ไม่ clear _pendingReservationId ที่นี่ — saveOrder จะ clear เองหลัง await updateReservation
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   if(m.id === 'modal-cropImage') return  // crop modal จัดการเอง
