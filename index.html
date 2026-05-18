@@ -573,7 +573,7 @@ select{background-image:none;}
   #page-purchase .kpi-row{grid-template-columns:repeat(2,1fr);}
 
   /* Tab bars */
-  .setup-tab{padding:8px 12px;font-size:12px;}
+  .setup-tab{padding:8px 12px;font-size:12px;white-space:nowrap;flex-shrink:0;}
 
   /* Pending breaks sidebar — mobile: กลับเป็น static ด้านบนฟอร์ม */
   #pending-breaks-sidebar{
@@ -2911,7 +2911,8 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       <div class="content">
 
         <!-- Tab bar -->
-        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap">
+        <div style="display:flex;gap:4px;row-gap:4px;column-gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap;flex-shrink:0">
+          <style>#page-setup .content > div:first-child::-webkit-scrollbar{display:none}</style>
           <div class="setup-tab active" data-i18n="setup_brands" onclick="switchTab('brands',this)">แบรนด์สินค้า</div>
           <div class="setup-tab" data-i18n="setup_rarity" onclick="switchTab('rarity',this)">Rarity</div>
           <div class="setup-tab" data-i18n="setup_channels" onclick="switchTab('channels',this)">ช่องทางขาย</div>
