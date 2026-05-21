@@ -4237,21 +4237,16 @@ async function sbUpsertUser(userObj) {
 }
 
 async function sbLoadAllUsers() {
+  // ดึงเฉพาะ email+name+shop สำหรับ login check — ไม่ดึง password จาก Supabase
+  // password ถูก verify ตอน login โดย compare hash จาก server โดยตรง
   try {
-    // ดึงเฉพาะ userInfo — ไม่ดึง data ทั้งหมดเพื่อป้องกัน data leak
     const res = await fetch(
-      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data->userInfo',
+      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id',
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
     if (!res.ok) return null
     const rows = await res.json()
-    ;(rows||[]).forEach(row => {
-      const u = row.userInfo
-      if (u && u.email) {
-        const key = u.email.trim().toLowerCase()
-        USERS[key] = { name:u.name, shop:u.shop, password:u.password, role:u.role||'admin', email:key }
-      }
-    })
+    // ไม่ populate USERS จาก query นี้แล้ว — login จะดึงข้อมูลตาม email โดยตรง
     return rows
   } catch(e) { console.warn('sbLoadAllUsers failed:', e); return null }
 }
@@ -4293,9 +4288,6 @@ function buildSnapshot() {
       units:          setupData.units,
       publicSettings: setupData.publicSettings || {},
     },
-    USERS: Object.fromEntries(
-      Object.entries(USERS).filter(([k]) => !['admin@546bfopg.com','staff@546bfopg.com'].includes(k))
-    ),
     savedAt: Date.now(),
     trialData: (()=>{ try { const r=localStorage.getItem('cv_trial_'+(currentUser?.email||'')); return r?JSON.parse(r):null } catch(e){return null} })()
   }
@@ -4315,15 +4307,16 @@ function applySnapshot(data) {
   pendingBreaks.length = 0
   if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
   if (data.setupData) {
-    if (data.setupData.brands)         setupData.brands         = data.setupData.brands
-    if (data.setupData.rarity)         setupData.rarity         = data.setupData.rarity
-    if (data.setupData.channels)       setupData.channels       = Array.isArray(data.setupData.channels) ? data.setupData.channels : []
-    if (data.setupData.suppliers)      setupData.suppliers      = data.setupData.suppliers
-    if (data.setupData.tiers)          setupData.tiers          = data.setupData.tiers
-    if (data.setupData.units)          setupData.units          = data.setupData.units
+    // ทับเฉพาะถ้า cloud มีข้อมูลจริง — ไม่ทับด้วย array ว่าง กัน race condition
+    if (data.setupData.brands     && data.setupData.brands.length > 0)     setupData.brands     = data.setupData.brands
+    if (data.setupData.rarity     && data.setupData.rarity.length > 0)     setupData.rarity     = data.setupData.rarity
+    if (data.setupData.channels   && data.setupData.channels.length > 0)   setupData.channels   = Array.isArray(data.setupData.channels) ? data.setupData.channels : []
+    if (data.setupData.suppliers  && data.setupData.suppliers.length > 0)  setupData.suppliers  = data.setupData.suppliers
+    if (data.setupData.tiers      && data.setupData.tiers.length > 0)      setupData.tiers      = data.setupData.tiers
+    if (data.setupData.units      && data.setupData.units.length > 0)      setupData.units      = data.setupData.units
     if (data.setupData.publicSettings) setupData.publicSettings = data.setupData.publicSettings
   }
-  if (data.USERS) Object.assign(USERS, data.USERS)
+  // ไม่รับ USERS จาก snapshot อีกต่อไป — ป้องกัน password hash leak ข้าม user
   if (data.trialData && currentUser) {
     try { localStorage.setItem('cv_trial_' + currentUser.email, JSON.stringify(data.trialData)) } catch(e) {}
   }
@@ -4772,7 +4765,36 @@ function doRegister() {
         consignments: [],
         expenses:     [],
         setupData: {
-          brands: [], rarity: [], channels: [], suppliers: [], tiers: [], units: [],
+          // ใส่ default Master data ให้ user ใหม่ทุกคน
+          brands: setupData.brands.length > 0 ? setupData.brands : [
+            {name:'Pokemon',   desc:'การ์ดสะสม Pokemon TCG', emoji:'⚡', color:'#f5c842', status:'active'},
+            {name:'Yu-Gi-Oh',  desc:'การ์ด Yu-Gi-Oh!',       emoji:'🐉', color:'#60a5fa', status:'active'},
+            {name:'MTG',       desc:'Magic: The Gathering',   emoji:'🌸', color:'#f472b6', status:'active'},
+            {name:'One Piece', desc:'One Piece Card Game',    emoji:'🌀', color:'#fb923c', status:'active'},
+          ],
+          rarity: setupData.rarity.length > 0 ? setupData.rarity : [
+            {name:'Common',     desc:'การ์ดทั่วไป',      emoji:'⬜', color:'#8888aa', extra:'1x',   status:'active'},
+            {name:'Rare',       desc:'การ์ดหายากระดับกลาง', emoji:'🟦', color:'#60a5fa', extra:'1.5x', status:'active'},
+            {name:'Ultra Rare', desc:'การ์ดหายาก ราคาสูง',  emoji:'🟪', color:'#a594fc', extra:'3x',   status:'active'},
+            {name:'Secret Rare',desc:'การ์ดหายากสูงสุด',    emoji:'🌟', color:'#f5c842', extra:'8x',   status:'active'},
+          ],
+          channels: setupData.channels.length > 0 ? setupData.channels : [
+            {name:'หน้าร้าน', desc:'ขายที่หน้าร้าน',     emoji:'🏪', color:'#f5c842', status:'active'},
+            {name:'Line OA',  desc:'Line Official Account', emoji:'💬', color:'#4ade80', status:'active'},
+            {name:'Facebook', desc:'Facebook Page',         emoji:'📘', color:'#60a5fa', status:'active'},
+            {name:'Shopee',   desc:'Shopee',                emoji:'🛒', color:'#fb923c', status:'active'},
+          ],
+          suppliers: setupData.suppliers.length > 0 ? setupData.suppliers : [],
+          tiers: setupData.tiers.length > 0 ? setupData.tiers : [
+            {name:'Regular', desc:'ลูกค้าทั่วไป',               emoji:'👤', color:'#8888aa', extra:'฿0 – ฿19,999',      tierMin:0,     tierMax:19999, status:'active'},
+            {name:'Silver',  desc:'ลูกค้าประจำ มีส่วนลด 3%',   emoji:'🥈', color:'#b4b2a9', extra:'฿20,000 – ฿49,999', tierMin:20000, tierMax:49999, status:'active'},
+            {name:'VIP',     desc:'ลูกค้า VIP มีส่วนลด 7%',    emoji:'👑', color:'#f5c842', extra:'฿50,000+',           tierMin:50000, tierMax:null,  status:'active'},
+          ],
+          units: setupData.units.length > 0 ? setupData.units : [
+            {name:'ใบ',   status:'active'},
+            {name:'กล่อง', status:'active'},
+            {name:'ซอง',  status:'active'},
+          ],
           publicSettings: { token: newToken }
         },
         savedAt: now
