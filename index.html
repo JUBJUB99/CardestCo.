@@ -4307,9 +4307,9 @@ function applySnapshot(data) {
   if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
   consignments.length = 0
   if (data.consignments)  { consignments.push(...data.consignments) }
-  // expenses
+  // expenses — reset ก่อนเสมอ กัน data ของ user อื่น leak เข้ามา
   expenses.length = 0
-  if (data.expenses)      { expenses.push(...data.expenses) }
+  if (data.expenses && Array.isArray(data.expenses)) { expenses.push(...data.expenses) }
   // pendingBreaks — reset เสมอ (ถ้า user ใหม่ไม่มีข้อมูลให้เป็น [])
   pendingBreaks.length = 0
   if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
@@ -5781,6 +5781,13 @@ function doLogin(){
     if(rem){ try{ localStorage.setItem('cv_remember_email',u) }catch(e){} }
     else{ try{ localStorage.removeItem('cv_remember_email'); localStorage.removeItem('cv_remember_pwd') }catch(e){} }
     currentUser = {...user, email:u, username:u}
+
+    // ── clear memory ทั้งหมดก่อน load ข้อมูล user ใหม่ ──────────────────
+    cards.length = 0; orders.length = 0; purchases.length = 0
+    consignments.length = 0; expenses.length = 0; pendingBreaks.length = 0
+    setupData.brands = []; setupData.rarity = []; setupData.channels = []
+    setupData.suppliers = []; setupData.tiers = []; setupData.units = []
+    // ──────────────────────────────────────────────────────────────────────
     let trialData = getTrialData(u)
     if(!trialData) trialData = initTrial(u)
 
@@ -5826,6 +5833,7 @@ function doLogout(){
 
   cards.length = 0; orders.length = 0; purchases.length = 0
   consignments.length = 0
+  expenses.length = 0        // ← clear expenses กัน user อื่นเห็นข้อมูล
   pendingBreaks.length = 0  // ← clear pending breaks ของ user เดิม
   currentUser = null
 
