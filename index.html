@@ -4316,7 +4316,7 @@ function applySnapshot(data) {
   if (data.setupData) {
     if (data.setupData.brands)         setupData.brands         = data.setupData.brands
     if (data.setupData.rarity)         setupData.rarity         = data.setupData.rarity
-    if (data.setupData.channels)       setupData.channels       = data.setupData.channels
+    if (data.setupData.channels)       setupData.channels       = Array.isArray(data.setupData.channels) ? data.setupData.channels : []
     if (data.setupData.suppliers)      setupData.suppliers      = data.setupData.suppliers
     if (data.setupData.tiers)          setupData.tiers          = data.setupData.tiers
     if (data.setupData.units)          setupData.units          = data.setupData.units
@@ -7639,8 +7639,20 @@ function openNewSaleModal() {
   // sync channel dropdown
   const chSel = document.getElementById('sale-channel')
   if (chSel) {
-    const activeCh = setupData.channels.filter(ch=>ch.status==='active')
-    chSel.innerHTML = activeCh.map(ch=>`<option value="${escHtml(ch.name)}">${escHtml(ch.emoji||'')} ${escHtml(ch.name)}</option>`).join('')
+    const allCh    = Array.isArray(setupData.channels) ? setupData.channels : []
+    const activeCh = allCh.filter(ch => ch.status === 'active')
+
+    // fallback 1: ถ้าไม่มี active → ใช้ทุก channel ที่มี
+    // fallback 2: ถ้าไม่มีเลย → ใส่ default "หน้าร้าน"
+    const options = activeCh.length > 0
+      ? activeCh
+      : allCh.length > 0
+        ? allCh
+        : [{ name: 'หน้าร้าน', emoji: '🏪' }, { name: 'ออนไลน์', emoji: '🌐' }]
+
+    chSel.innerHTML = options.map(ch =>
+      `<option value="${escHtml(ch.name)}">${escHtml(ch.emoji||'')} ${escHtml(ch.name)}</option>`
+    ).join('')
   }
   // reset customer
   document.getElementById('sale-cust-anon').checked = true
@@ -15180,7 +15192,11 @@ function syncMasterToAllPages(){
   )
 
   // ── หน้าออเดอร์: channel dropdown ─────────────────────────────────────────
-  const activeCh = setupData.channels.filter(ch=>ch.status==='active')
+  const _allCh    = Array.isArray(setupData.channels) ? setupData.channels : []
+  const _activeCh = _allCh.filter(ch => ch.status === 'active')
+  const activeCh  = _activeCh.length > 0 ? _activeCh
+                    : _allCh.length > 0 ? _allCh
+                    : [{ name: 'หน้าร้าน', emoji: '🏪' }, { name: 'ออนไลน์', emoji: '🌐' }]
   setOpts('order-channel',
     activeCh.map(ch=>`<option value="${ch.name}">${ch.emoji||''} ${ch.name}</option>`).join('')
   )
