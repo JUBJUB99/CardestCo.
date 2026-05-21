@@ -4238,14 +4238,15 @@ async function sbUpsertUser(userObj) {
 
 async function sbLoadAllUsers() {
   try {
+    // ดึงเฉพาะ userInfo — ไม่ดึง data ทั้งหมดเพื่อป้องกัน data leak
     const res = await fetch(
-      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data',
+      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data->userInfo',
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
     if (!res.ok) return null
     const rows = await res.json()
     ;(rows||[]).forEach(row => {
-      const u = row.data?.userInfo
+      const u = row.userInfo
       if (u && u.email) {
         const key = u.email.trim().toLowerCase()
         USERS[key] = { name:u.name, shop:u.shop, password:u.password, role:u.role||'admin', email:key }
@@ -4480,7 +4481,8 @@ async function saveData() {
       // ป้องกัน userInfo หายถ้า snapshot ไม่มี
       userInfo: snapshot.userInfo || existing_data.userInfo,
     }
-    const publicToken = merged?.setupData?.publicSettings?.token || null
+    // token ต้องมาจาก snapshot ของ user นี้เท่านั้น — ห้ามรับจาก existing (กัน token ซ้ำข้าม user)
+    const publicToken = snapshot?.setupData?.publicSettings?.token || null
     await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
       method: 'POST',
       headers: {
@@ -4755,23 +4757,31 @@ function doRegister() {
     const trialData = { start:now, subscribed:false, subExpiry:null, status:'trial' }
     const newUser   = { password:hashedPwd, name, role:'admin', shop:shopname, email }
     USERS[email]    = newUser
+    // generate token ใหม่ unique สำหรับ user นี้
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    const newToken = Array.from({length:16}, () => chars[Math.floor(Math.random()*chars.length)]).join('')
     try{ localStorage.setItem('cv_trial_'+email, JSON.stringify(trialData)) }catch(e){}
-    // save to Supabase
+    // save to Supabase — สร้าง data ใหม่ทั้งหมด ไม่รับ data เก่า
     try{
-      const getRes = await fetch(
-        SUPABASE_URL+'/rest/v1/shop_data?shop_id=eq.'+encodeURIComponent(email)+'&select=data',
-        {headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}}
-      )
-      const existing = await getRes.json()
-      const shopData = (Array.isArray(existing)&&existing[0]?.data)||{}
-      shopData.userInfo  = newUser
-      shopData.trialData = trialData
-      // ใช้ fetch ตรง (ไม่ใช้ sbFetch เพราะยังไม่ได้ login)
+      const freshData = {
+        userInfo:     newUser,
+        trialData:    trialData,
+        cards:        [],
+        orders:       [],
+        purchases:    [],
+        consignments: [],
+        expenses:     [],
+        setupData: {
+          brands: [], rarity: [], channels: [], suppliers: [], tiers: [], units: [],
+          publicSettings: { token: newToken }
+        },
+        savedAt: now
+      }
       await fetch(SUPABASE_URL+'/rest/v1/shop_data',{
         method:'POST',
         headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,
                  'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-        body:JSON.stringify({shop_id:email,data:shopData,updated_at:new Date().toISOString()})
+        body:JSON.stringify({shop_id:email, data:freshData, public_token:newToken, updated_at:new Date().toISOString()})
       })
     }catch(e){ console.warn('register save failed:',e) }
     // reset form
@@ -11607,14 +11617,14 @@ async function checkPublicMode() {
   const token  = params.get('shop')
   if (!token) return false
 
-  // ค้นหาร้านที่มี token นี้ — ดึงทุก shop แล้ว filter (token อยู่ใน data->setupData->publicSettings->token)
+  // ค้นหาร้านด้วย public_token column โดยตรง — ปลอดภัย ไม่ดึงข้อมูลของ user อื่น
   try {
     const res = await fetch(
-      SUPABASE_URL + '/rest/v1/shop_data?select=shop_id,data',
+      SUPABASE_URL + '/rest/v1/shop_data?public_token=eq.' + encodeURIComponent(token) + '&select=shop_id,data&limit=1',
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
     )
     const rows = await res.json()
-    const match = rows.find(r => r.data?.setupData?.publicSettings?.token === token)
+    const match = Array.isArray(rows) && rows[0]
 
     if (!match) {
       document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif;color:#666;font-size:14px">🔒 ลิงก์ไม่ถูกต้องหรือหมดอายุ</div>'
