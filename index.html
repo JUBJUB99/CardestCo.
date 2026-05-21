@@ -4472,7 +4472,14 @@ async function saveData() {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    const merged = { ...existing_data, ...snapshot }
+    // snapshot ต้องชนะเสมอ — ไม่ใช้ spread existing_data ทับ
+    // เอาเฉพาะ field ที่ snapshot ไม่มีจาก existing (เช่น userInfo)
+    const merged = {
+      ...existing_data,   // base จาก existing
+      ...snapshot,        // snapshot ทับทุกอย่าง
+      // ป้องกัน userInfo หายถ้า snapshot ไม่มี
+      userInfo: snapshot.userInfo || existing_data.userInfo,
+    }
     const publicToken = merged?.setupData?.publicSettings?.token || null
     await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
       method: 'POST',
