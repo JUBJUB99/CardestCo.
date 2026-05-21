@@ -5775,6 +5775,22 @@ function doLogin(){
       })()
     }
     USERS[u] = user
+
+    // ── ล้าง localStorage ของ user เก่าถ้า login คนละ account ──────────
+    try {
+      const prevUser = localStorage.getItem('cv_lastUser')
+      if (prevUser && prevUser !== u) {
+        // ลบ cache ของ user เก่าออก กัน data leak ข้ามกัน
+        localStorage.removeItem('cv_data_' + prevUser)
+        // ล้าง memory ด้วย
+        cards.length = 0; orders.length = 0; purchases.length = 0
+        consignments.length = 0; expenses.length = 0; pendingBreaks.length = 0
+        setupData.brands = []; setupData.rarity = []; setupData.channels = []
+        setupData.suppliers = []; setupData.tiers = []; setupData.units = []
+      }
+    } catch(e) {}
+    // ────────────────────────────────────────────────────────────────────
+
     localStorage.setItem('cv_lastUser', u)
     sessionStorage.setItem('cv_session_active','1')
     const rem = document.getElementById('remember')?.checked
