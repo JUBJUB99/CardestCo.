@@ -8890,8 +8890,12 @@ function handleImportConsignmentFile(e) {
 
       const errors = []
       const parsed = []
-      // นับจาก consignment ที่มีอยู่แล้ว เพื่อรัน ID ต่อเนื่อง
-      let nextNum = consignments.length + 1
+      let nextNum = 0
+      consignments.forEach(c => {
+        const m = (c.id || '').match(/^CS-(\d+)$/)
+        if (m) nextNum = Math.max(nextNum, parseInt(m[1]))
+      })
+      nextNum++ // เริ่มจาก max+1
       rows.forEach((r, i) => {
         const rowNum = i + 2
         const cardName = (r.card_name || r['card_name'] || '').trim()
@@ -8961,6 +8965,16 @@ function handleImportConsignmentFile(e) {
   else         reader.readAsArrayBuffer(file)
   // reset input
   document.getElementById('ic-file-input').value = ''
+}
+
+function getNextCsmtId() {
+  // หา max number จาก CS-XXXX ที่มีอยู่ทั้งหมด แล้ว +1
+  let max = 0
+  consignments.forEach(c => {
+    const m = (c.id || '').match(/^CS-(\d+)$/)
+    if (m) max = Math.max(max, parseInt(m[1]))
+  })
+  return 'CS-' + String(max + 1).padStart(4, '0')
 }
 
 function confirmImportConsignment() {
@@ -9938,7 +9952,7 @@ function saveConsignment() {
   const price      = type==='grade' ? 0 : (parseFloat(document.getElementById('csmt-price')?.value) || 0)
   const deposit    = parseFloat(document.getElementById('csmt-deposit')?.value) || 0
   const note       = document.getElementById('csmt-note')?.value.trim() || ''
-  const id         = 'CS-' + String(consignments.length + 1).padStart(4, '0')
+  const id         = getNextCsmtId()
 
   const item = {
     id, type, cardName, brand, rarity, qty, graded, gradeScore,
