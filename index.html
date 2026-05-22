@@ -832,18 +832,31 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
     <!-- FORGOT PASSWORD FORM -->
     <div id="formForgot" class="l-card" style="display:none">
       <div class="l-title" data-i18n="forgot_title">ลืมรหัสผ่าน</div>
-      <div style="text-align:center;font-size:48px;margin:16px 0">🔑</div>
-      <div style="background:var(--bg3);border-radius:12px;padding:18px;margin-bottom:18px;text-align:center">
-        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">ติดต่อ Support เพื่อ Reset รหัสผ่าน</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7">
-          แจ้ง Email ที่ใช้สมัคร ทาง Line OA<br>
-          Admin จะ reset รหัสผ่านให้ภายใน 24 ชั่วโมง
-        </div>
+      <div style="text-align:center;font-size:48px;margin:12px 0">🔑</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:16px">กรอก Email ที่ใช้สมัคร ระบบจะสร้างรหัสชั่วคราวให้</div>
+
+      <div id="forgotStep1">
+        <div class="l-label">Email</div>
+        <input class="l-input" id="forgotEmail" type="email" placeholder="email@example.com" autocomplete="email">
+        <div id="forgotAlertBox" style="margin-top:8px"></div>
+        <button class="l-btn" id="forgotBtn" onclick="doForgotPassword()" style="margin-top:12px">🔑 รีเซ็ตรหัสผ่าน</button>
       </div>
-      <button class="l-btn" onclick="window.open('https://line.me/ti/p/@546bfopg','_blank')" style="background:linear-gradient(135deg,#06c755,#00a843);display:flex;align-items:center;justify-content:center;gap:8px;row-gap:8px;column-gap:8px">
-        <span style="font-size:18px">💬</span> ติดต่อผ่าน Line OA
-      </button>
-      <div id="forgotAlertBox" style="margin-top:10px"></div>
+
+      <div id="forgotStep2" style="display:none">
+        <div style="background:var(--bg3);border:1px solid var(--green);border-radius:12px;padding:18px;text-align:center;margin-bottom:16px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px">✅ รหัสผ่านชั่วคราวของคุณคือ</div>
+          <div id="tempPasswordDisplay" style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--green);letter-spacing:2px;margin:8px 0"></div>
+          <button onclick="copyTempPassword()" style="margin-top:8px;padding:6px 16px;border-radius:8px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:12px;cursor:pointer">📋 Copy</button>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:16px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:4px">ขั้นตอนต่อไป</div>
+          1. กด Copy รหัสด้านบน<br>
+          2. กลับไป Login ด้วยรหัสนี้<br>
+          3. เข้าระบบแล้วเปลี่ยนรหัสใหม่ทันที
+        </div>
+        <button class="l-btn" onclick="switchAuthTab('login')">→ ไปหน้า Login</button>
+      </div>
+
       <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text3)">
         <span style="color:var(--accent2);cursor:pointer" onclick="switchAuthTab('login')" data-i18n="forgot_back">← กลับไปหน้า Login</span>
       </div>
@@ -2215,6 +2228,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
             <div class="panel-head">
               <span class="panel-title" data-i18n="csmt_list_title">รายการฝากขาย&amp;เกรด</span>
               <div style="display:flex;gap:8px;row-gap:8px;column-gap:8px;align-items:center">
+                <button class="btn btn-sm" onclick="openModal('importConsignment')" style="font-size:11px;padding:4px 10px;white-space:nowrap">↑ Import Excel</button>
                 <select id="csmt-type-filter" onchange="renderConsignment()" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--mono)">
                   <option value="" data-i18n="csmt_filter_all">ทั้งหมด</option>
                   <option value="sell" data-i18n="csmt_type_sell">ฝากขาย</option>
@@ -2946,6 +2960,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
           <div class="setup-tab" onclick="switchTab('params',this)">⚙️ Parameters</div>
           <div class="setup-tab" onclick="switchTab('package',this)">📦 Package</div>
           <div class="setup-tab" onclick="switchTab('publiclink',this);renderPublicLinkTab()">🔗 Public Link</div>
+          <div class="setup-tab" onclick="switchTab('changepassword',this)">🔒 เปลี่ยนรหัสผ่าน</div>
         </div>
 
         <!-- TAB: Brands -->
@@ -3178,6 +3193,34 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
                 <input type="checkbox" id="pub-allow-reserve" onchange="savePublicSettings()" style="width:16px;height:16px" checked>
                 <span style="font-size:13px">อนุญาตให้จองสินค้า</span>
               </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: เปลี่ยนรหัสผ่าน -->
+        <div id="tab-changepassword" class="tab-content" style="display:none">
+          <div style="max-width:400px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px">🔒 เปลี่ยนรหัสผ่าน</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:20px">กรอกรหัสผ่านปัจจุบันและรหัสใหม่</div>
+
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">รหัสผ่านปัจจุบัน</div>
+                <input id="cp-current" type="password" placeholder="รหัสผ่านปัจจุบัน"
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;box-sizing:border-box">
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">รหัสผ่านใหม่</div>
+                <input id="cp-new" type="password" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)"
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;box-sizing:border-box">
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">ยืนยันรหัสผ่านใหม่</div>
+                <input id="cp-confirm" type="password" placeholder="ยืนยันรหัสผ่านใหม่"
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;box-sizing:border-box">
+              </div>
+              <div id="cp-alert" style="display:none;padding:10px 14px;border-radius:8px;font-size:12px"></div>
+              <button class="btn btn-primary" id="cp-btn" onclick="doChangePassword()" style="padding:12px">🔒 เปลี่ยนรหัสผ่าน</button>
             </div>
           </div>
         </div>
@@ -3767,6 +3810,72 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
     <div class="form-actions">
       <button class="btn btn-sm" onclick="closeModal('importPO')">ยกเลิก</button>
       <button class="btn btn-primary btn-sm" id="btn-confirm-import-po" onclick="confirmImportPO()" style="display:none">✅ Import PO ทั้งหมด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Consignment Modal -->
+<div class="modal-overlay" id="modal-importConsignment">
+  <div class="modal" style="width:min(700px,96vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="margin:0;font-size:16px">📥 Import ฝากขาย&เกรด (Bulk)</h3>
+      <button onclick="closeModal('importConsignment')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);line-height:1">×</button>
+    </div>
+
+    <!-- Step 1: Download Template -->
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Step 1 — Download Template</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.8">
+        <b>บังคับ:</b> card_name, owner, type (sell/grade) &nbsp;|&nbsp;
+        <b>ไม่บังคับ:</b> brand, rarity, qty, price, deposit, grade_company, grade_score, note
+      </div>
+      <button class="btn btn-sm" onclick="downloadImportConsignmentTemplate()" style="font-size:12px">⬇️ Download Template Excel</button>
+    </div>
+
+    <!-- Step 2: Upload -->
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Step 2 — Upload ไฟล์</div>
+      <div id="ic-dropzone"
+        onclick="document.getElementById('ic-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--border2)'"
+        ondrop="event.preventDefault();handleImportConsignmentFile({target:{files:event.dataTransfer.files}})"
+        style="border:2px dashed var(--border2);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s">
+        <div style="font-size:24px;margin-bottom:6px">📄</div>
+        <div style="font-size:13px;color:var(--text2)">คลิกหรือลากไฟล์มาวาง</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)">.xlsx · .xls · .csv</div>
+      </div>
+      <input type="file" id="ic-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportConsignmentFile(event)">
+    </div>
+
+    <!-- Step 3: Preview -->
+    <div id="ic-preview" style="display:none;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Step 3 — ตรวจสอบก่อน Import</div>
+      <div id="ic-summary" style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:8px"></div>
+      <div style="max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:8px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse;min-width:600px">
+          <thead style="background:var(--bg3);position:sticky;top:0">
+            <tr>
+              <th style="padding:8px;text-align:left">#</th>
+              <th style="padding:8px;text-align:left">ชื่อการ์ด</th>
+              <th style="padding:8px;text-align:left">ประเภท</th>
+              <th style="padding:8px;text-align:left">เจ้าของ</th>
+              <th style="padding:8px;text-align:left">แบรนด์</th>
+              <th style="padding:8px;text-align:right">จำนวน</th>
+              <th style="padding:8px;text-align:right">ราคาขาย</th>
+              <th style="padding:8px;text-align:right">มัดจำ</th>
+              <th style="padding:8px;text-align:center">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="ic-preview-table"></tbody>
+        </table>
+      </div>
+      <div id="ic-errors" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(248,113,113,0.1);border:1px solid var(--red);border-radius:8px;font-size:11px;color:var(--red);font-family:var(--mono);white-space:pre-wrap"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-sm" onclick="closeModal('importConsignment')">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" id="btn-confirm-import-consignment" onclick="confirmImportConsignment()" style="display:none">✅ Import ทั้งหมด</button>
     </div>
   </div>
 </div>
@@ -4604,6 +4713,17 @@ function switchAuthTab(tab) {
     })
     clearRegAlert()
   }
+  // reset forgot form เมื่อออกจากหน้า forgot
+  if (tab === 'forgot') {
+    const s1 = document.getElementById('forgotStep1')
+    const s2 = document.getElementById('forgotStep2')
+    if (s1) s1.style.display = 'block'
+    if (s2) s2.style.display = 'none'
+    const inp = document.getElementById('forgotEmail')
+    if (inp) inp.value = ''
+    const al = document.getElementById('forgotAlertBox')
+    if (al) al.innerHTML = ''
+  }
   ['Login','Register','Forgot','Verify'].forEach(f => {
     const el = document.getElementById('form'+f)
     if (el) el.style.display = 'none'
@@ -4709,6 +4829,87 @@ async function hashPassword(password) {
   const data    = encoder.encode(password)
   const hash    = await crypto.subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')
+}
+
+async function doForgotPassword() {
+  const email  = document.getElementById('forgotEmail').value.trim().toLowerCase()
+  const btn    = document.getElementById('forgotBtn')
+  const alertEl = document.getElementById('forgotAlertBox')
+
+  alertEl.innerHTML = ''
+  if (!email) {
+    alertEl.innerHTML = '<div style="color:var(--red);font-size:12px;margin-top:6px">กรุณากรอก Email</div>'
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alertEl.innerHTML = '<div style="color:var(--red);font-size:12px;margin-top:6px">Email ไม่ถูกต้อง</div>'
+    return
+  }
+
+  btn.disabled = true
+  btn.innerHTML = '<span class="spinner"></span> กำลังตรวจสอบ...'
+
+  try {
+    // ตรวจว่า email มีในระบบไหม
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=shop_id,data->userInfo',
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+    )
+    const rows = await res.json()
+    if (!Array.isArray(rows) || rows.length === 0) {
+      alertEl.innerHTML = '<div style="color:var(--red);font-size:12px;margin-top:6px">ไม่พบ Email นี้ในระบบ</div>'
+      btn.disabled = false; btn.innerHTML = '🔑 รีเซ็ตรหัสผ่าน'; return
+    }
+
+    // generate รหัสชั่วคราว 8 ตัว
+    const chars   = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    const tempPwd = Array.from({length: 8}, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    const hashed  = await hashPassword(tempPwd)
+
+    // อัพเดต password ใน shop_data
+    const getRes  = await fetch(
+      SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+    )
+    const dataRows = await getRes.json()
+    const shopData = (Array.isArray(dataRows) && dataRows[0]?.data) || {}
+    if (shopData.userInfo) shopData.userInfo.password = hashed
+    if (shopData.USERS?.[email]) shopData.USERS[email].password = hashed
+
+    await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ shop_id: email, data: shopData, updated_at: new Date().toISOString() })
+    })
+
+    // ล้าง localStorage cache เพื่อกัน login ด้วยรหัสเก่า
+    try { localStorage.removeItem('cv_data_' + email) } catch(e) {}
+
+    // แสดงรหัสชั่วคราว
+    window._tempPwd = tempPwd
+    document.getElementById('tempPasswordDisplay').textContent = tempPwd
+    document.getElementById('forgotStep1').style.display = 'none'
+    document.getElementById('forgotStep2').style.display = 'block'
+
+  } catch(e) {
+    alertEl.innerHTML = '<div style="color:var(--red);font-size:12px;margin-top:6px">เกิดข้อผิดพลาด กรุณาลองใหม่</div>'
+  }
+  btn.disabled = false; btn.innerHTML = '🔑 รีเซ็ตรหัสผ่าน'
+}
+
+function copyTempPassword() {
+  const pwd = window._tempPwd || document.getElementById('tempPasswordDisplay').textContent
+  navigator.clipboard.writeText(pwd).then(() => {
+    showToast('✅ Copy รหัสแล้ว!', 'var(--green)')
+  }).catch(() => {
+    const el = document.createElement('textarea')
+    el.value = pwd; document.body.appendChild(el); el.select()
+    document.execCommand('copy'); document.body.removeChild(el)
+    showToast('✅ Copy รหัสแล้ว!', 'var(--green)')
+  })
 }
 
 function doRegister() {
@@ -8356,7 +8557,7 @@ function exportExcel(type) {
     return
   }
 
-  // สำหรับ purchases — export ตรงๆ เลย
+  // สำหรับ purchases และ consignments — export ตรงๆ เลย
   doExportExcel(type)
 }
 
@@ -8571,6 +8772,39 @@ function doExportExcel(type) {
     })
   }
 
+  if (type === 'consignments') {
+    filename = 'cardestco_consignments.xls'
+    sheetName = 'ฝากขาย&เกรด'
+    rows.push([
+      'ID', 'ประเภท', 'ชื่อการ์ด', 'แบรนด์', 'Rarity',
+      'จำนวน', 'เจ้าของ/ผู้ฝาก', 'ราคาขาย', 'มัดจำ',
+      'เกรด', 'คะแนนเกรด', 'ค่าบริการ',
+      'สถานะ', 'หมายเหตุ', 'วันที่รับฝาก', 'วันที่เสร็จ'
+    ])
+    consignments.forEach(c => {
+      const typeLabel = c.type === 'grade' ? 'ส่งเกรด' : 'ฝากขาย'
+      const statusMap = { active:'รับฝากอยู่', completed:'ขายแล้ว', returned:'คืนเจ้าของ', graded:'เกรดแล้ว' }
+      rows.push([
+        c.id || '',
+        typeLabel,
+        c.cardName || c.name || '',
+        c.brand || '',
+        c.rarity || '',
+        c.qty || 1,
+        c.owner || '',
+        c.price || 0,
+        c.deposit || 0,
+        c.graded ? 'ใช่' : 'ไม่',
+        c.gradeScore || c.gradedScore || '',
+        c.gradeCost || c.serviceFee || 0,
+        statusMap[c.status] || c.status || '',
+        c.note || '',
+        c.date || '',
+        c.completedDate || ''
+      ])
+    })
+  }
+
   if (rows.length <= 1) { showToast('ไม่มีข้อมูล', 'var(--orange)'); return }
 
   const xmlRows = rows.map(row =>
@@ -8602,7 +8836,147 @@ function doExportExcel(type) {
   showToast('✅ Export ' + filename, 'var(--green)')
 }
 
-// ── Import Cards ─────────────────────────────────────────────────────────────
+// ── Import Consignment ────────────────────────────────────────────────────────
+let _importConsignmentData = []
+
+function downloadImportConsignmentTemplate() {
+  const headers = ['card_name','type','owner','brand','rarity','qty','price','deposit','grade_company','grade_score','note']
+  const sample = [
+    ['YAMATO OP01-121', 'sell',  'สมชาย', 'One Piece', 'Secret Rare', 1, 45000, 5000, '', '',    'ฝากขาย'],
+    ['Charizard VMAX',  'sell',  'สมหญิง', 'Pokemon',  'Rare Holo',   1, 12000, 0,    '', '',    ''],
+    ['BGS 9.5 Pikachu', 'grade', 'มานี',   'Pokemon',  'Base Set',    1, 0,     0,    'BGS','9.5','ส่งเกรด'],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...sample])
+  ws['!cols'] = [
+    {wch:25},{wch:8},{wch:12},{wch:12},{wch:14},
+    {wch:6},{wch:10},{wch:8},{wch:14},{wch:10},{wch:20}
+  ]
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Import Consignment')
+  XLSX.writeFile(wb, 'cardest_import_consignment_template.xlsx')
+  showToast('⬇️ Downloaded template', 'var(--green)')
+}
+
+function handleImportConsignmentFile(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const name = file.name.toLowerCase()
+  const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls')
+  const isCSV   = name.endsWith('.csv')
+  if (!isExcel && !isCSV) { showToast('รองรับ .xlsx, .xls, .csv เท่านั้น', 'var(--orange)'); return }
+
+  // reset ก่อนเสมอ กันข้อมูลเก่าค้าง
+  _importConsignmentData = []
+
+  const reader = new FileReader()
+  reader.onload = ev => {
+    try {
+      let rows = []
+      if (isExcel) {
+        const wb   = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' })
+        const ws   = wb.Sheets[wb.SheetNames[0]]
+        rows = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      } else {
+        const text = new TextDecoder('utf-8').decode(ev.target.result)
+        const lines = text.trim().split('\n')
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''))
+        rows = lines.slice(1).map(line => {
+          const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g,''))
+          const obj = {}
+          headers.forEach((h,i) => obj[h] = vals[i] || '')
+          return obj
+        }).filter(r => r.card_name || r['card_name'])
+      }
+
+      const errors = []
+      const parsed = []
+      // นับจาก consignment ที่มีอยู่แล้ว เพื่อรัน ID ต่อเนื่อง
+      let nextNum = consignments.length + 1
+      rows.forEach((r, i) => {
+        const rowNum = i + 2
+        const cardName = (r.card_name || r['card_name'] || '').trim()
+        const owner    = (r.owner || '').trim()
+        const type     = (r.type || 'sell').trim().toLowerCase()
+        if (!cardName) { errors.push(`Row ${rowNum}: ไม่มีชื่อการ์ด (card_name)`); return }
+        if (!owner)    { errors.push(`Row ${rowNum}: ไม่มีชื่อเจ้าของ (owner)`); return }
+        if (!['sell','grade'].includes(type)) { errors.push(`Row ${rowNum}: type ต้องเป็น sell หรือ grade`); return }
+        parsed.push({
+          id:          'CS-' + String(nextNum).padStart(4, '0'),
+          cardName,
+          type,
+          owner,
+          brand:       (r.brand || '').trim(),
+          rarity:      (r.rarity || '').trim(),
+          qty:         parseInt(r.qty) || 1,
+          price:       parseFloat(r.price) || 0,
+          deposit:     parseFloat(r.deposit) || 0,
+          graded:      type === 'grade',
+          gradedScore: (r.grade_score || '').toString().trim(),
+          gradeCompany:(r.grade_company || '').trim(),
+          note:        (r.note || '').trim(),
+          status:      'active',
+          date:        new Date().toLocaleDateString('th-TH', {day:'2-digit',month:'2-digit',year:'2-digit'}),
+        })
+        nextNum++
+      })
+
+      _importConsignmentData = parsed
+
+      // แสดง preview
+      const errEl   = document.getElementById('ic-errors')
+      const prevEl  = document.getElementById('ic-preview')
+      const sumEl   = document.getElementById('ic-summary')
+      const bodyEl  = document.getElementById('ic-preview-table')
+      const btnConf = document.getElementById('btn-confirm-import-consignment')
+
+      prevEl.style.display = 'block'
+      sumEl.textContent = `พบ ${parsed.length} รายการ${errors.length > 0 ? ` · ⚠️ ${errors.length} รายการมีปัญหา` : ' · พร้อม Import'}`
+
+      if (errors.length > 0) {
+        errEl.style.display = 'block'
+        errEl.textContent = errors.join('\n')
+      } else {
+        errEl.style.display = 'none'
+      }
+
+      bodyEl.innerHTML = parsed.map((c, i) => `
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px 8px;color:var(--text3)">${i+1}</td>
+          <td style="padding:6px 8px;font-weight:600">${escHtml(c.cardName)}</td>
+          <td style="padding:6px 8px">${c.type === 'grade' ? '🎓 ส่งเกรด' : '🤝 ฝากขาย'}</td>
+          <td style="padding:6px 8px">${escHtml(c.owner)}</td>
+          <td style="padding:6px 8px">${escHtml(c.brand)}</td>
+          <td style="padding:6px 8px;text-align:right">${c.qty}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:var(--mono)">${c.price > 0 ? '฿'+c.price.toLocaleString() : '—'}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:var(--mono)">${c.deposit > 0 ? '฿'+c.deposit.toLocaleString() : '—'}</td>
+          <td style="padding:6px 8px;text-align:center"><span style="color:var(--green);font-size:11px">✅ พร้อม</span></td>
+        </tr>`).join('')
+
+      btnConf.style.display = parsed.length > 0 ? 'inline-block' : 'none'
+    } catch(err) {
+      showToast('อ่านไฟล์ไม่ได้: ' + err.message, 'var(--red)')
+    }
+  }
+  if (isExcel) reader.readAsArrayBuffer(file)
+  else         reader.readAsArrayBuffer(file)
+  // reset input
+  document.getElementById('ic-file-input').value = ''
+}
+
+function confirmImportConsignment() {
+  if (!_importConsignmentData.length) return
+  consignments.unshift(..._importConsignmentData)
+  saveData()
+  renderConsignment()
+  closeModal('importConsignment')
+  showToast(`✅ Import ${_importConsignmentData.length} รายการสำเร็จ`, 'var(--green)')
+  _importConsignmentData = []
+  // reset preview
+  document.getElementById('ic-preview').style.display = 'none'
+  document.getElementById('btn-confirm-import-consignment').style.display = 'none'
+}
+
+// ── Import PO ─────────────────────────────────────────────────────────────────
 let importData = []
 
 function downloadImportTemplate() {
@@ -9708,6 +10082,8 @@ function renderConsignment() {
       (c.owner||'').toLowerCase().includes(searchQuery) ||
       (c.brand||'').toLowerCase().includes(searchQuery)
     )
+    // เรียง Z-A (ID ใหม่สุดขึ้นก่อน)
+    list = [...list].sort((a, b) => (b.id||'').localeCompare(a.id||'', undefined, {numeric:true}))
     const typeColors = { sell: 'var(--yellow)', grade: 'var(--pink)' }
     const typeIcons  = { sell: '🛒', grade: '🏅' }
     const tbody = document.getElementById('csmt-table-body')
@@ -9742,7 +10118,9 @@ function renderConsignment() {
 
   // ── Completed Table (render เสมอ) ──
   {
-    const done = consignments.filter(c => c.status !== 'active')
+    const done = consignments
+      .filter(c => c.status !== 'active')
+      .sort((a, b) => (b.id||'').localeCompare(a.id||'', undefined, {numeric:true}))
     const tbody2 = document.getElementById('csmt-done-table-body')
     if (tbody2) tbody2.innerHTML = done.length ? done.map(c => {
       const typeIcon = c.type==='sell' ? '🛒' : '🏅'
@@ -14767,6 +15145,99 @@ function switchTab(tab, el){
   if(tab==='params')  renderParams()
   if(tab==='package') renderPackageTab()
   if(tab==='units')   renderUnits()
+  if(tab==='changepassword') {
+    // reset form เมื่อเปิด tab
+    ;['cp-current','cp-new','cp-confirm'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = ''
+    })
+    const al = document.getElementById('cp-alert')
+    if(al) { al.style.display='none'; al.textContent='' }
+  }
+}
+
+async function doChangePassword() {
+  const currentPwd = document.getElementById('cp-current').value
+  const newPwd     = document.getElementById('cp-new').value
+  const confirmPwd = document.getElementById('cp-confirm').value
+  const alertEl    = document.getElementById('cp-alert')
+  const btn        = document.getElementById('cp-btn')
+
+  function showCpAlert(msg, color='var(--red)') {
+    alertEl.style.display = 'block'
+    alertEl.style.background = color === 'var(--red)' ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)'
+    alertEl.style.color = color
+    alertEl.style.border = `1px solid ${color}`
+    alertEl.textContent = msg
+  }
+
+  alertEl.style.display = 'none'
+
+  if (!currentPwd) { showCpAlert('กรุณากรอกรหัสผ่านปัจจุบัน'); return }
+  if (!newPwd)     { showCpAlert('กรุณากรอกรหัสผ่านใหม่'); return }
+  if (newPwd.length < 8) { showCpAlert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัว'); return }
+  if (newPwd !== confirmPwd) { showCpAlert('รหัสผ่านใหม่ไม่ตรงกัน'); return }
+  if (currentPwd === newPwd) { showCpAlert('รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสเดิม'); return }
+
+  btn.disabled = true
+  btn.textContent = '⏳ กำลังเปลี่ยน...'
+
+  try {
+    const email      = currentUser?.email
+    const hashedCurr = await hashPassword(currentPwd)
+    const hashedNew  = await hashPassword(newPwd)
+
+    // ดึงข้อมูล user จาก Supabase
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+    )
+    const rows    = await res.json()
+    const shopData = (Array.isArray(rows) && rows[0]?.data) || {}
+    const storedPwd = shopData.userInfo?.password
+
+    // ตรวจรหัสปัจจุบัน
+    if (storedPwd !== hashedCurr && storedPwd !== currentPwd) {
+      showCpAlert('รหัสผ่านปัจจุบันไม่ถูกต้อง')
+      btn.disabled = false; btn.textContent = '🔒 เปลี่ยนรหัสผ่าน'; return
+    }
+
+    // อัพเดต password
+    if (shopData.userInfo) shopData.userInfo.password = hashedNew
+    USERS[email] = { ...USERS[email], password: hashedNew }
+    currentUser  = { ...currentUser, password: hashedNew }
+
+    await fetch(SUPABASE_URL + '/rest/v1/shop_data', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ shop_id: email, data: shopData, updated_at: new Date().toISOString() })
+    })
+
+    // อัพเดต localStorage cache
+    try {
+      const cached = localStorage.getItem('cv_data_' + email)
+      if (cached) {
+        const cachedData = JSON.parse(cached)
+        if (cachedData.userInfo) cachedData.userInfo.password = hashedNew
+        localStorage.setItem('cv_data_' + email, JSON.stringify(cachedData))
+      }
+    } catch(e) {}
+
+    // ล้าง form
+    ;['cp-current','cp-new','cp-confirm'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = ''
+    })
+
+    showCpAlert('✅ เปลี่ยนรหัสผ่านสำเร็จ', 'var(--green)')
+    showToast('✅ เปลี่ยนรหัสผ่านสำเร็จ', 'var(--green)')
+
+  } catch(e) {
+    showCpAlert('เกิดข้อผิดพลาด กรุณาลองใหม่')
+  }
+
+  btn.disabled = false; btn.textContent = '🔒 เปลี่ยนรหัสผ่าน'
 }
 
 function switchPurchaseTab(tab, el){
