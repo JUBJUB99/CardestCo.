@@ -4760,7 +4760,7 @@ async function loadData() {
   // 2. โหลดข้อมูลจาก tables ใหม่พร้อมกัน (parallel)
   try {
     const [ordersRes, purchasesRes, cardsRes, consignmentsRes, expensesRes, shopRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/orders?shop_id=eq.'       + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/orders?shop_id=eq.'       + encodeURIComponent(email) + '&order=order_id.desc&select=data', {headers}),
       fetch(SUPABASE_URL + '/rest/v1/purchases?shop_id=eq.'    + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
       fetch(SUPABASE_URL + '/rest/v1/cards?shop_id=eq.'        + encodeURIComponent(email) + '&select=data', {headers}),
       fetch(SUPABASE_URL + '/rest/v1/consignments?shop_id=eq.' + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
@@ -4778,10 +4778,17 @@ async function loadData() {
       shopRes.ok         ? shopRes.json()           : []
     ])
 
-    // apply orders
+    // apply orders — sort ด้วย order_id desc (ใหม่สุดก่อน)
     if (Array.isArray(ordersRows) && ordersRows.length > 0) {
       orders.length = 0
-      orders.push(...ordersRows.map(r => r.data).filter(Boolean))
+      const loadedOrders = ordersRows.map(r => r.data).filter(Boolean)
+      // sort ด้วย order_id เช่น ORD-0141 > ORD-0001
+      loadedOrders.sort((a, b) => {
+        const na = parseInt((a.id || '').replace(/\D/g, '')) || 0
+        const nb = parseInt((b.id || '').replace(/\D/g, '')) || 0
+        return nb - na
+      })
+      orders.push(...loadedOrders)
     }
 
     // apply purchases
