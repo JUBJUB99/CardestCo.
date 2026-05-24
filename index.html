@@ -4797,15 +4797,16 @@ async function loadData() {
       purchases.push(...purchasesRows.map(r => r.data).filter(Boolean))
     }
 
-    // apply cards — ถ้า table ว่าง fallback ไปใช้ blob
+    // apply cards — เชื่อ cards table เสมอ ไม่ fallback blob ถ้า table มีข้อมูล
     if (Array.isArray(cardsRows) && cardsRows.length > 0) {
       cards.length = 0
       cards.push(...cardsRows.map(r => r.data).filter(Boolean))
     } else if (shopData && shopData.cards && shopData.cards.length > 0) {
-      // fallback: ใช้จาก JSON blob แล้ว trigger sync ทันที
+      // fallback blob เฉพาะตอน table ว่างจริงๆ (user ใหม่หรือยังไม่เคย sync)
       cards.length = 0
       cards.push(...shopData.cards)
       console.warn('cards table empty — using blob fallback, will sync...')
+      setTimeout(() => saveData(), 500)  // sync ขึ้น table ทันที
     }
     // backfill id ให้การ์ดที่ยังไม่มี — migration safety
     let needsIdBackfill = false
@@ -4815,7 +4816,7 @@ async function loadData() {
         needsIdBackfill = true
       }
     })
-    if (needsIdBackfill) setTimeout(() => saveData(), 500)
+    if (needsIdBackfill) setTimeout(() => saveData(), 1000)
 
     // apply consignments
     if (Array.isArray(consignmentsRows) && consignmentsRows.length > 0) {
