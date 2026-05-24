@@ -4663,21 +4663,18 @@ async function syncToNewTables(email, snapshot) {
     updated_at: new Date().toISOString()
   })), 'shop_id,po')
 
-  // cards — DELETE แล้ว INSERT ใหม่ทั้งหมด (เพราะ cards ไม่มี stable unique id)
+  // cards — UPSERT ด้วย card_id ปลอดภัย ไม่ต้อง DELETE
   const stripPhoto = url => (url && (url.startsWith('http://') || url.startsWith('https://'))) ? url : ''
-  const cleanCardsForSync = (snapshot.cards || []).map(c => ({
+  const cleanCardsForSync = (snapshot.cards || []).map((c, i) => ({
     ...c,
+    id:     c.id || ('CRD-TEMP-' + i),
     photo:  stripPhoto(c.photo),
     photos: Array.isArray(c.photos) ? c.photos.map(stripPhoto).filter(Boolean) : []
   }))
   if (cleanCardsForSync.length > 0) {
-    await fetch(
-      SUPABASE_URL + '/rest/v1/cards?shop_id=eq.' + encodeURIComponent(email),
-      { method: 'DELETE', headers: baseHeaders }
-    )
-    const cardRows = cleanCardsForSync.map((c, i) => ({
+    const cardRows = cleanCardsForSync.map(c => ({
       shop_id:    email,
-      card_id:    String(i),
+      card_id:    c.id,
       name:       c.name  || '',
       brand:      c.brand || '',
       stock:      c.stock || 0,
@@ -4687,11 +4684,20 @@ async function syncToNewTables(email, snapshot) {
       updated_at: new Date().toISOString()
     }))
     for (let i = 0; i < cardRows.length; i += 50) {
-      await fetch(SUPABASE_URL + '/rest/v1/cards', {
-        method: 'POST',
-        headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
-        body: JSON.stringify(cardRows.slice(i, i + 50))
-      })
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/cards?on_conflict=shop_id,card_id',
+        {
+          method: 'POST',
+          headers: { ...baseHeaders, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(cardRows.slice(i, i + 50))
+        }
+      )
+      if (!res.ok) {
+        const err = await res.text()
+        console.error('syncToNewTables [cards] failed:', res.status, err)
+      } else {
+        console.log('syncToNewTables [cards] ok —', Math.min(50, cardRows.length - i), 'rows')
+      }
     }
   }
 
@@ -9196,6 +9202,15 @@ function handleImportConsignmentFile(e) {
   document.getElementById('ic-file-input').value = ''
 }
 
+function getNextCardId() {
+  let max = 0
+  cards.forEach(c => {
+    const m = (c.id || '').match(/^CRD-(\d+)$/)
+    if (m) max = Math.max(max, parseInt(m[1]))
+  })
+  return 'CRD-' + String(max + 1).padStart(4, '0')
+}
+
 function getNextCsmtId() {
   // หา max number จาก CS-XXXX ที่มีอยู่ทั้งหมด แล้ว +1
   let max = 0
@@ -9334,6 +9349,7 @@ function confirmImport() {
     } else {
       // เพิ่มใหม่
       cards.push({
+        id: getNextCardId(),
         name: row.name, brand: row.brand,
         rarity: row.rarity, set: row.set,
         stock: row.qty, cost: row.cost, price: row.price,
@@ -11415,6 +11431,7 @@ async function markReceived(idx){
     }
   } else {
     cards.push({
+      id: getNextCardId(),
       name:p.name, brand:p.brand, set:p.set||'-',
       rarity:p.rarity||'-', cost:p.cost, price:p.sell||0,
       stock:p.qty, min:3, emoji:'🃏',
