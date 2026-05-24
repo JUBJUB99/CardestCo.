@@ -4655,18 +4655,33 @@ async function syncToNewTables(email, snapshot) {
     updated_at: new Date().toISOString()
   })), 'shop_id,po')
 
-  // cards — conflict on shop_id,card_id
-  await upsert('cards', (snapshot.cards || []).map(c => ({
-    shop_id:    email,
-    card_id:    c.id    || '',
-    name:       c.name  || '',
-    brand:      c.brand || '',
-    stock:      c.stock || 0,
-    cost:       c.cost  || 0,
-    price:      c.price || 0,
-    data:       c,
-    updated_at: new Date().toISOString()
-  })), 'shop_id,card_id')
+  // cards — DELETE แล้ว INSERT ใหม่ทั้งหมด (เพราะ cards ไม่มี stable unique id)
+  if ((snapshot.cards || []).length > 0) {
+    // ลบของเก่าก่อน
+    await fetch(
+      SUPABASE_URL + '/rest/v1/cards?shop_id=eq.' + encodeURIComponent(email),
+      { method: 'DELETE', headers: baseHeaders }
+    )
+    // insert ใหม่ทั้งหมด
+    const cardRows = snapshot.cards.map(c => ({
+      shop_id:    email,
+      card_id:    c.id    || c.name + '|' + c.brand,
+      name:       c.name  || '',
+      brand:      c.brand || '',
+      stock:      c.stock || 0,
+      cost:       c.cost  || 0,
+      price:      c.price || 0,
+      data:       c,
+      updated_at: new Date().toISOString()
+    }))
+    for (let i = 0; i < cardRows.length; i += 50) {
+      await fetch(SUPABASE_URL + '/rest/v1/cards', {
+        method: 'POST',
+        headers: { ...baseHeaders, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(cardRows.slice(i, i + 50))
+      })
+    }
+  }
 
   // consignments — conflict on shop_id,csmt_id
   await upsert('consignments', (snapshot.consignments || []).map(c => ({
