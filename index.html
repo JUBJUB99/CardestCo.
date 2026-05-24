@@ -4794,6 +4794,15 @@ async function loadData() {
       cards.push(...shopData.cards)
       console.warn('cards table empty — using blob fallback, will sync...')
     }
+    // backfill id ให้การ์ดที่ยังไม่มี — migration safety
+    let needsIdBackfill = false
+    cards.forEach((c, i) => {
+      if (!c.id || c.id.startsWith('CRD-TEMP-')) {
+        c.id = 'CRD-' + String(i + 1).padStart(4, '0')
+        needsIdBackfill = true
+      }
+    })
+    if (needsIdBackfill) setTimeout(() => saveData(), 500)
 
     // apply consignments
     if (Array.isArray(consignmentsRows) && consignmentsRows.length > 0) {
