@@ -4373,20 +4373,22 @@ function escHtml(str) {
 
 function buildSnapshot() {
   // strip base64 photos — เก็บเฉพาะ URL (https://...) ไม่เก็บ data:image/...
-  const cleanCards = cards.map(c => {
-    const isUrl = c.photo && (c.photo.startsWith('http://') || c.photo.startsWith('https://'))
-    return { ...c, photo: isUrl ? c.photo : '' }
-  })
+  const stripPhoto = url => (url && (url.startsWith('http://') || url.startsWith('https://'))) ? url : ''
+  const cleanCards = cards.map(c => ({
+    ...c,
+    photo:  stripPhoto(c.photo),
+    photos: Array.isArray(c.photos) ? c.photos.map(stripPhoto).filter(Boolean) : []
+  }))
   // strip base64 cardPhoto จาก pendingBreaks ด้วย
   const cleanPendingBreaks = pendingBreaks.map(pb => {
     const isUrl = pb.cardPhoto && (pb.cardPhoto.startsWith('http://') || pb.cardPhoto.startsWith('https://'))
     return { ...pb, cardPhoto: isUrl ? pb.cardPhoto : '' }
   })
   return {
-    cards,                                   // เก็บไว้เป็น backup fallback
+    cards: cleanCards,                       // ✅ ใช้ cleanCards ที่ strip base64 แล้ว (backup fallback)
     orders: [], purchases: [],               // Phase 4: ไม่ save ลง JSON blob แล้ว
     consignments: [], expenses: [],          // ข้อมูลอยู่ใน tables แยกแล้ว
-    pendingBreaks: cleanPendingBreaks,
+    pendingBreaks: cleanPendingBreaks,       // เก็บไว้ใน blob เพราะยังไม่มี table แยก
     setupData: {
       brands:         setupData.brands,
       rarity:         setupData.rarity,
@@ -4395,6 +4397,7 @@ function buildSnapshot() {
       tiers:          setupData.tiers,
       units:          setupData.units,
       publicSettings: setupData.publicSettings || {},
+      params:         setupData.params || {},
     },
     savedAt: Date.now(),
     trialData: (()=>{ try { const r=localStorage.getItem('cv_trial_'+(currentUser?.email||'')); return r?JSON.parse(r):null } catch(e){return null} })()
@@ -4403,17 +4406,21 @@ function buildSnapshot() {
 
 function applySnapshot(data) {
   if (!data) return
-  if (data.cards)         { cards.length=0;         cards.push(...data.cards) }
-  if (data.orders)        { orders.length=0;        orders.push(...data.orders) }
-  if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
-  consignments.length = 0
-  if (data.consignments)  { consignments.push(...data.consignments) }
-  // expenses — reset ก่อนเสมอ กัน data ของ user อื่น leak เข้ามา
-  expenses.length = 0
-  if (data.expenses && Array.isArray(data.expenses)) { expenses.push(...data.expenses) }
-  // pendingBreaks — reset เสมอ (ถ้า user ใหม่ไม่มีข้อมูลให้เป็น [])
-  pendingBreaks.length = 0
-  if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
+  // Phase 4: ถ้า data มาจาก localStorage cache (มีแค่ setupData) ไม่ reset arrays
+  const isSetupOnly = !data.orders && !data.purchases && !data.expenses && !data.consignments
+  if (!isSetupOnly) {
+    if (data.cards)         { cards.length=0;         cards.push(...data.cards) }
+    if (data.orders)        { orders.length=0;        orders.push(...data.orders) }
+    if (data.purchases)     { purchases.length=0;     purchases.push(...data.purchases) }
+    consignments.length = 0
+    if (data.consignments)  { consignments.push(...data.consignments) }
+    // expenses — reset ก่อนเสมอ กัน data ของ user อื่น leak เข้ามา
+    expenses.length = 0
+    if (data.expenses && Array.isArray(data.expenses)) { expenses.push(...data.expenses) }
+    // pendingBreaks
+    pendingBreaks.length = 0
+    if (data.pendingBreaks) { pendingBreaks.push(...data.pendingBreaks) }
+  }
   if (data.setupData) {
     // ทับเฉพาะถ้า cloud มีข้อมูลจริง — ไม่ทับด้วย array ว่าง กัน race condition
     if (data.setupData.brands     && data.setupData.brands.length > 0)     setupData.brands     = data.setupData.brands
@@ -4657,16 +4664,20 @@ async function syncToNewTables(email, snapshot) {
   })), 'shop_id,po')
 
   // cards — DELETE แล้ว INSERT ใหม่ทั้งหมด (เพราะ cards ไม่มี stable unique id)
-  if ((snapshot.cards || []).length > 0) {
-    // ลบของเก่าก่อน
+  const stripPhoto = url => (url && (url.startsWith('http://') || url.startsWith('https://'))) ? url : ''
+  const cleanCardsForSync = (snapshot.cards || []).map(c => ({
+    ...c,
+    photo:  stripPhoto(c.photo),
+    photos: Array.isArray(c.photos) ? c.photos.map(stripPhoto).filter(Boolean) : []
+  }))
+  if (cleanCardsForSync.length > 0) {
     await fetch(
       SUPABASE_URL + '/rest/v1/cards?shop_id=eq.' + encodeURIComponent(email),
       { method: 'DELETE', headers: baseHeaders }
     )
-    // insert ใหม่ทั้งหมด
-    const cardRows = snapshot.cards.map((c, i) => ({
+    const cardRows = cleanCardsForSync.map((c, i) => ({
       shop_id:    email,
-      card_id:    String(i),   // ใช้ index เพื่อ tracking เท่านั้น ไม่ใช่ unique key
+      card_id:    String(i),
       name:       c.name  || '',
       brand:      c.brand || '',
       stock:      c.stock || 0,
@@ -4795,8 +4806,15 @@ async function loadData() {
     if (shopData) {
       if (shopData.setupData)  applySetupData(shopData.setupData)
       if (shopData.trialData)  applyTrialData(shopData.trialData, email)
-      // update localStorage cache (setupData only)
-      try { localStorage.setItem('cv_data_' + email, JSON.stringify(shopData)) } catch(e) {}
+      // cache เฉพาะ setupData — ไม่ cache orders/purchases/expenses ที่โหลดจาก tables แล้ว
+      const cacheData = {
+        setupData:  shopData.setupData,
+        userInfo:   shopData.userInfo,
+        trialData:  shopData.trialData,
+        publicSettings: shopData.publicSettings,
+        savedAt:    shopData.savedAt
+      }
+      try { localStorage.setItem('cv_data_' + email, JSON.stringify(cacheData)) } catch(e) {}
       _lastSyncedAt = shopData.savedAt || Date.now()
     }
 
@@ -7700,8 +7718,12 @@ function handleCardPhoto(event, cardIdx) {
       card.photo = card.photos[0]
       showToast('✅ อัพโหลดรูปสำเร็จ', 'var(--green)')
     } catch(e) {
-      console.warn('Storage upload failed, keeping base64 fallback:', e)
-      showToast('⚠️ Upload ไม่สำเร็จ — บันทึกเป็น fallback', 'var(--orange)')
+      console.warn('Storage upload failed:', e)
+      // ลบ base64 ที่ push เข้ามาออก เพราะเก็บไม่ได้
+      const badIdx = card.photos.indexOf(croppedUrl)
+      if (badIdx >= 0) card.photos.splice(badIdx, 1)
+      card.photo = card.photos[0] || ''
+      showToast('❌ อัพโหลดรูปไม่สำเร็จ กรุณาลองใหม่', 'var(--red)')
     }
     saveData()
     filterCards()
@@ -14806,8 +14828,10 @@ function loadPoImage(file) {
       poImageB64  = null    // ไม่จำเป็นต้องเก็บ base64 อีก
       showToast('✅ อัพโหลดรูปสำเร็จ', 'var(--green)')
     } catch(e) {
-      console.warn('Storage upload failed, using base64 fallback:', e)
-      showToast('⚠️ Upload ไม่สำเร็จ — ใช้ fallback', 'var(--orange)')
+      console.warn('Storage upload failed:', e)
+      poPhotos   = []
+      poImageB64 = null
+      showToast('❌ อัพโหลดรูปไม่สำเร็จ กรุณาลองใหม่', 'var(--red)')
     }
   })
 }
