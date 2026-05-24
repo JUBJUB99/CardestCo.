@@ -4271,7 +4271,6 @@ function sbFetch(path, options={}) {
     'apikey': SUPABASE_ANON,
     'Authorization': 'Bearer ' + SUPABASE_ANON,
     'Content-Type': 'application/json',
-    'x-shop-id': email,   // custom header สำหรับ RLS policy
     ...(options.headers||{})
   }
   return fetch(SUPABASE_URL + path, { ...options, headers })
@@ -4384,9 +4383,8 @@ function buildSnapshot() {
     return { ...pb, cardPhoto: isUrl ? pb.cardPhoto : '' }
   })
   return {
-    cards: cleanCards, orders, purchases,
-    consignments,
-    expenses,
+    cards: [], orders: [], purchases: [],   // Phase 4: ไม่ save ลง JSON blob แล้ว
+    consignments: [], expenses: [],          // ข้อมูลอยู่ใน tables แยกแล้ว
     pendingBreaks: cleanPendingBreaks,
     setupData: {
       brands:         setupData.brands,
@@ -4594,8 +4592,102 @@ async function saveData() {
       body: JSON.stringify({ shop_id: email, data: merged, updated_at: new Date().toISOString(), public_token: publicToken })
     })
     _lastSyncedAt = snapshot.savedAt  // บันทึกเวลา sync ล่าสุด
+
+    // ── Phase 2: Dual Write → tables ใหม่ (background, ไม่ block UI) ────
+    syncToNewTables(email, snapshot).catch(e => console.warn('syncToNewTables failed:', e))
+
   } catch(e) { console.warn('saveData Supabase failed:', e) }
   finally { _isSaving = false }
+}
+
+// ── Dual Write: sync ข้อมูลไปยัง tables แยก ──────────────────────────────────
+async function syncToNewTables(email, snapshot) {
+  const baseHeaders = {
+    'apikey':        SUPABASE_ANON,
+    'Authorization': 'Bearer ' + SUPABASE_ANON,
+    'Content-Type':  'application/json'
+  }
+
+  const upsert = async (table, rows, conflictCols) => {
+    if (!rows || !rows.length) return
+    const headers = { ...baseHeaders, 'Prefer': 'resolution=merge-duplicates,return=minimal' }
+    for (let i = 0; i < rows.length; i += 50) {
+      const batch = rows.slice(i, i + 50)
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/' + table + '?on_conflict=' + conflictCols,
+        { method: 'POST', headers, body: JSON.stringify(batch) }
+      )
+      if (!res.ok) {
+        const err = await res.text()
+        console.error(`syncToNewTables [${table}] failed:`, res.status, err)
+      } else {
+        console.log(`syncToNewTables [${table}] ok — ${batch.length} rows`)
+      }
+    }
+  }
+
+  // orders — conflict on shop_id,order_id
+  await upsert('orders', (snapshot.orders || []).map(o => ({
+    shop_id:    email,
+    order_id:   o.id       || '',
+    customer:   o.customer || '',
+    channel:    o.channel  || '',
+    status:     o.status   || 'active',
+    total:      o.total    || 0,
+    note:       o.note     || '',
+    data:       o,
+    updated_at: new Date().toISOString()
+  })), 'shop_id,order_id')
+
+  // purchases — conflict on shop_id,po
+  await upsert('purchases', (snapshot.purchases || []).map(p => ({
+    shop_id:    email,
+    po:         p.po    || '',
+    name:       p.name  || '',
+    brand:      p.brand || '',
+    qty:        p.qty   || 1,
+    cost:       p.cost  || 0,
+    status:     p.status || 'pending',
+    data:       p,
+    updated_at: new Date().toISOString()
+  })), 'shop_id,po')
+
+  // cards — conflict on shop_id,card_id
+  await upsert('cards', (snapshot.cards || []).map(c => ({
+    shop_id:    email,
+    card_id:    c.id    || '',
+    name:       c.name  || '',
+    brand:      c.brand || '',
+    stock:      c.stock || 0,
+    cost:       c.cost  || 0,
+    price:      c.price || 0,
+    data:       c,
+    updated_at: new Date().toISOString()
+  })), 'shop_id,card_id')
+
+  // consignments — conflict on shop_id,csmt_id
+  await upsert('consignments', (snapshot.consignments || []).map(c => ({
+    shop_id:    email,
+    csmt_id:    c.id       || '',
+    card_name:  c.cardName || '',
+    owner:      c.owner    || '',
+    type:       c.type     || 'sell',
+    status:     c.status   || 'active',
+    price:      c.price    || 0,
+    data:       c,
+    updated_at: new Date().toISOString()
+  })), 'shop_id,csmt_id')
+
+  // expenses — conflict on shop_id,expense_id
+  await upsert('expenses', (snapshot.expenses || []).map(e => ({
+    shop_id:    email,
+    expense_id: e.id       || '',
+    name:       e.name     || '',
+    category:   e.category || '',
+    amount:     e.amount   || 0,
+    date:       e.date     || '',
+    note:       e.note     || '',
+  })), 'shop_id,expense_id')
 }
 
 let _lastSyncedAt = Date.now()  // timestamp ที่ sync ล่าสุด
@@ -4604,41 +4696,131 @@ let _lastSyncedAt = Date.now()  // timestamp ที่ sync ล่าสุด
 async function loadData() {
   if (!currentUser?.email) return
   const email = currentUser.email
+  const headers = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + SUPABASE_ANON
+  }
 
-  // 1. โหลด localStorage cache ทันที (ไม่รอ network) — UX เร็ว
+  // 1. โหลด setupData/userInfo จาก JSON blob (localStorage cache ก่อน)
   let hasCache = false
   try {
     const raw = localStorage.getItem('cv_data_' + email)
     if (raw) {
-      applySnapshot(JSON.parse(raw))
+      const cached = JSON.parse(raw)
+      // apply เฉพาะ setupData/userInfo ไม่ใช่ orders/cards/purchases
+      if (cached.setupData)  applySetupData(cached.setupData)
+      if (cached.trialData)  applyTrialData(cached.trialData, email)
       hasCache = true
     }
   } catch(e) {}
 
-  // 2. background sync จาก Supabase (ไม่ await — ไม่บล็อก UI)
-  ;(async () => {
+  // 2. โหลดข้อมูลจาก tables ใหม่พร้อมกัน (parallel)
+  try {
+    const [ordersRes, purchasesRes, cardsRes, consignmentsRes, expensesRes, shopRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/orders?shop_id=eq.'       + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/purchases?shop_id=eq.'    + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/cards?shop_id=eq.'        + encodeURIComponent(email) + '&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/consignments?shop_id=eq.' + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/expenses?shop_id=eq.'     + encodeURIComponent(email) + '&order=created_at.desc&select=data', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.'    + encodeURIComponent(email) + '&select=data', {headers: {'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON}})
+    ])
+
+    // parse ทุก response
+    const [ordersRows, purchasesRows, cardsRows, consignmentsRows, expensesRows, shopRows] = await Promise.all([
+      ordersRes.ok       ? ordersRes.json()       : [],
+      purchasesRes.ok    ? purchasesRes.json()     : [],
+      cardsRes.ok        ? cardsRes.json()         : [],
+      consignmentsRes.ok ? consignmentsRes.json()  : [],
+      expensesRes.ok     ? expensesRes.json()      : [],
+      shopRes.ok         ? shopRes.json()           : []
+    ])
+
+    // apply orders
+    if (Array.isArray(ordersRows) && ordersRows.length > 0) {
+      orders.length = 0
+      orders.push(...ordersRows.map(r => r.data).filter(Boolean))
+    }
+
+    // apply purchases
+    if (Array.isArray(purchasesRows) && purchasesRows.length > 0) {
+      purchases.length = 0
+      purchases.push(...purchasesRows.map(r => r.data).filter(Boolean))
+    }
+
+    // apply cards
+    if (Array.isArray(cardsRows) && cardsRows.length > 0) {
+      cards.length = 0
+      cards.push(...cardsRows.map(r => r.data).filter(Boolean))
+    }
+
+    // apply consignments
+    if (Array.isArray(consignmentsRows) && consignmentsRows.length > 0) {
+      consignments.length = 0
+      consignments.push(...consignmentsRows.map(r => r.data).filter(Boolean))
+    }
+
+    // apply expenses
+    if (Array.isArray(expensesRows) && expensesRows.length > 0) {
+      expenses.length = 0
+      expenses.push(...expensesRows.map(r => r.data).filter(Boolean))
+    }
+
+    // apply setupData/userInfo จาก shop_data blob
+    const shopData = Array.isArray(shopRows) && shopRows[0]?.data
+    if (shopData) {
+      if (shopData.setupData)  applySetupData(shopData.setupData)
+      if (shopData.trialData)  applyTrialData(shopData.trialData, email)
+      // update localStorage cache (setupData only)
+      try { localStorage.setItem('cv_data_' + email, JSON.stringify(shopData)) } catch(e) {}
+      _lastSyncedAt = shopData.savedAt || Date.now()
+    }
+
+    renderDashboard()
+    renderOrders()
+    filterCards()
+    renderPurchase()
+    try { renderConsignment() } catch(e) {}
+    try { renderExpenses()   } catch(e) {}
+
+  } catch(e) {
+    console.warn('loadData from tables failed:', e)
+    // fallback: ถ้า tables ใหม่ล้มเหลว ใช้ JSON blob เดิม
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(email) + '&select=data',
         { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
       )
-      if (!res.ok) return
-      const rows = await res.json()
-      if (!Array.isArray(rows) || rows.length === 0 || !rows[0].data) return
-      const cloudData = rows[0].data
-      // เปรียบเทียบ savedAt ก่อน apply (ไม่ทับข้อมูลใหม่กว่า)
-      const localRaw = localStorage.getItem('cv_data_' + email)
-      const localSaved = localRaw ? (JSON.parse(localRaw).savedAt || 0) : 0
-      const cloudSaved = cloudData.savedAt || 0
-      if (cloudSaved > localSaved) {
-        applySnapshot(cloudData)
-        try { localStorage.setItem('cv_data_' + email, JSON.stringify(cloudData)) } catch(e) {}
-        _lastSyncedAt = cloudSaved || Date.now()
-        renderDashboard()
+      if (res.ok) {
+        const rows = await res.json()
+        if (Array.isArray(rows) && rows[0]?.data) {
+          applySnapshot(rows[0].data)
+          renderDashboard()
+        }
       }
-    } catch(e) {}
-  })()
+    } catch(e2) {}
+  }
 }
+
+// helper: apply เฉพาะ setupData
+function applySetupData(sd) {
+  if (!sd) return
+  if (sd.brands     && sd.brands.length > 0)     setupData.brands     = sd.brands
+  if (sd.rarity     && sd.rarity.length > 0)     setupData.rarity     = sd.rarity
+  if (sd.channels   && sd.channels.length > 0)   setupData.channels   = sd.channels
+  if (sd.suppliers  && sd.suppliers.length > 0)  setupData.suppliers  = sd.suppliers
+  if (sd.tiers      && sd.tiers.length > 0)      setupData.tiers      = sd.tiers
+  if (sd.units      && sd.units.length > 0)      setupData.units      = sd.units
+  if (sd.publicSettings) setupData.publicSettings = sd.publicSettings
+  if (sd.params)         setupData.params         = sd.params
+}
+
+// helper: apply trialData
+function applyTrialData(td, email) {
+  if (!td) return
+  try { localStorage.setItem('cv_trial_' + email, JSON.stringify(td)) } catch(e) {}
+}
+
+
 
 // ── Background polling — sync ทุก 30 วิ ─────────────────────────────────────
 let _pollingInterval = null
@@ -4646,40 +4828,40 @@ function startPolling() {
   if (_pollingInterval) clearInterval(_pollingInterval)
   _pollingInterval = setInterval(async () => {
     if (!currentUser?.email || _isSaving) return
+    const email = currentUser.email
+    const headers = {
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON
+    }
     try {
+      // ตรวจแค่ orders ใหม่ที่เพิ่งมา (ดู created_at ล่าสุดใน memory)
+      const latestOrderTime = orders.length > 0
+        ? Math.max(...orders.map(o => o.createdAt || 0))
+        : 0
+      const since = latestOrderTime
+        ? new Date(latestOrderTime).toISOString()
+        : new Date(Date.now() - 60000).toISOString()
+
       const res = await fetch(
-        SUPABASE_URL + '/rest/v1/shop_data?shop_id=eq.' + encodeURIComponent(currentUser.email) + '&select=data',
-        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON } }
+        SUPABASE_URL + '/rest/v1/orders?shop_id=eq.' + encodeURIComponent(email) +
+        '&created_at=gt.' + since + '&select=data',
+        { headers }
       )
       if (!res.ok) return
       const rows = await res.json()
-      const cloudData = Array.isArray(rows) && rows[0]?.data
-      if (!cloudData) return
-      const cloudSaved = cloudData.savedAt || 0
-      if (cloudSaved > (_lastSyncedAt || 0) + 3000) {
-        // มีข้อมูลใหม่จากเครื่องอื่น — merge แล้ว apply
-        const remoteOrders    = cloudData.orders    || []
-        const remotePurchases = cloudData.purchases || []
-        const localOrderIds   = new Set(orders.map(o=>o.id))
-        const localPOIds      = new Set(purchases.map(p=>p.po))
-        const newOrders    = remoteOrders.filter(o => !localOrderIds.has(o.id))
-        const newPurchases = remotePurchases.filter(p => !localPOIds.has(p.po))
-        if (newOrders.length > 0 || newPurchases.length > 0) {
-          orders.unshift(...newOrders)
-          purchases.unshift(...newPurchases)
-          // sync cards stock จาก cloud (ใหม่กว่า)
-          if (cloudData.cards) { cards.length = 0; cards.push(...cloudData.cards) }
-          _lastSyncedAt = cloudSaved
-          renderDashboard()
-          renderOrders()
-          filterCards()
-          showToast('🔄 ซิงค์ข้อมูลจากอีกเครื่อง (+' + (newOrders.length + newPurchases.length) + ' รายการ)', 'var(--accent2)')
-        } else {
-          _lastSyncedAt = cloudSaved
-        }
+      if (!Array.isArray(rows) || rows.length === 0) return
+
+      const newOrders = rows.map(r => r.data).filter(Boolean)
+        .filter(o => !orders.some(existing => existing.id === o.id))
+
+      if (newOrders.length > 0) {
+        orders.unshift(...newOrders)
+        renderDashboard()
+        renderOrders()
+        showToast('🔄 ซิงค์ข้อมูลจากอีกเครื่อง (+' + newOrders.length + ' รายการ)', 'var(--accent2)')
       }
     } catch(e) {}
-  }, 30000)  // ทุก 30 วินาที
+  }, 30000)
 }
 
 function stopPolling() {
@@ -13301,11 +13483,11 @@ function renderAgingReport() {
     .sort((a,b) => (b.days||0) - (a.days||0))
 
   // ── KPI ─────────────────────────────────────────────────────────────────
-  const totalItems = agingList.length
+  const totalItems = agingList.reduce((s,c) => s + (c.stock||0), 0)  // นับเป็นใบ
   const totalCost  = agingList.reduce((s,c) => s+c.totalCost, 0)
   const withDays   = agingList.filter(c => c.days !== null)
   const avgDays    = withDays.length ? Math.round(withDays.reduce((s,c)=>s+c.days,0)/withDays.length) : 0
-  const oldItems   = agingList.filter(c => c.period === '31+').length
+  const oldItems   = agingList.filter(c => c.period === '31+').reduce((s,c) => s + (c.stock||0), 0)  // นับเป็นใบ
 
   const el = id => document.getElementById(id)
   if(el('aging-kpi-items')) el('aging-kpi-items').textContent = totalItems
@@ -13328,7 +13510,7 @@ function renderAgingReport() {
       return `<div style="background:${b.bg};border:1px solid ${b.border};border-radius:14px;padding:16px 18px;cursor:pointer;transition:all 0.2s"
         onclick="document.getElementById('aging-period-filter').value='${b.key}';renderAgingReport()">
         <div style="font-size:12px;font-weight:700;color:${b.color};letter-spacing:1px;margin-bottom:8px">${pLabels[b.key]}</div>
-        <div style="font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px">${items.length}</div>
+        <div style="font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px">${items.reduce((s,c)=>s+(c.stock||0),0)}</div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">฿${cost.toLocaleString()}</div>
       </div>`
     }).join('')
