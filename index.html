@@ -4594,7 +4594,10 @@ async function saveData() {
     _lastSyncedAt = snapshot.savedAt  // บันทึกเวลา sync ล่าสุด
 
     // ── Phase 2: Dual Write → tables ใหม่ (background, ไม่ block UI) ────
-    syncToNewTables(email, snapshot).catch(e => console.warn('syncToNewTables failed:', e))
+    // ส่ง memory arrays โดยตรง ไม่ผ่าน snapshot (Phase 4 ตัด arrays ออกจาก snapshot แล้ว)
+    syncToNewTables(email, {
+      orders, purchases, cards, consignments, expenses
+    }).catch(e => console.warn('syncToNewTables failed:', e))
 
   } catch(e) { console.warn('saveData Supabase failed:', e) }
   finally { _isSaving = false }
