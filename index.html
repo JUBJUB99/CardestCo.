@@ -4383,7 +4383,8 @@ function buildSnapshot() {
     return { ...pb, cardPhoto: isUrl ? pb.cardPhoto : '' }
   })
   return {
-    cards: [], orders: [], purchases: [],   // Phase 4: ไม่ save ลง JSON blob แล้ว
+    cards,                                   // เก็บไว้เป็น backup fallback
+    orders: [], purchases: [],               // Phase 4: ไม่ save ลง JSON blob แล้ว
     consignments: [], expenses: [],          // ข้อมูลอยู่ใน tables แยกแล้ว
     pendingBreaks: cleanPendingBreaks,
     setupData: {
@@ -4705,6 +4706,7 @@ async function syncToNewTables(email, snapshot) {
     amount:     e.amount   || 0,
     date:       e.date     || '',
     note:       e.note     || '',
+    data:       e,
   })), 'shop_id,expense_id')
 }
 
@@ -4765,10 +4767,15 @@ async function loadData() {
       purchases.push(...purchasesRows.map(r => r.data).filter(Boolean))
     }
 
-    // apply cards
+    // apply cards — ถ้า table ว่าง fallback ไปใช้ blob
     if (Array.isArray(cardsRows) && cardsRows.length > 0) {
       cards.length = 0
       cards.push(...cardsRows.map(r => r.data).filter(Boolean))
+    } else if (shopData && shopData.cards && shopData.cards.length > 0) {
+      // fallback: ใช้จาก JSON blob แล้ว trigger sync ทันที
+      cards.length = 0
+      cards.push(...shopData.cards)
+      console.warn('cards table empty — using blob fallback, will sync...')
     }
 
     // apply consignments
