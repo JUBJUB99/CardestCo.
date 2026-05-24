@@ -1598,6 +1598,12 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
               <option value="completed" data-i18n="status_completed">Completed</option>
               <option value="cancel" data-i18n="status_cancelled">ยกเลิก</option>
             </select>
+            <input type="date" id="order-date-from" onchange="renderOrders()"
+              style="padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:var(--font)">
+            <span style="color:var(--text3);font-size:12px">ถึง</span>
+            <input type="date" id="order-date-to" onchange="renderOrders()"
+              style="padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:var(--font)">
+            <button class="btn btn-sm" onclick="document.getElementById('order-date-from').value='';document.getElementById('order-date-to').value='';renderOrders()" style="font-size:11px;padding:4px 10px;color:var(--text3)">ล้าง</button>
           </div>
           <div class="panel">
             <div class="table-wrap">
@@ -9522,13 +9528,40 @@ function renderOrders(){
   const sm={paid:'s-paid',shipped:'s-shipped',pending:'s-pending',cancel:'s-cancel',completed:'s-completed'}
   const st={paid:t('status_paid_label'),shipped:t('status_shipped_label'),pending:t('status_pending_label'),cancel:t('status_cancelled_label'),completed:t('status_completed')}
   populateDelOrderDropdown()
-  const q = (document.getElementById('search-orders')?.value||'').toLowerCase().trim()
+  const q          = (document.getElementById('search-orders')?.value||'').toLowerCase().trim()
   const statusFilt = document.getElementById('order-status-filter')?.value || ''
+  const dateFrom   = document.getElementById('order-date-from')?.value || ''
+  const dateTo     = document.getElementById('order-date-to')?.value   || ''
+
   const filtered = orders.filter(o => {
     if (statusFilt && o.status !== statusFilt) return false
     if (q) {
       const hay = ((o.id||'')+' '+(o.customer||'')+' '+(o.items||'')+' '+(o.channel||'')).toLowerCase()
       if (!hay.includes(q)) return false
+    }
+    // filter วันที่ — แปลง dd/mm/yy หรือ dd/mm/yyyy เป็น Date object
+    if (dateFrom || dateTo) {
+      const parseOrderDate = d => {
+        if (!d) return null
+        const parts = d.split('/')
+        if (parts.length < 3) return null
+        const day = parseInt(parts[0])
+        const mon = parseInt(parts[1]) - 1
+        const yr  = parseInt(parts[2]) < 100 ? 2000 + parseInt(parts[2]) : parseInt(parts[2])
+        return new Date(yr, mon, day)
+      }
+      const orderDate = parseOrderDate(o.date)
+      if (orderDate) {
+        if (dateFrom) {
+          const from = new Date(dateFrom)
+          if (orderDate < from) return false
+        }
+        if (dateTo) {
+          const to = new Date(dateTo)
+          to.setHours(23,59,59)
+          if (orderDate > to) return false
+        }
+      }
     }
     return true
   })
