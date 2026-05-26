@@ -2351,6 +2351,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
               <option value="CGC">CGC</option>
               <option value="SGC">SGC</option>
               <option value="ACE">ACE</option>
+              <option value="SQC">SQC</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0">
@@ -2490,6 +2491,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
               <option value="CGC">CGC</option>
               <option value="SGC">SGC</option>
               <option value="ACE">ACE</option>
+              <option value="SQC">SQC</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0">
@@ -3489,7 +3491,19 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         ✏️ กรอกข้อมูลเอง →
       </button>
 
-      <!-- AI status (hidden, kept for compat) -->
+      <!-- สั่งซื้อสินค้าเดิม -->
+      <div style="margin-top:8px">
+        <button type="button" onclick="toggleReorderPanel()" class="btn btn-sm"
+          style="width:100%;padding:10px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px">
+          🔄 สั่งซื้อสินค้าเดิม
+        </button>
+        <div id="po-reorder-panel" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px">
+          <input id="po-reorder-search" type="text" placeholder="พิมพ์ชื่อการ์ดที่เคยสั่งซื้อ..."
+            oninput="renderReorderList()"
+            style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:8px">
+          <div id="po-reorder-list" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
       <div id="po-ai-status" style="display:none"></div>
 
       <div class="form-actions" style="margin-top:12px">
@@ -3545,6 +3559,7 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
               <option value="CGC">🏅 CGC</option>
               <option value="SGC">🏅 SGC</option>
               <option value="ACE">🏅 ACE</option>
+              <option value="SQC">🏅 SQC</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0" id="po-psa-grade-wrap" style="display:none">
@@ -3659,6 +3674,12 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
       <!-- hidden compat elements -->
       <div id="po-profit" style="display:none"></div>
       <div id="po-margin" style="display:none"></div>
+
+      <div class="form-group">
+        <label>📅 วันที่ซื้อ</label>
+        <input type="date" id="po-date"
+          style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font);box-sizing:border-box">
+      </div>
 
       <div class="form-group">
         <label data-i18n="po_lbl_note">หมายเหตุ</label>
@@ -3979,6 +4000,81 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
         <div class="form-group" style="margin:0">
           <label style="font-size:12px;color:var(--text2)">ต้นทุน/ใบ (฿) <span style="color:var(--red)">*</span></label>
           <input type="number" id="epo-cost" min="0" placeholder="0">
+        </div>
+      </div>
+      <!-- Grade -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;color:var(--text2)">Graded</label>
+          <select id="epo-graded" style="width:100%">
+            <option value="no">— No Graded</option>
+            <option value="PSA">🏅 PSA</option>
+            <option value="BGS">🏅 BGS</option>
+            <option value="CGC">🏅 CGC</option>
+            <option value="SGC">🏅 SGC</option>
+            <option value="ACE">🏅 ACE</option>
+            <option value="SQC">🏅 SQC</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;color:var(--text2)">Grade Score</label>
+          <select id="epo-grade-score" style="width:100%">
+            <option value="">— Score —</option>
+            <option value="10">10</option>
+            <option value="9.5">9.5</option>
+            <option value="9">9</option>
+            <option value="8.5">8.5</option>
+            <option value="8">8</option>
+            <option value="7.5">7.5</option>
+            <option value="7">7</option>
+            <option value="6.5">6.5</option>
+            <option value="6">6</option>
+            <option value="5.5">5.5</option>
+            <option value="5">5</option>
+            <option value="4.5">4.5</option>
+            <option value="4">4</option>
+            <option value="3.5">3.5</option>
+            <option value="3">3</option>
+            <option value="2.5">2.5</option>
+            <option value="2">2</option>
+            <option value="1.5">1.5</option>
+            <option value="1">1</option>
+          </select>
+        </div>
+      </div>
+      <!-- Defect -->
+      <div class="form-group">
+        <label style="font-size:12px;color:var(--text2)">สภาพการ์ด</label>
+        <div style="display:flex;gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;flex:1">
+            <input type="radio" name="epo-defect" id="epo-defect-no" value="no" checked style="width:15px;height:15px">
+            <span style="font-size:12px">✅ No Defect</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;flex:1">
+            <input type="radio" name="epo-defect" id="epo-defect-yes" value="yes" style="width:15px;height:15px">
+            <span style="font-size:12px">⚠️ Defect</span>
+          </label>
+        </div>
+      </div>
+      <!-- ผู้ขาย -->
+      <div class="form-group">
+        <label style="font-size:12px;color:var(--text2)">ประเภทผู้ขาย</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer">
+            <input type="radio" name="epo-seller-type" value="anonymous" id="epo-seller-anon" onchange="toggleEpoSeller()" checked style="width:15px;height:15px">
+            <span style="font-size:13px">👤 ผู้ขายไม่ระบุตัวตน</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer">
+            <input type="radio" name="epo-seller-type" value="existing" id="epo-seller-existing" onchange="toggleEpoSeller()" style="width:15px;height:15px">
+            <span style="font-size:13px">🤝 ผู้ขายเดิม</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;cursor:pointer">
+            <input type="radio" name="epo-seller-type" value="new" id="epo-seller-new-radio" onchange="toggleEpoSeller()" style="width:15px;height:15px">
+            <span style="font-size:13px">✨ ผู้ขายใหม่</span>
+          </label>
+        </div>
+        <div id="epo-seller-wrap" style="display:none;margin-top:8px">
+          <input type="text" id="epo-seller" placeholder="ชื่อผู้ขาย..." style="width:100%">
         </div>
       </div>
       <div id="epo-stock-warn" style="display:none;background:rgba(251,146,60,0.1);border:1px solid var(--orange);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--orange);margin-bottom:12px">
@@ -7487,7 +7583,7 @@ function getGradeBadgeHtml(card) {
   if (!card.psa) return ''
   const t     = card.psaType || 'gem'
   const grade = (card.psaGrade != null && String(card.psaGrade).trim() !== '') ? String(card.psaGrade).trim() : ''
-  const companies = { PSA:'#e31837', BGS:'#1e3a8a', CGC:'#7c3aed', SGC:'#b45309', ACE:'#065f46' }
+  const companies = { PSA:'#e31837', BGS:'#1e3a8a', CGC:'#7c3aed', SGC:'#b45309', ACE:'#065f46', SQC:'#0369a1' }
   const isNew = companies[t]  // new format: company name
   if (isNew) {
     return `<div style="display:inline-flex;align-items:center;gap:5px;row-gap:5px;column-gap:5px;background:${isNew};border-radius:8px;padding:4px 10px;font-size:12px;font-weight:800;font-family:var(--mono);color:#fff;letter-spacing:0.5px">🏅 ${t}${grade?' '+grade:''}</div>`
@@ -7640,7 +7736,17 @@ function renderCardsEdit(data) {
           onblur="cards[${cardIdx}].price=parseFloat(this.value)||0;saveData();filterCards()"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--yellow);font-size:14px;font-weight:700;font-family:var(--mono);outline:none;padding:2px 0">
       </div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${c.stock}${getCardUnit(c)} · ${t('inv_cost_short')}${(c.cost||0).toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">${c.stock}${getCardUnit(c)} · ${t('inv_cost_short')}${(c.cost||0).toLocaleString()}</div>
+      <!-- ซ่อนจาก Public Link -->
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:var(--bg3);border-radius:8px;border:1px solid ${c.hideFromPublic ? 'var(--orange)' : 'var(--border2)'}">
+        <input type="checkbox" ${c.hideFromPublic ? 'checked' : ''}
+          onchange="cards[${cardIdx}].hideFromPublic=this.checked;saveData();filterCards()"
+          style="width:15px;height:15px;accent-color:var(--orange);flex-shrink:0">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:${c.hideFromPublic ? 'var(--orange)' : 'var(--text2)'}">🔒 ซ่อนจาก Public Link</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.hideFromPublic ? 'ไม่แสดงใน Shop' : 'แสดงใน Shop ปกติ'}</div>
+        </div>
+      </label>
     </div>`
   }).join('')
   if (data.length===0) { grid.innerHTML='<div style="grid-column:1/-1">'+emptyStateHTML('inv')+'</div>'; return }
@@ -11393,8 +11499,14 @@ function renderPurchase(data){
 
   const rows2 = list.map(p => {
     const total  = p.cost * p.qty
-    const thumb  = p.photos && p.photos.length
-      ? `<img src="${p.photos[0]}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid var(--border2);vertical-align:middle;margin-right:6px">`
+    // หารูปจาก purchase ก่อน ถ้าไม่มีให้หาจาก card ที่ match PO นั้น
+    const poPhotos = (p.photos && p.photos.length) ? p.photos
+      : (() => {
+          const card = cards.find(c => c.poRefs && c.poRefs.some(r => r.po === p.po))
+          return card?.photos?.length ? card.photos : (card?.photo ? [card.photo] : [])
+        })()
+    const thumb  = poPhotos.length
+      ? `<img src="${poPhotos[0]}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid var(--border2);vertical-align:middle;margin-right:6px">`
       : `<span style="display:inline-block;width:32px;height:32px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);vertical-align:middle;margin-right:6px;text-align:center;line-height:32px;font-size:14px">🃏</span>`
     return `<tr>
       <td style="font-family:var(--mono);color:var(--text3);font-size:11px">${p.po}</td>
@@ -11528,8 +11640,13 @@ function renderReceiveTab() {
     <div style="display:flex;flex-direction:column;gap:10px">
       ${pending.map(p => {
         const idx   = purchases.indexOf(p)
-        const thumb = p.photos && p.photos.length
-          ? `<img src="${p.photos[0]}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border2);flex-shrink:0">`
+        const poPhotos = (p.photos && p.photos.length) ? p.photos
+          : (() => {
+              const card = cards.find(c => c.poRefs && c.poRefs.some(r => r.po === p.po))
+              return card?.photos?.length ? card.photos : (card?.photo ? [card.photo] : [])
+            })()
+        const thumb = poPhotos.length
+          ? `<img src="${poPhotos[0]}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border2);flex-shrink:0">`
           : `<div style="width:44px;height:44px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🃏</div>`
         return `
           <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px">
@@ -11734,6 +11851,16 @@ function confirmResolve(result) {
 
 // ── Edit PO ─────────────────────────────────────────────────────────────────
 
+function toggleEpoSeller() {
+  const sellerType = document.querySelector('input[name="epo-seller-type"]:checked')?.value || 'anonymous'
+  const wrap = document.getElementById('epo-seller-wrap')
+  if (wrap) wrap.style.display = (sellerType === 'existing' || sellerType === 'new') ? 'block' : 'none'
+}
+
+function toggleEpoGrade() {
+  // ไม่ต้อง toggle อะไรเพราะ score อยู่ข้างๆ อยู่แล้ว
+}
+
 function openEditPO() {
   const sel = document.getElementById('epo-select')
   if (!sel) return
@@ -11809,6 +11936,22 @@ function onEditPOSelect() {
   document.getElementById('epo-name').value = p.name || ''
   document.getElementById('epo-qty').value  = p.qty  || 1
   document.getElementById('epo-cost').value = p.cost || 0
+  // grade
+  const gradedEl = document.getElementById('epo-graded')
+  if (gradedEl) gradedEl.value = p.psaType && p.psaType !== 'no' ? p.psaType : 'no'
+  const gradeScoreEl = document.getElementById('epo-grade-score')
+  if (gradeScoreEl) gradeScoreEl.value = p.psaGrade || ''
+  // defect
+  const defectVal = p.hasDefect ? 'yes' : 'no'
+  const defectEl  = document.querySelector(`input[name="epo-defect"][value="${defectVal}"]`)
+  if (defectEl) defectEl.checked = true
+  // seller
+  const sellerType = p.sellerType || 'anonymous'
+  const sellerRadio = document.querySelector(`input[name="epo-seller-type"][value="${sellerType}"]`)
+  if (sellerRadio) { sellerRadio.checked = true }
+  toggleEpoSeller()
+  const sellerEl = document.getElementById('epo-seller')
+  if (sellerEl) sellerEl.value = p.sellerName || ''
 
   // แสดง warning ถ้า PO รับแล้ว
   const stockWarnEl = document.getElementById('epo-stock-warn')
@@ -11833,9 +11976,14 @@ function saveEditPO() {
   if (!p) return
   if (_editPOIsSold(p)) { showToast('⚠️ การ์ดนี้ถูกขายไปแล้ว', 'var(--orange)'); return }
 
-  const newName = document.getElementById('epo-name').value.trim()
-  const newQty  = parseInt(document.getElementById('epo-qty').value) || 0
-  const newCost = parseFloat(document.getElementById('epo-cost').value) || 0
+  const newName       = document.getElementById('epo-name').value.trim()
+  const newQty        = parseInt(document.getElementById('epo-qty').value) || 0
+  const newCost       = parseFloat(document.getElementById('epo-cost').value) || 0
+  const newGraded     = document.getElementById('epo-graded')?.value || 'no'
+  const newScore      = document.getElementById('epo-grade-score')?.value || null
+  const newHasDefect  = document.querySelector('input[name="epo-defect"]:checked')?.value === 'yes'
+  const newSellerType = document.querySelector('input[name="epo-seller-type"]:checked')?.value || 'anonymous'
+  const newSellerName = document.getElementById('epo-seller')?.value.trim() || ''
 
   if (!newName) { showToast('กรุณากรอกชื่อการ์ด', 'var(--orange)'); return }
   if (newQty < 1) { showToast('จำนวนต้องมากกว่า 0', 'var(--orange)'); return }
@@ -11847,9 +11995,15 @@ function saveEditPO() {
   const wasReceived = p.status === 'received'
 
   // อัปเดต PO
-  p.name = newName
-  p.qty  = newQty
-  p.cost = newCost
+  p.name        = newName
+  p.qty         = newQty
+  p.cost        = newCost
+  p.psa         = newGraded !== 'no'
+  p.psaType     = newGraded
+  p.psaGrade    = newScore || null
+  p.hasDefect   = newHasDefect
+  p.sellerType  = newSellerType
+  p.sellerName  = newSellerName
 
   // ถ้า PO รับแล้ว → ต้องอัปเดต card ด้วย
   if (wasReceived) {
@@ -11866,6 +12020,12 @@ function saveEditPO() {
 
       // อัปเดตชื่อถ้าเปลี่ยน
       if (newName !== oldName) card.name = newName
+
+      // อัปเดต grade และ defect ตาม PO
+      card.psa       = newGraded !== 'no'
+      card.psaType   = newGraded
+      card.psaGrade  = newScore || null
+      card.hasDefect = newHasDefect
 
       // อัปเดต poRef qty
       const ref = card.poRefs && card.poRefs.find(r => r.po === p.po)
@@ -14261,6 +14421,10 @@ function resetPOForm(keepOpen) {
   document.getElementById('po-cost').value  = ''
   document.getElementById('po-sell').value  = '0'
   document.getElementById('po-qty').value   = '1'
+  // set default date เป็นวันนี้
+  const todayISO = new Date().toISOString().split('T')[0]
+  const dateEl = document.getElementById('po-date')
+  if (dateEl) dateEl.value = todayISO
   const poSet = document.getElementById('po-set')
   if (poSet) poSet.value = ''
   const gradedSel = document.getElementById('po-graded-company'); if(gradedSel) gradedSel.value='no'
@@ -14367,9 +14531,18 @@ function checkLimitThenOpenPO() {
     return
   }
   openModal('newPurchase')
+  // set วันที่ปัจจุบันและ render reorder list หลัง modal render
+  setTimeout(() => {
+    const dateEl = document.getElementById('po-date')
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0]
+    // reset reorder panel
+    const panel = document.getElementById('po-reorder-panel')
+    if (panel) panel.style.display = 'none'
+    const searchEl = document.getElementById('po-reorder-search')
+    if (searchEl) searchEl.value = ''
+  }, 50)
 }
 
-// ── AI Purchase ───────────────────────────────────────────────────────────────
 let _aiPurItems = []  // parsed items จาก AI
 
 function aiPurchaseClose() {
@@ -14505,7 +14678,7 @@ ${input}`
 
     // ── JS Validation Layer ────────────────────────────────────────────────
     const validGradeScores = [1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
-    const validGraders = ['PSA','BGS','CGC','SGC','ACE']
+    const validGraders = ['PSA','BGS','CGC','SGC','ACE','SQC']
 
     _aiPurItems = parsed.map((item, i) => {
       const qty         = Math.max(1, parseInt(item.qty) || 1)
@@ -14632,7 +14805,7 @@ function renderAIPurPreview() {
           <select onchange="_aiPurItems[${i}].graded=this.value||null"
             style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px">
             <option value="" ${!it.graded?'selected':''}>ไม่มี / Not Graded</option>
-            ${['PSA','BGS','CGC','SGC','ACE'].map(g=>`<option value="${g}" ${it.graded===g?'selected':''}>${g}</option>`).join('')}
+            ${['PSA','BGS','CGC','SGC','ACE','SQC'].map(g=>`<option value="${g}" ${it.graded===g?'selected':''}>${g}</option>`).join('')}
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0">
@@ -14816,7 +14989,17 @@ function savePurchase(){
   }
   if (poItems.length === 0) { showToast('ไม่มีรายการ กรุณาเพิ่มการ์ดก่อน', 'var(--orange)'); return }
 
-  const date=formatDate()
+  // ใช้วันที่จาก input ถ้ามี ไม่งั้น fallback วันนี้
+  const poDateEl = document.getElementById('po-date')
+  let date
+  if (poDateEl && poDateEl.value) {
+    const d = new Date(poDateEl.value)
+    date = String(d.getDate()).padStart(2,'0') + '/' +
+           String(d.getMonth()+1).padStart(2,'0') + '/' +
+           String(d.getFullYear()).slice(-2)
+  } else {
+    date = formatDate()
+  }
   poItems.forEach(it => {
     const newPO = {
       po: (()=>{
@@ -14965,6 +15148,151 @@ function analyzeCardWithAI() {
 function fillCardFromAI(card) {
   // Coming Soon — fallback to manual
   skipAI()
+}
+
+function toggleReorderPanel() {
+  const panel = document.getElementById('po-reorder-panel')
+  const searchEl = document.getElementById('po-reorder-search')
+  if (!panel) return
+  const isOpen = panel.style.display !== 'none'
+  panel.style.display = isOpen ? 'none' : 'block'
+  if (!isOpen) {
+    if (searchEl) { searchEl.value = ''; searchEl.focus() }
+    renderReorderList()
+  }
+}
+
+function renderReorderList() {
+  const q    = (document.getElementById('po-reorder-search')?.value || '').toLowerCase().trim()
+  const list = document.getElementById('po-reorder-list')
+  if (!list) return
+
+  // deduplicate purchases ตามชื่อ+แบรนด์ เอาอันล่าสุด
+  const seen = new Map()
+  ;[...purchases].reverse().forEach(p => {
+    const key = (p.name + '|' + p.brand).toLowerCase()
+    if (!seen.has(key)) seen.set(key, p)
+  })
+
+  let items = [...seen.values()]
+  if (q) items = items.filter(p =>
+    (p.name || '').toLowerCase().includes(q) ||
+    (p.brand || '').toLowerCase().includes(q)
+  )
+  items = items.slice(0, 20)
+
+  if (!items.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text3);font-size:12px;padding:12px">ไม่พบรายการที่ค้นหา</div>`
+    return
+  }
+
+  list.innerHTML = items.map((p, i) => `
+    <div onclick="reorderFromPurchase('${encodeURIComponent(JSON.stringify({
+      name: p.name, brand: p.brand, rarity: p.rarity||'', set: p.set||'',
+      cost: p.cost||0, sell: p.sell||0, qty: p.qty||1, unit: p.unit||'ใบ',
+      sellerType: p.sellerType||'anonymous', sellerName: p.sellerName||'',
+      psa: p.psa||false, psaType: p.psaType||'no', psaGrade: p.psaGrade||null,
+      hasDefect: p.hasDefect||false, note: p.note||''
+    }))}')"
+      style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+        border:1px solid var(--border2);background:var(--bg);cursor:pointer;transition:border-color 0.15s"
+      onmouseover="this.style.borderColor='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border2)'">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${p.brand} · ฿${(p.cost||0).toLocaleString()}/ใบ · ${fmtD(p.date)}</div>
+      </div>
+      <div style="font-size:18px;color:var(--accent);flex-shrink:0">→</div>
+    </div>`).join('')
+}
+
+function reorderFromPurchase(encoded) {
+  try {
+    const p = JSON.parse(decodeURIComponent(encoded))
+    goToStep2(null)
+    setTimeout(() => {
+      // กรอกชื่อ
+      const nameEl = document.getElementById('po-name')
+      if (nameEl) nameEl.value = p.name || ''
+
+      // Brand
+      const brandEl = document.getElementById('po-brand')
+      if (brandEl && p.brand) {
+        // หา option ที่ตรง
+        const opt = [...brandEl.options].find(o => o.value === p.brand)
+        if (opt) brandEl.value = p.brand
+      }
+
+      // Rarity
+      const rarityEl = document.getElementById('po-rarity')
+      if (rarityEl && p.rarity) {
+        const opt = [...rarityEl.options].find(o => o.value === p.rarity)
+        if (opt) rarityEl.value = p.rarity
+      }
+
+      // Set
+      const setEl = document.getElementById('po-set')
+      if (setEl) setEl.value = p.set || ''
+
+      // ราคา
+      const costEl = document.getElementById('po-cost')
+      if (costEl) { costEl.value = p.cost || ''; costEl.dispatchEvent(new Event('input')) }
+      const sellEl = document.getElementById('po-sell')
+      if (sellEl) sellEl.value = p.sell || '0'
+
+      // qty
+      const qtyEl = document.getElementById('po-qty')
+      if (qtyEl) qtyEl.value = p.qty || 1
+
+      // unit
+      const unitEl = document.getElementById('po-unit')
+      if (unitEl && p.unit) {
+        const opt = [...unitEl.options].find(o => o.value === p.unit)
+        if (opt) unitEl.value = p.unit
+      }
+
+      // Graded
+      const gradedEl = document.getElementById('po-graded-company')
+      if (gradedEl) {
+        gradedEl.value = p.psaType || 'no'
+        gradedEl.dispatchEvent(new Event('change'))
+        if (p.psaGrade) {
+          setTimeout(() => {
+            const gradeEl = document.getElementById('po-grade-score-select')
+            if (gradeEl) gradeEl.value = p.psaGrade
+          }, 100)
+        }
+      }
+
+      // Defect
+      if (p.hasDefect) {
+        const defectEl = document.getElementById('po-defect-yes')
+        if (defectEl) defectEl.checked = true
+      } else {
+        const noDefectEl = document.getElementById('po-defect-no')
+        if (noDefectEl) noDefectEl.checked = true
+      }
+
+      // Seller
+      const sellerRadio = document.querySelector(`input[name="po-seller-type"][value="${p.sellerType || 'anonymous'}"]`)
+      if (sellerRadio) { sellerRadio.checked = true; toggleSellerType() }
+      if (p.sellerName) {
+        setTimeout(() => {
+          const nameInput = document.getElementById('po-seller-name')
+          if (nameInput) nameInput.value = p.sellerName
+        }, 100)
+      }
+
+      // Note
+      const noteEl = document.getElementById('po-note')
+      if (noteEl) noteEl.value = p.note || ''
+
+      updatePoMargin()
+      showToast('✅ โหลดข้อมูลเดิมแล้ว แก้ไขได้เลย', 'var(--green)')
+    }, 150)
+  } catch(e) {
+    showToast('ไม่สามารถโหลดข้อมูลได้', 'var(--red)')
+  }
 }
 
 function goToStep2(card) {

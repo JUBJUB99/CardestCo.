@@ -470,7 +470,7 @@ async function init() {
     shopId    = match.shop_id
     const d   = match.data
     settings  = d.setupData?.publicSettings || {}
-    shopCards = (d.cards || []).filter(c => (c.stock || 0) > 0)
+    shopCards = (d.cards || []).filter(c => (c.stock || 0) > 0 && !c.hideFromPublic)
 
     // Header
     document.getElementById('shop-name').textContent    = settings.shopName || d.userInfo?.shop || 'ร้านค้า'
