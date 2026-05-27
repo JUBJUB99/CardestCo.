@@ -3316,6 +3316,13 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;}
       </div>
     </div>
 
+    <!-- วันที่ขาย -->
+    <div class="form-group">
+      <label>📅 วันที่ขาย</label>
+      <input type="date" id="sale-date"
+        style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font);box-sizing:border-box">
+    </div>
+
     <!-- หมายเหตุ -->
     <div class="form-group">
       <label data-i18n="sale_note_label">หมายเหตุ</label>
@@ -4056,6 +4063,13 @@ Luffy OP-01 Parallel 500 บาท 5 ใบ"></textarea>
           </label>
         </div>
       </div>
+      <!-- วันที่ซื้อ -->
+      <div class="form-group">
+        <label style="font-size:12px;color:var(--text2)">📅 วันที่ซื้อ</label>
+        <input type="date" id="epo-date"
+          style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:var(--font);box-sizing:border-box">
+      </div>
+
       <!-- ผู้ขาย -->
       <div class="form-group">
         <label style="font-size:12px;color:var(--text2)">ประเภทผู้ขาย</label>
@@ -6384,8 +6398,15 @@ function doLogin(){
     localStorage.setItem('cv_lastUser', u)
     sessionStorage.setItem('cv_session_active','1')
     const rem = document.getElementById('remember')?.checked
-    if(rem){ try{ localStorage.setItem('cv_remember_email',u) }catch(e){} }
-    else{ try{ localStorage.removeItem('cv_remember_email'); localStorage.removeItem('cv_remember_pwd') }catch(e){} }
+    if(rem){
+      try{
+        localStorage.setItem('cv_remember_email', u)
+        // encode password แบบง่าย (base64) เพื่อไม่ให้เห็นเป็น plaintext
+        localStorage.setItem('cv_remember_pwd', btoa(unescape(encodeURIComponent(p))))
+      }catch(e){}
+    } else {
+      try{ localStorage.removeItem('cv_remember_email'); localStorage.removeItem('cv_remember_pwd') }catch(e){}
+    }
     currentUser = {...user, email:u, username:u}
 
     // ── clear memory ทั้งหมดก่อน load ข้อมูล user ใหม่ ──────────────────
@@ -6538,6 +6559,13 @@ function doLogout(){
     document.getElementById('username').value = savedEmail
     const remEl = document.getElementById('remember')
     if (remEl) remEl.checked = true
+    // restore password ถ้ามี
+    try {
+      const savedPwd = localStorage.getItem('cv_remember_pwd')
+      if (savedPwd) {
+        document.getElementById('password').value = decodeURIComponent(escape(atob(savedPwd)))
+      }
+    } catch(e) {}
   } else {
     document.getElementById('username').value = ''
     document.getElementById('password').value = ''
@@ -7404,6 +7432,11 @@ function toggleTheme() {
       const rEl = document.getElementById('remember')
       if (uEl) uEl.value = savedEmail
       if (rEl) rEl.checked = true
+      // restore password
+      const savedPwd = localStorage.getItem('cv_remember_pwd')
+      if (pEl && savedPwd) {
+        try { pEl.value = decodeURIComponent(escape(atob(savedPwd))) } catch(e) {}
+      }
     }
   } catch(e) {}
 })()
@@ -8264,6 +8297,9 @@ let saleItems = []  // [{cardIdx, qty, price}]
 
 function openNewSaleModal() {
   saleItems = []
+  // set วันที่ขายเป็นวันนี้
+  const saleDateEl = document.getElementById('sale-date')
+  if (saleDateEl) saleDateEl.value = new Date().toISOString().split('T')[0]
   // sync channel dropdown
   const chSel = document.getElementById('sale-channel')
   if (chSel) {
@@ -8388,6 +8424,17 @@ function setSaleBrand(el, brand) {
     p.style.fontWeight  = active ? '600' : '400'
   })
   renderSaleItems()
+}
+
+function openImgPopup(src) {
+  const existing = document.getElementById('img-popup-overlay')
+  if (existing) existing.remove()
+  const overlay = document.createElement('div')
+  overlay.id = 'img-popup-overlay'
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out'
+  overlay.onclick = () => overlay.remove()
+  overlay.innerHTML = `<img src="${src}" style="max-width:90vw;max-height:88vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">`
+  document.body.appendChild(overlay)
 }
 
 function openSalePhotoPopup(itemIdx) {
@@ -8702,6 +8749,14 @@ async function saveOrder() {
     if (card) card.stock = Math.max(0, card.stock - it.qty)
   })
 
+  // คำนวณวันที่ขาย
+  let saleDate = formatDate()
+  const rawSaleDate = document.getElementById('sale-date')?.value
+  if (rawSaleDate) {
+    const [yr, mo, dy] = rawSaleDate.split('-')
+    saleDate = dy + '/' + mo + '/' + String(parseInt(yr)).slice(-2)
+  }
+
   const newOrder = {
     id:       'ORD-' + String(orders.length + 1).padStart(4,'0'),
     customer: custName,
@@ -8712,7 +8767,7 @@ async function saveOrder() {
     channel,
     note,
     status:   'completed',
-    date:     formatDate(),
+    date:     saleDate,
     orderItems: validItems.map(it=>({
       cardIdx: it.cardIdx,
       name:    cards[it.cardIdx]?.name || '-',
@@ -9542,7 +9597,11 @@ function confirmImport() {
   let added = 0, updated = 0
 
   importData.forEach(row => {
-    const existing = cards.find(cd => cd.name.toLowerCase()===row.name.toLowerCase() && cd.brand.toLowerCase()===row.brand.toLowerCase())
+    const existing = cards.find(cd =>
+      cd.name.toLowerCase() === row.name.toLowerCase() &&
+      cd.brand.toLowerCase() === row.brand.toLowerCase() &&
+      (cd.rarity || '-').toLowerCase() === (row.rarity || '-').toLowerCase()
+    )
     if (existing) {
       // อัปเดต stock เพิ่ม
       existing.stock = (existing.stock||0) + row.qty
@@ -9759,18 +9818,35 @@ function renderOrders(){
     ordTable.innerHTML = '<tr><td colspan="9">'+emptyStateHTML('ord')+'</td></tr>'
     return
   }
-  document.getElementById('ordersTable').innerHTML=filtered.map(o=>`
+  document.getElementById('ordersTable').innerHTML=filtered.map(o=>{
+    // หารูปจาก orderItems → cards
+    const orderPhotos = []
+    ;(o.orderItems || []).forEach(it => {
+      const card = cards.find(c => c.name === it.name && c.brand === it.brand)
+      const p0 = card?.photos?.[0] || card?.photo || ''
+      if (p0 && !orderPhotos.includes(p0)) orderPhotos.push(p0)
+    })
+    const photoHTML = orderPhotos.length > 0
+      ? `<div style="display:flex;gap:4px;overflow-x:auto;max-width:130px;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
+          ${orderPhotos.slice(0,10).map(p=>`<img src="${p}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--border2);cursor:pointer" onclick="openImgPopup('${p}')">`).join('')}
+        </div>`
+      : ''
+    return `
     <tr>
       <td style="font-family:var(--mono);color:var(--text3)">${o.id}</td>
       <td>${o.customer}</td>
-      <td style="color:var(--text2);font-size:12px">${o.items}</td>
+      <td style="max-width:160px">
+        ${photoHTML}
+        <div style="font-size:11px;color:var(--text2);margin-top:${orderPhotos.length?'4px':'0'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.items}</div>
+      </td>
       <td style="color:var(--yellow);font-weight:700">฿${o.total.toLocaleString()}</td>
       <td style="font-family:var(--mono);font-size:12px;color:${(o.hiddenCost||0)>0?'var(--orange)':'var(--text3)'}">${(o.hiddenCost||0)>0?'฿'+(o.hiddenCost).toLocaleString():'-'}</td>
       <td style="color:var(--text2);font-size:12px">${o.channel}</td>
       <td><span class="order-status ${sm[o.status]}">${st[o.status]}</span></td>
       <td style="color:var(--text3);font-family:var(--mono)">${fmtD(o.date)}</td>
       <td><button class="btn btn-sm" onclick="openOrderDetail('${o.id}')" style="font-size:10px;padding:4px 10px">${currentLang==='en'?'View':'ดู'}</button></td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 }
 
 function renderPackageTab() {
@@ -11625,10 +11701,11 @@ async function markReceived(idx){
   const psaGrade = p.psaGrade || null
 
   // หา card ที่มี poRef ของ PO นี้อยู่แล้ว (กรณี markReceived ซ้ำ)
-  // หรือ match name+brand+psaType+psaGrade เหมือนเดิม
+  // หรือ match name+brand+rarity+psaType+psaGrade เหมือนเดิม
   const card = cards.find(c =>
     c.name === p.name &&
     c.brand === p.brand &&
+    (c.rarity || '-') === (p.rarity || '-') &&
     (c.psaType || 'no') === psaType &&
     String(c.psaGrade || '') === String(psaGrade || '')
   )
@@ -11994,14 +12071,17 @@ function onEditPOSelect() {
 
   const isSold = _editPOIsSold(p)
   if (isSold) {
-    fieldsEl.style.display = 'none'
-    placeholderEl.style.display = 'none'
+    // ยังแก้ไขบางอย่างได้แม้ขายแล้ว (grade, date, seller) แต่แก้ qty/cost ไม่ได้
+    document.getElementById('epo-qty').disabled  = true
+    document.getElementById('epo-cost').disabled = true
     soldWarnEl.style.display = 'block'
-    return
+  } else {
+    document.getElementById('epo-qty').disabled  = false
+    document.getElementById('epo-cost').disabled = false
+    soldWarnEl.style.display = 'none'
   }
-
-  soldWarnEl.style.display = 'none'
   placeholderEl.style.display = 'none'
+  fieldsEl.style.display      = 'block'
 
   // populate fields
   document.getElementById('epo-po-label').textContent = p.po
@@ -12015,8 +12095,21 @@ function onEditPOSelect() {
   if (gradedEl) gradedEl.value = p.psaType && p.psaType !== 'no' ? p.psaType : 'no'
   const gradeScoreEl = document.getElementById('epo-grade-score')
   if (gradeScoreEl) gradeScoreEl.value = p.psaGrade || ''
-  // defect
-  const defectVal = p.hasDefect ? 'yes' : 'no'
+  // date — แปลง dd/mm/yy → yyyy-mm-dd สำหรับ input[type=date]
+  const dateEl = document.getElementById('epo-date')
+  if (dateEl) {
+    if (p.date) {
+      const parts = p.date.split('/')
+      if (parts.length === 3) {
+        const d   = parts[0].padStart(2,'0')
+        const m   = parts[1].padStart(2,'0')
+        const yr  = parseInt(parts[2]) < 100 ? '20' + parts[2].padStart(2,'0') : parts[2]
+        dateEl.value = `${yr}-${m}-${d}`
+      }
+    } else {
+      dateEl.value = new Date().toISOString().split('T')[0]
+    }
+  }
   const defectEl  = document.querySelector(`input[name="epo-defect"][value="${defectVal}"]`)
   if (defectEl) defectEl.checked = true
   // seller
@@ -12058,6 +12151,13 @@ function saveEditPO() {
   const newHasDefect  = document.querySelector('input[name="epo-defect"]:checked')?.value === 'yes'
   const newSellerType = document.querySelector('input[name="epo-seller-type"]:checked')?.value || 'anonymous'
   const newSellerName = document.getElementById('epo-seller')?.value.trim() || ''
+  // แปลง yyyy-mm-dd → dd/mm/yy
+  let newDate = p.date || ''
+  const rawDate = document.getElementById('epo-date')?.value
+  if (rawDate) {
+    const [yr, mo, dy] = rawDate.split('-')
+    newDate = `${dy}/${mo}/${String(parseInt(yr)).slice(-2)}`
+  }
 
   if (!newName) { showToast('กรุณากรอกชื่อการ์ด', 'var(--orange)'); return }
   if (newQty < 1) { showToast('จำนวนต้องมากกว่า 0', 'var(--orange)'); return }
@@ -12072,6 +12172,7 @@ function saveEditPO() {
   p.name        = newName
   p.qty         = newQty
   p.cost        = newCost
+  p.date        = newDate
   p.psa         = newGraded !== 'no'
   p.psaType     = newGraded
   p.psaGrade    = newScore || null
